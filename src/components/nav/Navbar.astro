@@ -1,0 +1,51 @@
+---
+export interface Props {
+  activePage?: 'home' | 'servicios' | 'contacto';
+}
+const { activePage = 'home' } = Astro.props;
+const links = [
+  { href: '/', label: 'Home', id: 'home' },
+  { href: '/servicios', label: 'Services', id: 'servicios' },
+  { href: '/contacto', label: 'Contact', id: 'contacto' },
+];
+---
+
+<nav class="fixed top-0 left-0 w-full z-50 grid grid-cols-3 items-center px-margin-mobile md:px-sp-xl h-20 max-w-container-max mx-auto bg-surface shadow-sm transition-all duration-300" id="main-nav">
+  <div class="flex items-center gap-base justify-self-start">
+    <a href="/" class="text-headline-md font-headline-md font-bold text-primary no-underline">Mg Shipping</a>
+  </div>
+  <div class="hidden md:flex items-center justify-center gap-sp-lg justify-self-center">
+    {
+      links.map((link) => (
+        <a
+          href={link.href}
+          class={`text-label-md font-label-md transition-colors duration-200 no-underline ${
+            activePage === link.id
+              ? 'text-primary font-bold border-b-2 border-primary pb-1'
+              : 'text-on-surface-variant hover:text-secondary'
+          }`}
+        >
+          {link.label}
+        </a>
+      ))
+    }
+  </div>
+  <div class="hidden sm:flex items-center justify-end gap-sp-sm justify-self-end">
+    <button class="text-primary font-label-md hover:text-secondary transition-colors cursor-pointer whitespace-nowrap">Sign In</button>
+    <button class="bg-primary text-on-primary px-sp-md py-sp-xs rounded-lg font-label-md hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 cursor-pointer whitespace-nowrap">Open Locker</button>
+  </div>
+</nav>
+
+<script>
+  window.addEventListener('scroll', () => {
+    const nav = document.getElementById('main-nav');
+    if (!nav) return;
+    if (window.scrollY > 50) {
+      nav.classList.add('h-16', 'shadow-md', 'bg-surface/95', 'backdrop-blur-sm');
+      nav.classList.remove('h-20', 'shadow-sm', 'bg-surface');
+    } else {
+      nav.classList.add('h-20', 'shadow-sm', 'bg-surface');
+      nav.classList.remove('h-16', 'shadow-md', 'bg-surface/95', 'backdrop-blur-sm');
+    }
+  });
+</script>

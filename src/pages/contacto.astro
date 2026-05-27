@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/nav/Navbar.astro';
+import Footer from '../components/nav/Footer.astro';
+import WhatsAppButton from '../components/ui/WhatsAppButton.astro';
+import TrackingForm from '../components/contact/TrackingForm.astro';
+import ContactForm from '../components/contact/ContactForm.astro';
+import LocationCards from '../components/contact/LocationCards.astro';
+import SocialSection from '../components/contact/SocialSection.astro';
+---
+
+<BaseLayout title="Contact & Tracking | Mg Shipping Agency">
+  <Navbar activePage="contacto" />
+  <main class="pt-24 pb-xl px-margin-mobile md:px-sp-xl max-w-container-max mx-auto">
+    <header class="mb-sp-lg text-center md:text-left">
+      <h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary mb-sp-xs">Track & Connect</h1>
+      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Manage your shipments from Miami to Nicaragua with precision. Real-time updates and dedicated support at your fingertips.</p>
+    </header>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+      <TrackingForm />
+      <aside class="hidden xl:block xl:col-span-4 space-y-gutter">
+        <div class="bg-primary p-sp-lg rounded-xl text-on-primary">
+          <h3 class="font-headline-md text-headline-md mb-sp-base">Fast Shipping</h3>
+          <p class="text-body-md opacity-80 mb-sp-md">Average delivery time between Miami and Managua: 3-5 business days.</p>
+          <div class="flex gap-sp-sm">
+            <div class="flex-1 text-center bg-white/10 p-sp-sm rounded-lg">
+              <div class="text-headline-md font-bold">98%</div>
+              <div class="text-label-sm">On Time</div>
+            </div>
+            <div class="flex-1 text-center bg-white/10 p-sp-sm rounded-lg">
+              <div class="text-headline-md font-bold">15k+</div>
+              <div class="text-label-sm">Delivered</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <ContactForm />
+      <section class="lg:col-span-12 xl:col-span-5 mt-sp-lg">
+        <LocationCards />
+      </section>
+    </div>
+  </main>
+  <SocialSection />
+  <Footer />
+  <WhatsAppButton />
+</BaseLayout>
