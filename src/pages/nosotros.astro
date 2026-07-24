@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/organisms/Header.astro';
+import Footer from '../components/organisms/Footer.astro';
+import WhatsAppButton from '../components/organisms/WhatsAppButton.astro';
+import ScrollReveal from '../components/atoms/ScrollReveal.astro';
+
+const values = [
+  {
+    icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
+    title: 'Confianza',
+    description: 'Cada paquete que recibimos es tratado con la máxima cuidado y responsabilidad.',
+  },
+  {
+    icon: 'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z',
+    title: 'Puntualidad',
+    description: 'Cumplimos con los tiempos de entrega prometidos. Tu tiempo es valioso.',
+  },
+  {
+    icon: 'M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z',
+    title: 'Seguridad',
+    description: 'Tus paquetes están protegidos desde Miami hasta su destino final en Nicaragua.',
+  },
+];
+---
+
+<BaseLayout title="Nosotros | Shipping Agency Agency" description="Conoce Shipping Agency Agency. Especialistas en logística y envíos de paquetes de Miami a Nicaragua.">
+  <Header activePage="nosotros" />
+  <main class="pt-24 pb-xl">
+    <section class="px-margin-mobile md:px-sp-xl py-sp-xl bg-surface-container-low">
+      <div class="max-w-container-max mx-auto text-center">
+        <h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary mb-sp-md">Sobre Shipping Agency</h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-3xl mx-auto mb-sp-lg">
+          Somos una empresa de logística especializada en el envío de paquetes desde Miami hasta Nicaragua. Nuestra misión es hacer que tus compras internacionales lleguen de forma rápida, segura y accesible a la puerta de tu casa.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-sp-md max-w-2xl mx-auto">
+          <div class="bg-white p-sp-md rounded-xl border border-outline-variant text-center">
+            <div class="text-headline-lg font-bold text-primary">5+</div>
+            <div class="text-label-md text-outline">Años de Experiencia</div>
+          </div>
+          <div class="bg-white p-sp-md rounded-xl border border-outline-variant text-center">
+            <div class="text-headline-lg font-bold text-primary">15k+</div>
+            <div class="text-label-md text-outline">Paquetes Entregados</div>
+          </div>
+          <div class="bg-white p-sp-md rounded-xl border border-outline-variant text-center">
+            <div class="text-headline-lg font-bold text-primary">98%</div>
+            <div class="text-label-md text-outline">Satisfacción</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="px-margin-mobile md:px-sp-xl py-sp-xl">
+      <div class="max-w-container-max mx-auto">
+        <h2 class="font-headline-lg text-headline-lg text-primary mb-sp-lg text-center">Nuestros Valores</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-sp-md">
+          {values.map((val) => (
+            <ScrollReveal>
+              <article class="bg-white border border-outline-variant rounded-xl p-sp-lg text-center hover:shadow-md transition-shadow">
+                <div class="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center mx-auto mb-sp-md">
+                  <svg class="w-8 h-8 fill-on-primary-container" viewBox="0 0 24 24"><path d={val.icon} /></svg>
+                </div>
+                <h3 class="font-headline-md text-headline-md text-primary mb-sp-xs">{val.title}</h3>
+                <p class="text-on-surface-variant">{val.description}</p>
+              </article>
+            </ScrollReveal>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="px-margin-mobile md:px-sp-xl py-sp-xl bg-surface-container-low">
+      <div class="max-w-3xl mx-auto text-center">
+        <h2 class="font-headline-lg text-headline-lg text-primary mb-sp-md">Nuestra Historia</h2>
+        <p class="text-body-lg text-on-surface-variant mb-sp-md">
+          Shipping Agency Agency nació de la necesidad de conectar a los nicaragüenses con sus compras en Estados Unidos. Sabemos lo frustrante que puede ser comprar en línea y no tener una forma confiable de recibir tus productos en Nicaragua.
+        </p>
+        <p class="text-body-lg text-on-surface-variant mb-sp-md">
+          Con un almacén propio en Miami y una oficina en Managua, ofrecemos un servicio completo de receiving, consolidación y envío que te permite comprar con confianza sabiendo que tus paquetes están en buenas manos.
+        </p>
+        <p class="text-body-lg text-on-surface-variant">
+          Hoy servimos a miles de clientes satisfechos que confían en nosotros para traer sus compras desde Estados Unidos hasta la puerta de sus casas en todo Nicaragua.
+        </p>
+      </div>
+    </section>
+  </main>
+  <Footer />
+  <WhatsAppButton />
+</BaseLayout>

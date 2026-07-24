@@ -1,0 +1,36 @@
+---
+import ServiceCard from '../molecules/ServiceCard.astro';
+
+const services = [
+  {
+    icon: 'inbox',
+    title: 'Casillero Virtual en Miami',
+    description: 'Recibe tus compras de Amazon, eBay, Shein y más en nuestra dirección física en Miami. Te notificamos cuando llegue cada paquete.',
+  },
+  {
+    icon: 'rocket',
+    title: 'Courier Aéreo',
+    description: 'Envíos exprés vía aérea con llegada a Nicaragua en 3-5 días hábiles. Ideal para paquetes urgentes y de alto valor.',
+  },
+  {
+    icon: 'boat',
+    title: 'Courier Marítimo',
+    description: 'Para cargas grandes y mudanzas. Consolidamos tu mercancía y la enviamos por vía marítima con la mejor relación costo-beneficio.',
+  },
+  {
+    icon: 'shield',
+    title: 'Seguro de Carga',
+    description: 'Protege tus envíos con nuestro seguro opcional. Cobertura completa desde Miami hasta la entrega final en Nicaragua.',
+  },
+];
+---
+
+<section class="py-sp-xl px-margin-mobile md:px-sp-xl" aria-label="Nuestros servicios">
+  <div class="max-w-container-max mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-sp-md">
+      {services.map((svc) => (
+        <ServiceCard icon={svc.icon} title={svc.title} description={svc.description} />
+      ))}
+    </div>
+  </div>
+</section>

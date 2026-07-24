@@ -1,46 +1,69 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Navbar from '../components/nav/Navbar.astro';
-import Footer from '../components/nav/Footer.astro';
-import WhatsAppButton from '../components/ui/WhatsAppButton.astro';
-import TrackingForm from '../components/contact/TrackingForm.astro';
-import ContactForm from '../components/contact/ContactForm.astro';
-import LocationCards from '../components/contact/LocationCards.astro';
-import SocialSection from '../components/contact/SocialSection.astro';
+import Header from '../components/organisms/Header.astro';
+import Footer from '../components/organisms/Footer.astro';
+import WhatsAppButton from '../components/organisms/WhatsAppButton.astro';
+import TrackingInput from '../components/molecules/TrackingInput.astro';
+import ContactFormData from '../components/molecules/ContactFormData.astro';
+import LocationCard from '../components/molecules/LocationCard.astro';
+import SocialLinks from '../components/molecules/SocialLinks.astro';
+
+const socials = [
+  { label: 'FB', href: 'https://facebook.com' },
+  { label: 'IG', href: 'https://instagram.com' },
+  { label: 'TK', href: 'https://tiktok.com' },
+];
 ---
 
-<BaseLayout title="Contact & Tracking | Mg Shipping Agency">
-  <Navbar activePage="contacto" />
+<BaseLayout title="Contacto & Rastreo | Shipping Agency">
+  <Header activePage="contacto" />
   <main class="pt-24 pb-xl px-margin-mobile md:px-sp-xl max-w-container-max mx-auto">
     <header class="mb-sp-lg text-center md:text-left">
-      <h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary mb-sp-xs">Track & Connect</h1>
-      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Manage your shipments from Miami to Nicaragua with precision. Real-time updates and dedicated support at your fingertips.</p>
+      <h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary mb-sp-xs">Rastreo & Contacto</h1>
+      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+        Administra tus envíos de Miami a Nicaragua con precisión. Actualizaciones en tiempo real y soporte dedicado a tu alcance.
+      </p>
     </header>
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-      <TrackingForm />
+      <section class="lg:col-span-12 xl:col-span-8">
+        <TrackingInput />
+      </section>
       <aside class="hidden xl:block xl:col-span-4 space-y-gutter">
         <div class="bg-primary p-sp-lg rounded-xl text-on-primary">
-          <h3 class="font-headline-md text-headline-md mb-sp-base">Fast Shipping</h3>
-          <p class="text-body-md opacity-80 mb-sp-md">Average delivery time between Miami and Managua: 3-5 business days.</p>
+          <h3 class="font-headline-md text-headline-md mb-sp-base">Envío Rápido</h3>
+          <p class="text-body-md opacity-80 mb-sp-md">Tiempo promedio de entrega entre Miami y Managua: 3-5 días hábiles.</p>
           <div class="flex gap-sp-sm">
             <div class="flex-1 text-center bg-white/10 p-sp-sm rounded-lg">
               <div class="text-headline-md font-bold">98%</div>
-              <div class="text-label-sm">On Time</div>
+              <div class="text-label-sm">A Tiempo</div>
             </div>
             <div class="flex-1 text-center bg-white/10 p-sp-sm rounded-lg">
               <div class="text-headline-md font-bold">15k+</div>
-              <div class="text-label-sm">Delivered</div>
+              <div class="text-label-sm">Entregados</div>
             </div>
           </div>
         </div>
       </aside>
-      <ContactForm />
-      <section class="lg:col-span-12 xl:col-span-5 mt-sp-lg">
-        <LocationCards />
+      <section class="lg:col-span-12 xl:col-span-7 mt-sp-lg">
+        <ContactFormData />
+      </section>
+      <section class="lg:col-span-12 xl:col-span-5 mt-sp-lg space-y-gutter">
+        <LocationCard
+          name="Miami Warehouse"
+          address="8235 NW 68th St, Miami, FL 33166"
+          image="https://lh3.googleusercontent.com/aida-public/AB6AXuCdTsqinN1b61Tlo8sIibGBQM8ELi2QHdmQRsqWdQkLsoZj8TdoDbuiuSIplgvFeNElcVc3UwllTtrJhIVnqft1DHrV5bxcCH9FAZTvU1SL8hELjJ2Uu-pRCMzl7TbhwI73You7LDv4mTiC5kXRHEIbD79Eh6AWKyiXb3BevsOKp2hs6MMXGp5HdaGALyidFMN-ItyVO8wpQcWgBOQX68Zsq9U3ErAdu6yAfn1faJC6TIVgjKlaI3PMH_Ag4OVshldUJfYXoDiwTqg"
+          mapsUrl="https://maps.google.com/?q=8235+NW+68th+St+Miami+FL+33166"
+        />
+        <LocationCard
+          name="Nicaragua Agency"
+          address="Bolonia, de la Rotonda El Güegüense 2c. al sur, Managua."
+          image="https://lh3.googleusercontent.com/aida-public/AB6AXuDb6xQsA1IloAqCJP6CD7ysR46tzwFPkWKzJo989ot6kUMc2QXajxRrb4Eix4xP52hb1P1GyZ5WjLcCjkIutpDTQLDK41sVc64G3A8bT5igSDAZt_trNokGMq_kpHegDu45ADv5S5WVddbh2BRCTsqSPFHAu2AT6tygzvZ3ynRkmv2wZCeRas8Wa9Nx_u-of53vmugDY3pngaOtSoo0arS4Xcb0v8xQkmZgDizqr3-g6ylCsUbe5US26LV1-SV3HK0Yh0nNhtD1ye0"
+          mapsUrl="https://maps.google.com/?q=Bolonia+Managua+Nicaragua"
+        />
       </section>
     </div>
   </main>
-  <SocialSection />
+  <SocialLinks networks={socials} />
   <Footer />
   <WhatsAppButton />
 </BaseLayout>

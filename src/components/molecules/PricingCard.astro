@@ -1,0 +1,69 @@
+---
+import ScrollReveal from '../atoms/ScrollReveal.astro';
+
+interface Props {
+  badge: string;
+  title: string;
+  price: string;
+  priceNote: string;
+  features: string[];
+  highlighted?: boolean;
+}
+
+const { badge, title, price, priceNote, features, highlighted = false } = Astro.props;
+---
+
+<ScrollReveal>
+  <article class:list={[
+    'rounded-xl p-sp-lg text-center transition-shadow',
+    highlighted
+      ? 'bg-primary text-on-primary relative scale-105 shadow-lg border-2 border-secondary-container'
+      : 'bg-white border border-outline-variant hover:shadow-md'
+  ]}>
+    {highlighted && (
+      <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-secondary-container text-on-secondary-container text-label-sm font-label-sm px-sp-md py-sp-xs rounded-full">
+        Más Popular
+      </span>
+    )}
+    <span class:list={[
+      'text-label-sm font-label-sm px-base py-sp-xs rounded-full mb-sp-md inline-block',
+      highlighted ? 'bg-white/20' : 'bg-surface-container-high text-primary'
+    ]}>
+      {badge}
+    </span>
+    <h3 class:list={[
+      'font-headline-md text-headline-md mb-sp-sm',
+      highlighted ? '' : 'text-primary'
+    ]}>
+      {title}
+    </h3>
+    <p class:list={[
+      'text-display-lg font-display-lg mb-sp-xs',
+      highlighted ? '' : 'text-primary'
+    ]}>
+      {price}
+    </p>
+    <p class:list={[
+      'text-label-sm mb-sp-md',
+      highlighted ? 'text-on-primary/70' : 'text-outline'
+    ]}>
+      {priceNote}
+    </p>
+    <ul class="text-left space-y-sp-sm mb-sp-lg">
+      {features.map((feature) => (
+        <li class="flex items-center gap-sp-xs text-body-md">
+          <svg class="w-5 h-5 fill-secondary-container shrink-0" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          {feature}
+        </li>
+      ))}
+    </ul>
+    <button class:list={[
+      'w-full py-base rounded-lg font-label-md transition-all cursor-pointer',
+      highlighted
+        ? 'bg-on-primary text-primary hover:bg-secondary-container hover:text-on-secondary-container'
+        : 'border-2 border-primary text-primary hover:bg-primary hover:text-on-primary'
+    ]}>
+      Elegir Plan
+    </button>
+  </article>
+</ScrollReveal>

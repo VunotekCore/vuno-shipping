@@ -1,0 +1,31 @@
+---
+import ScrollReveal from '../atoms/ScrollReveal.astro';
+
+interface Social {
+  label: string;
+  href: string;
+}
+
+interface Props {
+  networks: Social[];
+}
+
+const { networks } = Astro.props;
+---
+
+<div class="bg-surface-container py-sp-lg border-t border-outline-variant">
+  <ScrollReveal>
+    <div class="max-w-container-max mx-auto px-margin-mobile md:px-sp-xl flex flex-col items-center gap-sp-md">
+      <span class="text-label-md text-outline uppercase tracking-widest">Conéctate con Nosotros</span>
+      <div class="flex gap-sp-lg">
+        {networks.map((social) => (
+          <a class="group no-underline" href={social.href} target="_blank" rel="noopener noreferrer" aria-label={social.label}>
+            <div class="w-12 h-12 rounded-full border border-primary flex items-center justify-center group-hover:bg-primary transition-all">
+              <span class="text-primary group-hover:text-white transition-colors text-label-md font-bold">{social.label}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </ScrollReveal>
+</div>

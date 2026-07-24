@@ -1,0 +1,25 @@
+---
+interface Props {
+  name?: string;
+  id?: string;
+  options: { value: string; label: string }[];
+  required?: boolean;
+  class?: string;
+}
+
+const {
+  name,
+  id,
+  options,
+  required = false,
+  class: className = '',
+} = Astro.props;
+
+const base = 'w-full px-sp-md py-base rounded-lg border border-outline-variant bg-white text-primary text-body-md focus:ring-2 focus:ring-primary-container focus:outline-none transition-all';
+---
+
+<select name={name} id={id} required={required} class={`${base} ${className}`}>
+  {options.map((opt) => (
+    <option value={opt.value}>{opt.label}</option>
+  ))}
+</select>

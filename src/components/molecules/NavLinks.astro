@@ -1,0 +1,35 @@
+---
+interface Link {
+  href: string;
+  label: string;
+  id: string;
+}
+
+interface Props {
+  links: Link[];
+  activePage?: string;
+  direction?: 'horizontal' | 'vertical';
+  class?: string;
+}
+
+const { links, activePage = 'home', direction = 'horizontal', class: className = '' } = Astro.props;
+
+const layout = direction === 'horizontal' ? 'flex items-center gap-sp-lg' : 'flex flex-col gap-sp-sm';
+---
+
+<nav class:list={[layout, className]} aria-label="Navegación principal">
+  {links.map((link) => (
+    <a
+      href={link.href}
+      class:list={[
+        'text-label-md font-label-md no-underline pb-1 transition-colors duration-200',
+        activePage === link.id
+          ? 'text-primary font-bold'
+          : 'text-on-surface-variant hover:text-secondary'
+      ]}
+      aria-current={activePage === link.id ? 'page' : undefined}
+    >
+      {link.label}
+    </a>
+  ))}
+</nav>

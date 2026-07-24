@@ -1,0 +1,69 @@
+---
+import ScrollReveal from '../atoms/ScrollReveal.astro';
+---
+
+<section class="py-sp-xl px-margin-mobile md:px-sp-xl bg-surface-container-low" aria-label="Calculadora de envío">
+  <ScrollReveal>
+    <div class="max-w-container-max mx-auto">
+      <div class="max-w-lg mx-auto bg-white border border-outline-variant rounded-xl p-sp-lg shadow-sm">
+        <h2 class="font-headline-md text-headline-md text-primary mb-sp-md text-center">Calculadora de Envío</h2>
+        <div class="space-y-sp-sm">
+          <div>
+            <label class="text-label-sm font-label-sm text-outline block mb-sp-xs" for="calc-weight">Peso (Lbs)</label>
+            <input id="calc-weight" class="w-full bg-white text-primary px-sp-md py-base rounded-lg border border-outline-variant focus:ring-2 focus:ring-primary-container focus:outline-none" placeholder="0.00" type="number" />
+          </div>
+          <div>
+            <label class="text-label-sm font-label-sm text-outline block mb-sp-xs" for="calc-type">Tipo de Artículo</label>
+            <select id="calc-type" class="w-full bg-white text-primary px-sp-md py-base rounded-lg border border-outline-variant focus:ring-2 focus:ring-primary-container focus:outline-none">
+              <option value="0">Ropa y Calzado</option>
+              <option value="1">Electrónicos</option>
+              <option value="2">Hogar</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-label-sm font-label-sm text-outline block mb-sp-xs" for="calc-mode">Tipo de Envío</label>
+            <select id="calc-mode" class="w-full bg-white text-primary px-sp-md py-base rounded-lg border border-outline-variant focus:ring-2 focus:ring-primary-container focus:outline-none">
+              <option value="air">Courier Aéreo ($8.99/lb)</option>
+              <option value="sea">Courier Marítimo ($4.99/lb)</option>
+            </select>
+          </div>
+          <button id="calc-btn" class="w-full bg-primary text-on-primary py-base rounded-lg font-label-md mt-sp-md hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 cursor-pointer">Calcular Tarifa</button>
+          <div id="calc-result" class="mt-sp-md p-sp-md bg-surface-container-low rounded-lg border border-outline-variant hidden">
+            <span class="text-label-sm text-outline">Tarifa estimada:</span>
+            <p id="calc-price" class="text-headline-md font-headline-md text-primary mt-sp-xs">$0.00</p>
+            <p class="text-label-sm text-outline">*Los precios pueden variar según el volumen y el valor declarado.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ScrollReveal>
+</section>
+
+<script>
+  const weightInput = document.getElementById('calc-weight') as HTMLInputElement;
+  const typeSelect = document.getElementById('calc-type') as HTMLSelectElement;
+  const modeSelect = document.getElementById('calc-mode') as HTMLSelectElement;
+  const calcBtn = document.getElementById('calc-btn');
+  const resultDiv = document.getElementById('calc-result');
+  const priceSpan = document.getElementById('calc-price');
+
+  const rates = { air: 8.99, sea: 4.99 };
+  const multipliers = [1, 1.3, 1.15];
+
+  calcBtn?.addEventListener('click', () => {
+    const weight = parseFloat(weightInput?.value || '0');
+    const type = parseInt(typeSelect?.value || '0');
+    const mode = (modeSelect?.value || 'air') as 'air' | 'sea';
+    if (weight <= 0) {
+      alert('Por favor ingresa un peso válido.');
+      return;
+    }
+    const base = rates[mode];
+    const mult = multipliers[type] || 1;
+    const total = weight * base * mult;
+    resultDiv?.classList.remove('hidden');
+    if (priceSpan) {
+      priceSpan.textContent = `$${total.toFixed(2)} USD`;
+    }
+  });
+</script>

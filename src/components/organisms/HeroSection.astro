@@ -1,0 +1,106 @@
+---
+import Button from '../atoms/Button.astro';
+
+const slides = [
+  { image: '/1.webp', alt: 'Almacén de paquetes en Miami' },
+  { image: '/2.webp', alt: 'Paquetes listos para envío internacional' },
+  { image: '/3.webp', alt: 'Envío marítimo de carga' },
+  { image: '/4.webp', alt: 'Entrega a domicilio en Nicaragua' },
+];
+---
+
+<section id="hero" class="relative h-[100vh] h-[100dvh] min-h-[600px] overflow-hidden" aria-label="Hero principal">
+  <div class="hero-slides">
+    {slides.map((slide, i) => (
+      <div class:list={['hero-slide', { active: i === 0 }]}>
+        <img src={slide.image} alt={slide.alt} class="hero-slide-img" loading={i === 0 ? 'eager' : 'lazy'} />
+        <div class="hero-overlay"></div>
+      </div>
+    ))}
+  </div>
+
+  <div class="relative z-10 w-full h-full flex items-center px-margin-mobile md:px-sp-xl">
+    <div class="max-w-container-max mx-auto w-full grid grid-cols-1 md:grid-cols-2 items-center gap-sp-lg">
+      <div class="text-on-primary">
+        <h1 class="font-display-lg text-headline-md md:text-headline-lg max-w-xl leading-tight mb-sp-md">
+          Tus compras en USA, entregadas en la puerta de tu casa en Nicaragua.
+        </h1>
+        <p class="text-body-md md:text-body-lg text-surface-variant max-w-md mb-sp-md">
+          La forma más rápida, segura y confiable de traer tus paquetes desde Miami hasta cualquier parte de Nicaragua.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-sp-sm">
+          <Button variant="secondary" size="md" href="/rastreo">Abrir Casillero Gratis</Button>
+          <Button variant="outline" size="md" href="/rastreo" class="border-white text-white hover:bg-white hover:text-primary">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 22q-.825 0-1.412-.587Q4 20.825 4 20V8q0-.825.588-1.412Q5.175 6 6 6h3V4q0-.825.588-1.413Q10.175 2 11 2h2q.825 0 1.413.587Q15 3.175 15 4v2h3q.825 0 1.413.588Q20 7.175 20 8v12q0 .825-.587 1.413Q18.825 22 18 22Zm0-2h12V8h-3v2q0 .425-.287.712Q14.425 11 14 11h-4q-.425 0-.712-.288Q9 10.425 9 10V8H6v12Zm5-12h2V4h-2Zm-5 12V8v12Z"/></svg>
+            Rastrear Paquete
+          </Button>
+        </div>
+      </div>
+      <div class="hidden md:flex items-center justify-center">
+        <div class="bg-surface/10 backdrop-blur-md p-sp-lg rounded-xl border border-white/20 shadow-2xl w-full max-w-md">
+          <h3 class="text-on-primary font-headline-md text-headline-md mb-sp-md">Calculadora de Envío</h3>
+          <div class="space-y-sp-sm">
+            <div>
+              <label class="text-label-sm font-label-sm text-surface-variant block mb-sp-xs" for="hero-calc-weight">Peso (Lbs)</label>
+              <input id="hero-calc-weight" class="w-full bg-white text-primary px-sp-md py-base rounded-lg border-none focus:ring-2 focus:ring-secondary-container" placeholder="0.00" type="number" />
+            </div>
+            <div>
+              <label class="text-label-sm font-label-sm text-surface-variant block mb-sp-xs" for="hero-calc-type">Tipo de Artículo</label>
+              <select id="hero-calc-type" class="w-full bg-white text-primary px-sp-md py-base rounded-lg border-none focus:ring-2 focus:ring-secondary-container">
+                <option>Ropa y Calzado</option>
+                <option>Electrónicos</option>
+                <option>Hogar</option>
+              </select>
+            </div>
+            <button class="w-full bg-primary text-on-primary py-base rounded-lg font-label-md mt-sp-md cursor-pointer hover:bg-primary-container transition-colors">Calcular Tarifa</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <a href="#proceso" class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 text-white/80 hover:text-white transition-colors" aria-label="Ir a la siguiente sección">
+    <svg class="w-6 h-6 animate-bounce" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"></polyline>
+    </svg>
+  </a>
+</section>
+
+<script>
+  import { initHeroSlider } from '../../scripts/hero-slider.js';
+  initHeroSlider();
+</script>
+
+<style>
+  .hero-slides {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .hero-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1.2s ease-in-out;
+  }
+
+  .hero-slide.active {
+    opacity: 1;
+  }
+
+  .hero-slide-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 30, 64, 0.92) 0%, rgba(0, 51, 102, 0.80) 50%, rgba(144, 77, 0, 0.25) 100%);
+  }
+</style>

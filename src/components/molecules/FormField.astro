@@ -1,0 +1,21 @@
+---
+interface Props {
+  label: string;
+  for?: string;
+  required?: boolean;
+  error?: string;
+}
+
+const { label, for: forAttr, required = false, error } = Astro.props;
+---
+
+<div class="space-y-sp-xs">
+  <label class="text-label-sm font-label-sm text-outline block" for={forAttr}>
+    {label}
+    {required && <span class="text-error ml-0.5">*</span>}
+  </label>
+  <slot />
+  {error && (
+    <p class="text-error text-label-sm">{error}</p>
+  )}
+</div>

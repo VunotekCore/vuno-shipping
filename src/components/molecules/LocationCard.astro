@@ -1,0 +1,28 @@
+---
+import ScrollReveal from '../atoms/ScrollReveal.astro';
+
+interface Props {
+  name: string;
+  address: string;
+  image: string;
+  mapsUrl?: string;
+}
+
+const { name, address, image, mapsUrl = '#' } = Astro.props;
+---
+
+<ScrollReveal>
+  <article class="bg-surface-container-high p-sp-lg rounded-xl border border-outline-variant flex flex-col md:flex-row gap-sp-md">
+    <div class="w-full md:w-32 h-32 bg-white rounded-lg overflow-hidden flex-shrink-0">
+      <img class="w-full h-full object-cover" src={image} alt={name} loading="lazy" />
+    </div>
+    <div>
+      <h3 class="font-headline-md text-headline-md text-primary mb-sp-xs">{name}</h3>
+      <p class="text-body-md text-on-surface-variant mb-sp-base">{address}</p>
+      <a class="text-secondary font-label-md flex items-center gap-sp-xs hover:underline no-underline" href={mapsUrl} target="_blank" rel="noopener noreferrer">
+        <svg class="w-[18px] h-[18px] fill-secondary" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        Ver en Maps
+      </a>
+    </div>
+  </article>
+</ScrollReveal>

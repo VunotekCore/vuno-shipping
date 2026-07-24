@@ -1,0 +1,37 @@
+---
+import FeatureCard from '../molecules/FeatureCard.astro';
+---
+
+<section class="py-sp-xl px-margin-mobile md:px-sp-xl" aria-label="Características principales">
+  <div class="max-w-container-max mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-sp-md">
+      <FeatureCard
+        icon="warehouse"
+        title="Warehouse Propio en Miami"
+        description="Control total de tu mercancía desde que llega a nuestras manos hasta que sale hacia su destino final."
+        badge="Nuestra Sede"
+        variant="highlighted"
+        class="md:col-span-2 md:row-span-2"
+      />
+      <FeatureCard
+        icon="truck"
+        title="Despachos Diarios"
+        description="No esperes semanas. Salidas constantes aéreas y marítimas para que tus compras lleguen volando."
+        badge="Operación Continua"
+        class="md:col-span-2"
+      />
+      <FeatureCard
+        icon="refresh"
+        title="Rastreo Online"
+        description="Sigue tu paquete en tiempo real 24/7 desde nuestra plataforma."
+        variant="highlighted"
+      />
+      <FeatureCard
+        icon="location"
+        title="Entrega a Domicilio"
+        description="Entregamos en la puerta de tu casa u oficina en toda Nicaragua."
+        variant="primary"
+      />
+    </div>
+  </div>
+</section>

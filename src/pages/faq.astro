@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/organisms/Header.astro';
+import Footer from '../components/organisms/Footer.astro';
+import WhatsAppButton from '../components/organisms/WhatsAppButton.astro';
+import CTASection from '../components/organisms/CTASection.astro';
+import FAQItem from '../components/molecules/FAQItem.astro';
+
+const faqItems = [
+  {
+    question: '¿Cómo abro mi casillero virtual en Miami?',
+    answer: 'Solo regístrate en nuestra plataforma o contáctanos por WhatsApp. Te asignaremos una dirección personal en Miami donde podrás recibir tus compras de Amazon, eBay, Shein y otras tiendas online.',
+  },
+  {
+    question: '¿Cuánto tarda en llegar mi paquete de Miami a Nicaragua?',
+    answer: 'El tiempo de entrega depende del servicio elegido. Courier Aéreo: 3-5 días hábiles. Courier Marítimo: 7-15 días hábiles. Recibirás notificaciones en cada etapa del proceso.',
+  },
+  {
+    question: '¿Cuánto cuesta el envío por libra?',
+    answer: 'Courier Aéreo desde $8.99/lb y Courier Marítimo desde $4.99/lb. Para cargas voluminosas (+50lbs) ofrecemos tarifas especiales desde $2.99/lb por vía marítima.',
+  },
+  {
+    question: '¿Puedo rastrear mi paquete en tiempo real?',
+    answer: 'Sí, una vez que tu paquete es recibido en nuestro almacén de Miami, podrás rastrearlo en tiempo real desde nuestra plataforma 24/7.',
+  },
+  {
+    question: '¿Qué tipos de artículos puedo enviar?',
+    answer: 'Aceptamos ropa, calzado, electrónicos, artículos para el hogar, muebles y casi cualquier producto legal. Existen restricciones para artículos peligrosos, líquidos y alimentos perecederos.',
+  },
+  {
+    question: '¿Ofrecen seguro de carga?',
+    answer: 'Sí, ofrecemos seguro opcional de carga que cubre desde Miami hasta la entrega final en Nicaragua. El seguro está incluido en los planes Estándar y Premium.',
+  },
+  {
+    question: '¿Puedo consolidar varios paquetes en un solo envío?',
+    answer: 'Sí, ofrecemos servicio de consolidación. Recibimos tus múltiples paquetes en Miami, los empacamos juntos y los enviamos como un solo envío, ahorrándote costos de envío.',
+  },
+  {
+    question: '¿Cómo pago por el servicio de envío?',
+    answer: 'Aceptamos transferencia bancaria, tarjeta de crédito/débito y pagos en efectivo en nuestras oficinas en Nicaragua.',
+  },
+];
+---
+
+<BaseLayout title="Preguntas Frecuentes | Shipping Agency" description="Resuelve tus dudas sobre envíos de paquetes de Miami a Nicaragua. Precios, tiempos de entrega, rastreo y más.">
+  <Header activePage="faq" />
+  <main class="pt-24 pb-xl px-margin-mobile md:px-sp-xl max-w-container-max mx-auto">
+    <header class="mb-sp-xl text-center">
+      <h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary mb-sp-xs">Preguntas Frecuentes</h1>
+      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+        Encuentra respuestas a las preguntas más comunes sobre nuestros servicios de envío.
+      </p>
+    </header>
+
+    <section class="max-w-3xl mx-auto space-y-sp-sm" aria-label="Preguntas frecuentes">
+      {faqItems.map((item) => (
+        <FAQItem question={item.question} answer={item.answer} />
+      ))}
+    </section>
+
+    <CTASection />
+  </main>
+  <Footer />
+  <WhatsAppButton />
+</BaseLayout>

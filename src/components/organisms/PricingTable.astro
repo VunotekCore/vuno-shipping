@@ -1,0 +1,41 @@
+---
+import PricingCard from '../molecules/PricingCard.astro';
+
+const plans = [
+  {
+    badge: 'Básico',
+    title: 'Recogida en Agencia',
+    price: '$4.99',
+    priceNote: 'por libra (marítimo)',
+    features: ['Recogida en Managua', '7-10 días hábiles', 'Seguro opcional'],
+    highlighted: false,
+  },
+  {
+    badge: 'Estándar',
+    title: 'Entrega a Domicilio',
+    price: '$8.99',
+    priceNote: 'por libra (aéreo)',
+    features: ['Entrega puerta a puerta', '3-5 días hábiles', 'Seguro incluido'],
+    highlighted: true,
+  },
+  {
+    badge: 'Premium',
+    title: 'Carga Voluminosa',
+    price: '$2.99',
+    priceNote: 'por libra (marítimo, +50lbs)',
+    features: ['Ideal para mudanzas', '10-15 días hábiles', 'Seguro incluido'],
+    highlighted: false,
+  },
+];
+---
+
+<section class="py-sp-xl px-margin-mobile md:px-sp-xl" aria-label="Comparativa de planes">
+  <div class="max-w-container-max mx-auto">
+    <h2 class="font-headline-lg text-headline-lg text-primary mb-sp-lg text-center">Comparativa de Envío</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-sp-md">
+      {plans.map((plan) => (
+        <PricingCard {...plan} />
+      ))}
+    </div>
+  </div>
+</section>

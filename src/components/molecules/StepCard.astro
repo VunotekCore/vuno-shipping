@@ -1,0 +1,29 @@
+---
+import ScrollReveal from '../atoms/ScrollReveal.astro';
+
+interface Props {
+  number: string;
+  icon: string;
+  title: string;
+  description: string;
+}
+
+const { number, icon, title, description } = Astro.props;
+
+const iconPaths: Record<string, string> = {
+  shopping_cart: 'M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2zM7.17 15.75l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.86-7.01L19.42 4h-.01l-1.1 2-2.76 5H8.53l-.13-.27L6.16 6l-.95-2-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25z',
+  warehouse: 'M22 21V7l-10-5L2 7v14h7v-8h6v8h7zm-9-5v-4H9v4H7v-6h10v6h-4z',
+  door_front: 'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 12h-2v-2h2v2z',
+};
+---
+
+<ScrollReveal>
+  <article class="relative z-10 bg-surface-container-lowest p-sp-lg rounded-xl shadow-sm border border-outline-variant hover:shadow-md transition-shadow group text-center">
+    <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-sp-md group-hover:bg-secondary transition-colors">
+      <svg class="w-8 h-8 fill-white" viewBox="0 0 24 24"><path d={iconPaths[icon]} /></svg>
+    </div>
+    <span class="text-secondary font-bold text-label-md mb-sp-xs block">{number}</span>
+    <h4 class="font-headline-md text-headline-md text-primary mb-sp-sm">{title}</h4>
+    <p class="text-on-surface-variant">{description}</p>
+  </article>
+</ScrollReveal>

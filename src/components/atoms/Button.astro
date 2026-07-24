@@ -1,0 +1,46 @@
+---
+interface Props {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  href?: string;
+  type?: 'button' | 'submit' | 'reset';
+  class?: string;
+  fullWidth?: boolean;
+}
+
+const {
+  variant = 'primary',
+  size = 'md',
+  href,
+  type = 'button',
+  class: className = '',
+  fullWidth = false,
+} = Astro.props;
+
+const base = 'inline-flex items-center justify-center gap-sp-xs font-label-md rounded-lg transition-all active:scale-95 cursor-pointer no-underline';
+
+const variants: Record<string, string> = {
+  primary: 'bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container',
+  secondary: 'bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-primary',
+  outline: 'border-2 border-primary text-primary hover:bg-primary hover:text-on-primary',
+  ghost: 'text-primary hover:bg-surface-container-high',
+};
+
+const sizes: Record<string, string> = {
+  sm: 'px-sp-md py-sp-xs text-label-sm',
+  md: 'px-sp-md py-base text-label-md',
+  lg: 'px-sp-lg py-sp-md text-headline-md',
+};
+
+const classes = `${base} ${variants[variant]} ${sizes[size]} ${fullWidth ? 'w-full' : ''} ${className}`;
+---
+
+{href ? (
+  <a href={href} class={classes}>
+    <slot />
+  </a>
+) : (
+  <button type={type} class={classes}>
+    <slot />
+  </button>
+)}

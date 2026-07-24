@@ -1,0 +1,125 @@
+---
+import NavLinks from '../molecules/NavLinks.astro';
+import Button from '../atoms/Button.astro';
+
+interface Props {
+  activePage?: 'home' | 'servicios' | 'contacto' | 'rastreo' | 'nosotros' | 'faq';
+}
+
+const { activePage = 'home' } = Astro.props;
+
+const links = [
+  { href: '/', label: 'Inicio', id: 'home' },
+  { href: '/servicios', label: 'Servicios', id: 'servicios' },
+  { href: '/rastreo', label: 'Rastreo', id: 'rastreo' },
+  { href: '/nosotros', label: 'Nosotros', id: 'nosotros' },
+  { href: '/faq', label: 'FAQ', id: 'faq' },
+  { href: '/contacto', label: 'Contacto', id: 'contacto' },
+];
+---
+
+<header
+  class="fixed top-0 left-0 w-full z-50 h-20 bg-surface shadow-sm transition-all duration-300"
+  id="main-header"
+  role="banner"
+>
+  <div id="scroll-progress" class="progress-bar"></div>
+  <div class="flex justify-between items-center h-full max-w-container-max mx-auto px-margin-mobile md:px-sp-lg">
+    <a href="/" class="text-headline-md font-headline-md font-bold text-primary no-underline logo-animate" aria-label="Shipping Agency — Ir al inicio">
+      Shipping Agency
+    </a>
+
+    <div class="hidden lg:flex items-center gap-sp-lg">
+      <NavLinks links={links} activePage={activePage} />
+    </div>
+
+    <div class="hidden sm:flex items-center gap-sp-sm">
+      <Button variant="ghost" size="sm">Iniciar Sesión</Button>
+      <Button variant="primary" size="sm" href="/rastreo">Abrir Casillero</Button>
+    </div>
+
+    <button
+      id="mobile-menu-btn"
+      class="lg:hidden flex flex-col justify-center items-center w-10 h-10 gap-1.5 cursor-pointer"
+      aria-label="Abrir menú de navegación"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+    >
+      <span class="block w-6 h-0.5 bg-primary transition-all duration-300 origin-center" id="bar1"></span>
+      <span class="block w-6 h-0.5 bg-primary transition-all duration-300" id="bar2"></span>
+      <span class="block w-6 h-0.5 bg-primary transition-all duration-300 origin-center" id="bar3"></span>
+    </button>
+  </div>
+
+  <div
+    id="mobile-menu"
+    class="lg:hidden hidden fixed top-20 left-0 w-full bg-surface shadow-lg border-t border-outline-variant"
+    role="navigation"
+    aria-label="Menú móvil"
+  >
+    <div class="flex flex-col px-margin-mobile py-sp-md gap-sp-sm">
+      <NavLinks links={links} activePage={activePage} direction="vertical" />
+      <div class="flex flex-col gap-sp-sm mt-sp-md pt-sp-md border-t border-outline-variant sm:hidden">
+        <Button variant="ghost" size="sm">Iniciar Sesión</Button>
+        <Button variant="primary" size="sm" href="/rastreo" fullWidth>Abrir Casillero</Button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<style>
+  @keyframes logoEntrance {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .logo-animate {
+    animation: logoEntrance 0.8s ease-out forwards;
+  }
+  .progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--color-primary);
+    width: 0%;
+    transition: width 0.1s linear;
+    z-index: 60;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  const header = document.getElementById('main-header');
+  const progressBar = document.getElementById('scroll-progress');
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const bar1 = document.getElementById('bar1');
+  const bar2 = document.getElementById('bar2');
+  const bar3 = document.getElementById('bar3');
+
+  window.addEventListener('scroll', () => {
+    if (!header) return;
+    if (window.scrollY > 50) {
+      header.classList.add('h-16', 'shadow-md', 'bg-surface/95', 'backdrop-blur-sm');
+      header.classList.remove('h-20', 'shadow-sm', 'bg-surface');
+    } else {
+      header.classList.add('h-20', 'shadow-sm', 'bg-surface');
+      header.classList.remove('h-16', 'shadow-md', 'bg-surface/95', 'backdrop-blur-sm');
+    }
+    if (progressBar) {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      const percent = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
+      progressBar.style.width = percent + '%';
+    }
+  });
+
+  menuBtn?.addEventListener('click', () => {
+    const isOpen = mobileMenu?.classList.toggle('hidden') === false;
+    menuBtn.setAttribute('aria-expanded', String(isOpen));
+    bar1?.classList.toggle('translate-y-2');
+    bar1?.classList.toggle('rotate-45');
+    bar2?.classList.toggle('opacity-0');
+    bar3?.classList.toggle('-translate-y-2');
+    bar3?.classList.toggle('-rotate-45');
+  });
+</script>
