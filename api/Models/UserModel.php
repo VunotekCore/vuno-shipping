@@ -96,9 +96,8 @@ class UserModel
     public function countByRoleSlug(string $slug): int
     {
         $stmt = $this->db->prepare("
-            SELECT COUNT(*) FROM `user` u
-            JOIN role r ON r.id = u.role_id
-            WHERE r.slug = :slug
+            SELECT COUNT(*) FROM `user`
+            WHERE role_id = (SELECT id FROM role WHERE slug = :slug LIMIT 1)
         ");
         $stmt->execute(['slug' => $slug]);
         return (int) $stmt->fetchColumn();

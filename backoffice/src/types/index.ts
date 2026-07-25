@@ -9,8 +9,9 @@ export interface User {
   role_id: number
   role_name: string
   role_slug: string
-  permissions?: Permissions
-  created_at?: string
+  permissions: Record<string, string[]>
+  must_change_password?: boolean
+  created_at: string
 }
 
 export interface Role {

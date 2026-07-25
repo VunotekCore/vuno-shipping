@@ -76,6 +76,7 @@ class AuthController
                 'role_name'   => $user['role_name'],
                 'role_slug'   => $user['role_slug'],
                 'permissions' => $permissions,
+                'must_change_password' => (bool) ($user['must_change_password'] ?? false),
             ],
         ]);
     }
@@ -93,13 +94,18 @@ class AuthController
             jsonError('Usuario no encontrado', 401);
         }
 
-        jsonSuccess(['user' => $user]);
+        jsonSuccess([
+            'user' => $user,
+            'must_change_password' => (bool) ($user['must_change_password'] ?? false),
+        ]);
     }
 
     public function logout(): never
     {
         requireMethod('POST');
+        rateLimit('logout', 20, 900);
         $payload = requireAuth();
+        validateCsrfToken();
 
         blacklistToken($payload['jti'] ?? '', $payload['exp'] ?? time());
 

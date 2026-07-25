@@ -1,19 +1,58 @@
 <script setup lang="ts">
+import { watch, nextTick, ref } from 'vue'
+
 defineProps<{
   visible: boolean
   title?: string
   size?: 'sm' | 'md' | 'lg'
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   close: []
 }>()
 
+const modalRef = ref<HTMLElement | null>(null)
+
 function onBackdrop(e: MouseEvent) {
   if ((e.target as HTMLElement).classList.contains('admin-modal-overlay')) {
-    ;(e.currentTarget as HTMLElement).dispatchEvent(new Event('close'))
+    emit('close')
   }
 }
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    emit('close')
+    return
+  }
+  if (e.key === 'Tab' && modalRef.value) {
+    const focusable = modalRef.value.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+  }
+}
+
+watch(() => modalRef.value, (el) => {
+  if (el) {
+    nextTick(() => {
+      const first = el.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      first?.focus()
+    })
+  }
+})
 </script>
 
 <template>
@@ -23,8 +62,13 @@ function onBackdrop(e: MouseEvent) {
         v-if="visible"
         class="admin-modal-overlay fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click="onBackdrop"
+        @keydown="onKeydown"
       >
         <div
+          ref="modalRef"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="title"
           :class="[
             'w-full rounded-xl border border-[#1e293b] bg-[#111d2e] shadow-2xl max-h-[90vh] flex flex-col',
             size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg'

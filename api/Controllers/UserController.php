@@ -49,7 +49,7 @@ class UserController
     public function create(): never
     {
         requireMethod('POST');
-        $payload = requireAuthMiddleware();
+        $payload = requireAuthMiddleware(true);
         rateLimit('user_create', 10, 900);
 
         if (!hasPermission($payload, 'user', 'create')) {
@@ -92,7 +92,7 @@ class UserController
     public function update(): never
     {
         requireMethod('PUT');
-        $payload = requireAuthMiddleware();
+        $payload = requireAuthMiddleware(true);
         rateLimit('user_update', 20, 900);
 
         if (!hasPermission($payload, 'user', 'edit')) {
@@ -134,9 +134,16 @@ class UserController
             }
 
             $roleModel = new RoleModel(Database::getConnection());
-            $role = $roleModel->findById($newRoleId);
-            if ($role === null) {
+            $newRole = $roleModel->findById($newRoleId);
+            if ($newRole === null) {
                 jsonError('El rol seleccionado no existe', 422);
+            }
+
+            if ($existing['role_slug'] === 'admin' && $newRole['slug'] !== 'admin') {
+                $adminCount = $this->model->countByRoleSlug('admin');
+                if ($adminCount <= 1) {
+                    jsonError('No se puede degradar: es el último administrador del sistema', 409);
+                }
             }
 
             $updateData['role_id'] = $newRoleId;
@@ -160,7 +167,7 @@ class UserController
     public function delete(): never
     {
         requireMethod('DELETE');
-        $payload = requireAuthMiddleware();
+        $payload = requireAuthMiddleware(true);
         rateLimit('user_delete', 5, 900);
 
         if (!hasPermission($payload, 'user', 'delete')) {

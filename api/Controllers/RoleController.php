@@ -45,7 +45,7 @@ class RoleController
     public function create(): never
     {
         requireMethod('POST');
-        $payload = requireAuthMiddleware();
+        $payload = requireAuthMiddleware(true);
         rateLimit('role_create', 10, 900);
 
         if (!hasPermission($payload, 'role', 'create')) {
@@ -79,7 +79,7 @@ class RoleController
     public function update(): never
     {
         requireMethod('PUT');
-        $payload = requireAuthMiddleware();
+        $payload = requireAuthMiddleware(true);
         rateLimit('role_update', 20, 900);
 
         if (!hasPermission($payload, 'role', 'edit')) {
@@ -109,6 +109,10 @@ class RoleController
             jsonError('El slug solo puede contener letras minúsculas, números, guiones y guiones bajos', 422);
         }
 
+        if ($existing['slug'] === 'admin' && $slug !== 'admin') {
+            jsonError('No se puede cambiar el slug del rol admin', 409);
+        }
+
         $duplicate = $this->model->findBySlug($slug);
         if ($duplicate !== null && $duplicate['id'] !== $id) {
             jsonError('Ya existe un rol con ese slug', 409);
@@ -123,7 +127,7 @@ class RoleController
     public function delete(): never
     {
         requireMethod('DELETE');
-        $payload = requireAuthMiddleware();
+        $payload = requireAuthMiddleware(true);
         rateLimit('role_delete', 5, 900);
 
         if (!hasPermission($payload, 'role', 'delete')) {
@@ -158,7 +162,7 @@ class RoleController
     public function permissions(): never
     {
         requireMethod('GET', 'PUT');
-        $payload = requireAuthMiddleware();
+        $payload = requireAuthMiddleware($_SERVER['REQUEST_METHOD'] === 'PUT');
 
         if (!hasPermission($payload, 'role', 'read')) {
             jsonError('No tenés permiso para ver roles', 403);

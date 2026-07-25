@@ -6,6 +6,7 @@ import type { User } from '../types'
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const refreshToken = ref<string | null>(localStorage.getItem('refresh_token'))
+  const mustChangePassword = ref(false)
 
   const isAuthenticated = computed(() => !!user.value)
 
@@ -21,6 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (data.success && data.data?.user) {
       user.value = data.data.user
+      mustChangePassword.value = !!data.data.must_change_password
       if (data.data.refresh_token) {
         refreshToken.value = data.data.refresh_token
         localStorage.setItem('refresh_token', data.data.refresh_token)
@@ -34,32 +36,26 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     user.value = null
     refreshToken.value = null
+    mustChangePassword.value = false
     localStorage.removeItem('refresh_token')
     authService.logout().catch(() => {})
     window.location.href = '/login'
   }
 
-  async function refresh(): Promise<boolean> {
-    if (!refreshToken.value) return false
+  function setUser(userData: User) {
+    user.value = userData
+  }
 
-    try {
-      const { data } = await authService.refresh(refreshToken.value)
+  function setRefreshToken(token: string) {
+    refreshToken.value = token
+    localStorage.setItem('refresh_token', token)
+  }
 
-      if (data.success && data.data?.user) {
-        user.value = data.data.user
-        if (data.data.refresh_token) {
-          refreshToken.value = data.data.refresh_token
-          localStorage.setItem('refresh_token', data.data.refresh_token)
-        }
-        return true
-      }
-
-      return false
-    } catch {
-      refreshToken.value = null
-      localStorage.removeItem('refresh_token')
-      return false
-    }
+  function clearAuth() {
+    user.value = null
+    refreshToken.value = null
+    mustChangePassword.value = false
+    localStorage.removeItem('refresh_token')
   }
 
   async function verify(): Promise<boolean> {
@@ -67,25 +63,18 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await authService.verify()
 
       if (!data.success) {
-        // Try refresh before giving up
-        if (refreshToken.value) {
-          return await refresh()
-        }
         user.value = null
         return false
       }
 
       user.value = data.data?.user ?? null
+      mustChangePassword.value = !!data.data?.must_change_password
       return true
     } catch {
-      // Try refresh before giving up
-      if (refreshToken.value) {
-        return await refresh()
-      }
       user.value = null
       return false
     }
   }
 
-  return { user, refreshToken, isAuthenticated, hasPermission, login, logout, refresh, verify }
+  return { user, refreshToken, isAuthenticated, mustChangePassword, hasPermission, login, logout, setUser, setRefreshToken, clearAuth, verify }
 })

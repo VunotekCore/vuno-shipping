@@ -2,6 +2,7 @@
 import ScrollReveal from '../atoms/ScrollReveal.astro';
 import Input from '../atoms/Input.astro';
 import Select from '../atoms/Select.astro';
+import Button from '../atoms/Button.astro';
 ---
 
 <section class="py-sp-xl px-margin-mobile md:px-sp-xl bg-surface-container-low" aria-label="Calculadora de envío">
@@ -29,8 +30,8 @@ import Select from '../atoms/Select.astro';
               <option value="sea">Courier Marítimo ($4.99/lb)</option>
             </Select>
           </div>
-          <button id="calc-btn" class="w-full bg-primary text-on-primary py-base rounded-lg font-label-md mt-sp-md hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 cursor-pointer">Calcular Tarifa</button>
-          <div id="calc-result" class="mt-sp-md p-sp-md bg-surface-container-low rounded-lg border border-outline-variant hidden">
+          <Button id="calc-btn" variant="primary" fullWidth>Calcular Tarifa</Button>
+          <div id="calc-result" class="mt-sp-md p-sp-md bg-surface-container-low rounded-xl border border-outline-variant hidden">
             <span class="text-label-sm text-outline">Tarifa estimada:</span>
             <p id="calc-price" class="text-headline-md font-headline-md text-primary mt-sp-xs">$0.00</p>
             <p class="text-label-sm text-outline">*Los precios pueden variar según el volumen y el valor declarado.</p>
@@ -57,8 +58,17 @@ import Select from '../atoms/Select.astro';
     const type = parseInt(typeSelect?.value || '0');
     const mode = (modeSelect?.value || 'air') as 'air' | 'sea';
     if (weight <= 0) {
-      alert('Por favor ingresa un peso válido.');
+      if (priceSpan) {
+        priceSpan.textContent = 'Ingresa un peso válido';
+        priceSpan.classList.add('text-error');
+        priceSpan.classList.remove('text-primary');
+      }
+      resultDiv?.classList.remove('hidden');
       return;
+    }
+    if (priceSpan) {
+      priceSpan.classList.remove('text-error');
+      priceSpan.classList.add('text-primary');
     }
     const base = rates[mode];
     const mult = multipliers[type] || 1;

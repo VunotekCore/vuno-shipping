@@ -22,7 +22,7 @@ import Icon from '../atoms/Icon.astro';
             <span class="text-label-md font-bold whitespace-nowrap step-label">{step.label}</span>
           </div>
           {i < steps.length - 1 && (
-            <div class="flex-1 h-1 mx-sp-base relative stepper-line stepper-line-connector" data-line={i} style={`animation-delay: ${i * 800 + 400}ms`}>
+            <div class="flex-1 h-1 mx-base relative stepper-line stepper-line-connector" data-line={i} style={`animation-delay: ${i * 800 + 400}ms`}>
               <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 <Icon name="flight" size="sm" class="fill-secondary-container" />
               </div>

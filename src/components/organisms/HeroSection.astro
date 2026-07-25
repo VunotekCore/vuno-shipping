@@ -16,7 +16,7 @@ const slides = [
   <div class="hero-slides">
     {slides.map((slide, i) => (
       <div class:list={['hero-slide', { active: i === 0 }]}>
-        <img src={slide.image} alt={slide.alt} class="hero-slide-img" loading={i === 0 ? 'eager' : 'lazy'} />
+        <img src={slide.image} alt={slide.alt} width="1920" height="1080" class="hero-slide-img" loading={i === 0 ? 'eager' : 'lazy'} fetchpriority={i === 0 ? 'high' : undefined} />
         <div class="hero-overlay"></div>
       </div>
     ))}
@@ -55,7 +55,7 @@ const slides = [
                 <option>Hogar</option>
               </Select>
             </div>
-            <button class="w-full bg-primary text-on-primary py-base rounded-lg font-label-md mt-sp-md cursor-pointer hover:bg-primary-container transition-colors">Calcular Tarifa</button>
+            <Button variant="primary" size="md" fullWidth>Calcular Tarifa</Button>
           </div>
         </div>
       </div>
@@ -63,9 +63,7 @@ const slides = [
   </div>
 
   <a href="#proceso" class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 text-white/80 hover:text-white transition-colors" aria-label="Ir a la siguiente sección">
-    <svg class="w-6 h-6 animate-bounce" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="6 9 12 15 18 9"></polyline>
-    </svg>
+    <Icon name="chevron_down" size="md" class="fill-current animate-bounce" />
   </a>
 </section>
 

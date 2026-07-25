@@ -10,11 +10,12 @@ interface Props {
 const {
   title = 'Shipping Agency — Envíos Miami a Nicaragua',
   description = 'La forma más rápida, segura y confiable de traer tus paquetes desde Miami hasta cualquier parte de Nicaragua.',
-  image = '/og-default.jpg',
+  image = '/1.webp',
 } = Astro.props;
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://mgshipping.com');
-const ogImage = new URL(image, Astro.site ?? 'https://mgshipping.com').href;
+const siteUrl = Astro.site ?? 'https://shipping.vunotek.com';
+const canonicalURL = new URL(Astro.url.pathname, siteUrl);
+const ogImage = new URL(image, siteUrl).href;
 ---
 
 <!doctype html>
@@ -46,7 +47,7 @@ const ogImage = new URL(image, Astro.site ?? 'https://mgshipping.com').href;
     <meta name="twitter:image" content={ogImage} />
   </head>
   <body class="bg-surface text-on-surface font-body-md">
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-4 focus:left-4 focus:bg-primary focus:text-on-primary focus:px-4 focus:py-2 focus:rounded-lg">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-4 focus:left-4 focus:bg-primary focus:text-on-primary focus:px-4 focus:py-2 focus:rounded-xl">
       Saltar al contenido principal
     </a>
     <slot />

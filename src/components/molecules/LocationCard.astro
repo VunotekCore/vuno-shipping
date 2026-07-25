@@ -14,12 +14,12 @@ const { name, address, image, mapsUrl = '#' } = Astro.props;
 
 <ScrollReveal>
   <article class="bg-surface-container-high p-sp-lg rounded-xl border border-outline-variant flex flex-col md:flex-row gap-sp-md">
-    <div class="w-full md:w-32 h-32 bg-white rounded-lg overflow-hidden flex-shrink-0">
-      <img class="w-full h-full object-cover" src={image} alt={name} loading="lazy" />
+    <div class="w-full md:w-32 h-32 bg-white rounded-xl overflow-hidden flex-shrink-0">
+      <img class="w-full h-full object-cover" src={image} alt={name} width="128" height="128" loading="lazy" />
     </div>
     <div>
       <h3 class="font-headline-md text-headline-md text-primary mb-sp-xs">{name}</h3>
-      <p class="text-body-md text-on-surface-variant mb-sp-base">{address}</p>
+      <p class="text-body-md text-on-surface-variant mb-base">{address}</p>
       <a class="text-secondary font-label-md flex items-center gap-sp-xs hover:underline no-underline" href={mapsUrl} target="_blank" rel="noopener noreferrer">
         <Icon name="location" size="sm" class="fill-secondary" />
         Ver en Maps

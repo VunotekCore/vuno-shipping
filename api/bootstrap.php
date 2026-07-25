@@ -15,7 +15,7 @@ set_exception_handler(function (\Throwable $e): void {
 });
 
 // --- Dotenv (.env) ---
-$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 $dotenv->required(['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS', 'JWT_SECRET']);
 
@@ -54,12 +54,12 @@ setCorsHeaders();
 setSecurityHeaders();
 
 // --- Helpers ---
-function config(?array $merge = null): array
+function config(?array $replace = null): array
 {
     static $config = null;
 
-    if ($merge !== null) {
-        $config = $merge;
+    if ($replace !== null) {
+        $config = $replace;
         return $config;
     }
 
@@ -164,9 +164,13 @@ function requireMethod(string ...$methods): void
     }
 }
 
-function requireAuthMiddleware(): array
+function requireAuthMiddleware(bool $validateCsrf = false): array
 {
-    return requireAuth();
+    $payload = requireAuth();
+    if ($validateCsrf) {
+        validateCsrfToken();
+    }
+    return $payload;
 }
 
 // --- Input Validation ---
@@ -245,7 +249,8 @@ function isTokenBlacklisted(string $jti): bool
         $stmt->execute(['jti' => $jti]);
         return $stmt->fetch() !== false;
     } catch (\Throwable) {
-        return false;
+        apiLog('CRITICAL', 'Token blacklist DB failure — failing closed');
+        return true;
     }
 }
 
@@ -411,6 +416,7 @@ function rateLimit(string $key, int $maxAttempts, int $windowSeconds): void
         return;
     }
 
+    fchmod($fp, 0600);
     flock($fp, LOCK_EX);
 
     $now = time();
@@ -559,4 +565,8 @@ function cleanupExpiredTokens(): void
     } catch (\Throwable) {
         // Silent cleanup
     }
+}
+
+if (random_int(1, 100) === 1) {
+    cleanupExpiredTokens();
 }

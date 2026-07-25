@@ -1,6 +1,7 @@
 ---
 import ScrollReveal from '../atoms/ScrollReveal.astro';
 import Icon from '../atoms/Icon.astro';
+import Button from '../atoms/Button.astro';
 
 interface Props {
   badge: string;
@@ -58,13 +59,8 @@ const { badge, title, price, priceNote, features, highlighted = false } = Astro.
         </li>
       ))}
     </ul>
-    <button class:list={[
-      'w-full py-base rounded-lg font-label-md transition-all cursor-pointer',
-      highlighted
-        ? 'bg-on-primary text-primary hover:bg-secondary-container hover:text-on-secondary-container'
-        : 'border-2 border-primary text-primary hover:bg-primary hover:text-on-primary'
-    ]}>
+    <Button variant={highlighted ? 'secondary' : 'outline'} fullWidth class={highlighted ? 'bg-on-primary text-primary hover:bg-secondary-container hover:text-on-secondary-container' : 'border-2 border-primary text-primary hover:bg-primary hover:text-on-primary'}>
       Elegir Plan
-    </button>
+    </Button>
   </article>
 </ScrollReveal>

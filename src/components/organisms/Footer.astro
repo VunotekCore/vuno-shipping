@@ -20,7 +20,7 @@ const serviceLinks = [
     <div class="flex flex-col gap-sp-sm">
       <span class="text-headline-md font-headline-md font-bold text-on-primary">Shipping Agency</span>
       <p class="text-primary-fixed-dim max-w-xs text-body-md font-body-md">Llevando el mundo a tus manos. Especialistas en logística Miami-Nicaragua.</p>
-      <div class="flex gap-sp-md mt-sp-base">
+      <div class="flex gap-sp-md mt-base">
         <a class="text-primary-fixed-dim hover:text-white transition-colors" href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
           <Icon name="facebook" size="sm" class="fill-current" />
         </a>
@@ -32,13 +32,13 @@ const serviceLinks = [
 
     <div class="grid grid-cols-2 gap-sp-lg">
       <div class="flex flex-col gap-sp-sm">
-        <h5 class="text-on-primary font-bold text-label-md">Navegación</h5>
+        <p class="text-on-primary font-bold text-label-md">Navegación</p>
         {navLinks.slice(0, 3).map((link) => (
           <a class="text-primary-fixed-dim text-label-sm font-label-sm hover:text-white transition-colors no-underline" href={link.href}>{link.label}</a>
         ))}
       </div>
       <div class="flex flex-col gap-sp-sm">
-        <h5 class="text-on-primary font-bold text-label-md invisible">Navegación</h5>
+        <p class="text-on-primary font-bold text-label-md invisible">Navegación</p>
         {navLinks.slice(3).map((link) => (
           <a class="text-primary-fixed-dim text-label-sm font-label-sm hover:text-white transition-colors no-underline" href={link.href}>{link.label}</a>
         ))}
@@ -47,13 +47,13 @@ const serviceLinks = [
 
     <div class="grid grid-cols-2 gap-sp-lg">
       <div class="flex flex-col gap-sp-sm">
-        <h5 class="text-on-primary font-bold text-label-md">Compañía</h5>
+        <p class="text-on-primary font-bold text-label-md">Compañía</p>
         {companyLinks.map((link) => (
           <a class="text-primary-fixed-dim text-label-sm font-label-sm hover:text-white transition-colors no-underline" href={link.href}>{link.label}</a>
         ))}
       </div>
       <div class="flex flex-col gap-sp-sm">
-        <h5 class="text-on-primary font-bold text-label-md">Servicios</h5>
+        <p class="text-on-primary font-bold text-label-md">Servicios</p>
         {serviceLinks.map((link) => (
           <a class="text-primary-fixed-dim text-label-sm font-label-sm hover:text-white transition-colors no-underline" href={link.href}>{link.label}</a>
         ))}

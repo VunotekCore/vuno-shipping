@@ -4,10 +4,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/../bootstrap.php';
 
 use App\Models\UserModel;
-use App\Services\AuthService;
 use App\Config\Database;
 
 requireMethod('POST');
+rateLimit('refresh', 15, 900);
 
 $data = getJsonInput();
 $refreshToken = $data['refresh_token'] ?? '';
@@ -29,14 +29,12 @@ if ($user === null) {
     jsonError('Usuario no encontrado', 401);
 }
 
-$permissions = $userModel->getEffectivePermissions($user['role_id'], $user['id']);
-
 $token = createJwt([
     'sub'         => $user['id'],
     'email'       => $user['email'],
     'role_id'     => $user['role_id'],
     'role_slug'   => $user['role_slug'],
-    'permissions' => $permissions,
+    'permissions' => $user['permissions'],
 ]);
 
 $newRefreshToken = createRefreshToken($user['id']);
@@ -61,6 +59,6 @@ jsonSuccess([
         'role_id'     => $user['role_id'],
         'role_name'   => $user['role_name'],
         'role_slug'   => $user['role_slug'],
-        'permissions' => $permissions,
+        'permissions' => $user['permissions'],
     ],
 ]);

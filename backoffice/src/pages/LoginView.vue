@@ -21,8 +21,9 @@ async function handleLogin() {
     if (success) {
       router.push('/')
     }
-  } catch (e: any) {
-    error.value = e?.response?.data?.message || 'Error al iniciar sesión'
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } } }
+    error.value = err?.response?.data?.message || 'Error al iniciar sesión'
   } finally {
     loading.value = false
   }

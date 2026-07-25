@@ -1,5 +1,10 @@
 import axios from 'axios'
 
+function getCsrfToken(): string {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
 export function getApiUrl(): string {
   if (import.meta.env.DEV) {
     return ''
@@ -16,6 +21,16 @@ const api = axios.create({
   timeout: 15000,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
+})
+
+api.interceptors.request.use((config) => {
+  if (config.method && ['post', 'put', 'delete'].includes(config.method)) {
+    const csrf = getCsrfToken()
+    if (csrf) {
+      config.headers['X-CSRF-Token'] = csrf
+    }
+  }
+  return config
 })
 
 let isRefreshing = false
@@ -59,6 +74,9 @@ api.interceptors.response.use(
         const { data } = await api.post('/admin/refresh.php', { refresh_token: refreshToken })
 
         if (data.success) {
+          if (data.data?.refresh_token) {
+            localStorage.setItem('refresh_token', data.data.refresh_token)
+          }
           processQueue(null)
           return api(originalRequest)
         }

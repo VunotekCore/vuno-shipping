@@ -1,14 +1,10 @@
 ---
-const pageTitle = 'Servicios & Pricing';
+import PageHeader from '../molecules/PageHeader.astro';
 ---
 
-<header class="pt-20 pb-lg px-margin-mobile md:px-sp-xl bg-surface-container-low">
-  <div class="max-w-container-max mx-auto">
-    <div class="text-center">
-      <h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary mb-sp-xs">{pageTitle}</h1>
-      <p class="text-body-lg font-body-lg text-on-surface-variant max-w-2xl mx-auto">
-        Ofrecemos soluciones logísticas completas para tus compras en Estados Unidos. Desde casillero virtual hasta delivery puerta a puerta.
-      </p>
-    </div>
-  </div>
+<header class="pt-20 bg-surface-container-low">
+  <PageHeader
+    title="Servicios & Pricing"
+    description="Ofrecemos soluciones logísticas completas para tus compras en Estados Unidos. Desde casillero virtual hasta delivery puerta a puerta."
+  />
 </header>

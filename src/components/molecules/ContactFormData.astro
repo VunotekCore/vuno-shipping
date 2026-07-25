@@ -39,7 +39,7 @@ import Icon from '../atoms/Icon.astro';
   const form = document.getElementById('contact-form') as HTMLFormElement;
   const btn = document.getElementById('contact-submit') as HTMLButtonElement;
 
-  btn?.addEventListener('click', (e) => {
+  form?.addEventListener('submit', (e) => {
     e.preventDefault();
     const originalText = btn.innerText;
     btn.disabled = true;
@@ -49,11 +49,11 @@ import Icon from '../atoms/Icon.astro';
     setTimeout(() => {
       btn.innerText = '¡Mensaje Enviado!';
       btn.classList.remove('bg-primary');
-      btn.classList.add('bg-green-600');
+      btn.classList.add('bg-secondary-container');
 
       setTimeout(() => {
         btn.innerText = originalText;
-        btn.classList.remove('bg-green-600', 'opacity-70');
+        btn.classList.remove('bg-secondary-container', 'opacity-70');
         btn.classList.add('bg-primary');
         btn.disabled = false;
         form?.reset();

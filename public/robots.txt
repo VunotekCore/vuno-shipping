@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mgshipping.com/sitemap.xml
+Sitemap: https://shipping.vunotek.com/sitemap.xml

@@ -45,7 +45,7 @@ class PermissionController
     public function create(): never
     {
         requireMethod('POST');
-        $payload = requireAuthMiddleware();
+        $payload = requireAuthMiddleware(true);
         rateLimit('permission_create', 10, 900);
 
         if (!hasPermission($payload, 'permission', 'create')) {
@@ -84,7 +84,7 @@ class PermissionController
     public function update(): never
     {
         requireMethod('PUT');
-        $payload = requireAuthMiddleware();
+        $payload = requireAuthMiddleware(true);
         rateLimit('permission_update', 20, 900);
 
         if (!hasPermission($payload, 'permission', 'edit')) {
@@ -133,7 +133,7 @@ class PermissionController
     public function delete(): never
     {
         requireMethod('DELETE');
-        $payload = requireAuthMiddleware();
+        $payload = requireAuthMiddleware(true);
         rateLimit('permission_delete', 5, 900);
 
         if (!hasPermission($payload, 'permission', 'delete')) {

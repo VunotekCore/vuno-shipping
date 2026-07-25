@@ -10,8 +10,8 @@ import SocialLinks from '../components/molecules/SocialLinks.astro';
 import PageHeader from '../components/molecules/PageHeader.astro';
 
 const socials = [
-  { label: 'FB', href: 'https://facebook.com' },
-  { label: 'IG', href: 'https://instagram.com' },
+  { label: 'FB', href: 'https://facebook.com', icon: 'facebook' },
+  { label: 'IG', href: 'https://instagram.com', icon: 'instagram' },
   { label: 'TK', href: 'https://tiktok.com' },
 ];
 ---
@@ -29,14 +29,14 @@ const socials = [
       </section>
       <aside class="hidden xl:block xl:col-span-4 space-y-gutter">
         <div class="bg-primary p-sp-lg rounded-xl text-on-primary">
-          <h3 class="font-headline-md text-headline-md mb-sp-base">Envío Rápido</h3>
+          <h3 class="font-headline-md text-headline-md mb-base">Envío Rápido</h3>
           <p class="text-body-md opacity-80 mb-sp-md">Tiempo promedio de entrega entre Miami y Managua: 3-5 días hábiles.</p>
           <div class="flex gap-sp-sm">
-            <div class="flex-1 text-center bg-white/10 p-sp-sm rounded-lg">
+            <div class="flex-1 text-center bg-white/10 p-sp-sm rounded-xl">
               <div class="text-headline-md font-bold">98%</div>
               <div class="text-label-sm">A Tiempo</div>
             </div>
-            <div class="flex-1 text-center bg-white/10 p-sp-sm rounded-lg">
+            <div class="flex-1 text-center bg-white/10 p-sp-sm rounded-xl">
               <div class="text-headline-md font-bold">15k+</div>
               <div class="text-label-sm">Entregados</div>
             </div>

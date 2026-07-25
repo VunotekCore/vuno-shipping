@@ -4,7 +4,7 @@ import Button from '../atoms/Button.astro';
 import { navLinks } from '../../lib/nav';
 
 interface Props {
-  activePage?: 'home' | 'servicios' | 'contacto' | 'rastreo' | 'nosotros' | 'faq';
+  activePage?: 'home' | 'servicios' | 'contacto' | 'rastreo' | 'nosotros' | 'faq' | 'privacidad' | 'terminos';
 }
 
 const { activePage = 'home' } = Astro.props;
@@ -87,20 +87,26 @@ const { activePage = 'home' } = Astro.props;
   const bar2 = document.getElementById('bar2');
   const bar3 = document.getElementById('bar3');
 
+  let ticking = false;
   window.addEventListener('scroll', () => {
-    if (!header) return;
-    if (window.scrollY > 50) {
-      header.classList.add('h-16', 'shadow-md', 'bg-surface/95', 'backdrop-blur-sm');
-      header.classList.remove('h-20', 'shadow-sm', 'bg-surface');
-    } else {
-      header.classList.add('h-20', 'shadow-sm', 'bg-surface');
-      header.classList.remove('h-16', 'shadow-md', 'bg-surface/95', 'backdrop-blur-sm');
-    }
-    if (progressBar) {
-      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-      const percent = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
-      progressBar.style.width = percent + '%';
-    }
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      if (!header) { ticking = false; return; }
+      if (window.scrollY > 50) {
+        header.classList.add('h-16', 'shadow-md', 'bg-surface/95', 'backdrop-blur-sm');
+        header.classList.remove('h-20', 'shadow-sm', 'bg-surface');
+      } else {
+        header.classList.add('h-20', 'shadow-sm', 'bg-surface');
+        header.classList.remove('h-16', 'shadow-md', 'bg-surface/95', 'backdrop-blur-sm');
+      }
+      if (progressBar) {
+        const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+        const percent = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
+        progressBar.style.width = percent + '%';
+      }
+      ticking = false;
+    });
   });
 
   menuBtn?.addEventListener('click', () => {

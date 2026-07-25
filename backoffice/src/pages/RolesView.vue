@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue'
 import { roleService, type Role } from '../services/roleService'
 import { permissionService, type Permission } from '../services/permissionService'
 import { useCrudView } from '../composables/useCrudView'
+import { useToast } from '../composables/useToast'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
@@ -70,7 +71,6 @@ async function loadRolePermissions(roleId: number) {
     const perms = data.data?.permissions ?? []
     selectedPerms.value = new Set(perms.map((p) => p.id))
   } catch {
-    const { useToast } = await import('../composables/useToast')
     useToast().error('Error al cargar permisos del rol')
   }
 }
@@ -103,13 +103,11 @@ async function savePerms() {
   savingPerms.value = true
   try {
     await roleService.setPermissions(permRole.value.id, Array.from(selectedPerms.value))
-    const { useToast } = await import('../composables/useToast')
     useToast().success('Permisos actualizados')
     showPermsModal.value = false
     await load()
   } catch (e: unknown) {
     const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
-    const { useToast } = await import('../composables/useToast')
     useToast().error(msg || 'Error al guardar permisos')
   } finally {
     savingPerms.value = false
