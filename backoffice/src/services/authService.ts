@@ -12,4 +12,8 @@ export const authService = {
   logout() {
     return api.post('/admin/logout.php')
   },
+
+  refresh(refreshToken: string) {
+    return api.post('/admin/refresh.php', { refresh_token: refreshToken })
+  },
 }

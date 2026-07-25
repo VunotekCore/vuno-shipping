@@ -51,3 +51,24 @@ CREATE TABLE IF NOT EXISTS user_permission (
     INDEX idx_user_permission_user (user_id),
     INDEX idx_user_permission_permission (permission_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS token_blacklist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    jti VARCHAR(64) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_token_blacklist_jti (jti),
+    INDEX idx_token_blacklist_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES `user`(id) ON DELETE CASCADE,
+    INDEX idx_refresh_tokens_user (user_id),
+    INDEX idx_refresh_tokens_hash (token_hash),
+    INDEX idx_refresh_tokens_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

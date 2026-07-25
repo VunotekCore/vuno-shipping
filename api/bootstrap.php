@@ -95,11 +95,24 @@ function setSecurityHeaders(): void
     header('X-XSS-Protection: 0');
     header("Content-Security-Policy: default-src 'self'; frame-ancestors 'none'");
 
-    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-               || (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443);
-    if ($isHttps) {
+    if (isSecureRequest()) {
         header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
     }
+}
+
+function isSecureRequest(): bool
+{
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        return true;
+    }
+    if (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443) {
+        return true;
+    }
+    $forwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
+    if ($forwardedProto === 'https') {
+        return true;
+    }
+    return false;
 }
 
 function jsonResponse(array $data, int $code = 200): never
@@ -213,7 +226,47 @@ function requireAuth(): array
         jsonError('Token inválido o expirado', 401);
     }
 
+    if (isTokenBlacklisted($payload['jti'] ?? '')) {
+        jsonError('Token revocado', 401);
+    }
+
     return $payload;
+}
+
+function isTokenBlacklisted(string $jti): bool
+{
+    if ($jti === '') {
+        return false;
+    }
+
+    try {
+        $db = \App\Config\Database::getConnection();
+        $stmt = $db->prepare('SELECT 1 FROM token_blacklist WHERE jti = :jti AND expires_at > NOW() LIMIT 1');
+        $stmt->execute(['jti' => $jti]);
+        return $stmt->fetch() !== false;
+    } catch (\Throwable) {
+        return false;
+    }
+}
+
+function blacklistToken(string $jti, int $expiresAt): void
+{
+    if ($jti === '') {
+        return;
+    }
+
+    try {
+        $db = \App\Config\Database::getConnection();
+        $stmt = $db->prepare(
+            'INSERT IGNORE INTO token_blacklist (jti, expires_at) VALUES (:jti, :expires_at)'
+        );
+        $stmt->execute([
+            'jti' => $jti,
+            'expires_at' => date('Y-m-d H:i:s', $expiresAt),
+        ]);
+    } catch (\Throwable $e) {
+        apiLog('ERROR', 'Failed to blacklist token: ' . $e->getMessage());
+    }
 }
 
 function hasPermission(array $payload, string $module, string $action): bool
@@ -233,6 +286,7 @@ function createJwt(array $payload): string
     $issuer = $config['jwt']['issuer'] ?? 'shipping.vunotek.com';
 
     $now = time();
+    $jti = bin2hex(random_bytes(16));
 
     $header = base64UrlEncode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
 
@@ -240,6 +294,7 @@ function createJwt(array $payload): string
         'iss' => $issuer,
         'iat' => $now,
         'exp' => $now + $expiresIn,
+        'jti' => $jti,
     ]);
 
     $body = base64UrlEncode(json_encode($claims));
@@ -287,6 +342,11 @@ function base64UrlEncode(string $data): string
 function getJsonInput(): array
 {
     $raw = file_get_contents('php://input');
+
+    if (mb_strlen($raw) > 1048576) {
+        jsonError('Payload demasiado grande', 413);
+    }
+
     $data = json_decode($raw, true);
 
     if (!is_array($data)) {
@@ -346,11 +406,18 @@ function rateLimit(string $key, int $maxAttempts, int $windowSeconds): void
 
     $file = $dir . '/' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', "{$key}_{$ip}") . '.json';
 
+    $fp = fopen($file, 'c');
+    if ($fp === false) {
+        return;
+    }
+
+    flock($fp, LOCK_EX);
+
     $now = time();
     $attempts = [];
 
-    if (file_exists($file)) {
-        $raw = file_get_contents($file);
+    $raw = stream_get_contents($fp);
+    if ($raw !== false && $raw !== '') {
         $attempts = json_decode($raw, true) ?: [];
     }
 
@@ -358,6 +425,8 @@ function rateLimit(string $key, int $maxAttempts, int $windowSeconds): void
     $attempts = array_values($attempts);
 
     if (count($attempts) >= $maxAttempts) {
+        flock($fp, LOCK_UN);
+        fclose($fp);
         $retryAfter = $attempts[0] + $windowSeconds - $now;
         header('Retry-After: ' . $retryAfter);
         apiLog('WARNING', 'Rate limit exceeded', [
@@ -370,7 +439,13 @@ function rateLimit(string $key, int $maxAttempts, int $windowSeconds): void
     }
 
     $attempts[] = $now;
-    file_put_contents($file, json_encode($attempts), LOCK_EX);
+
+    ftruncate($fp, 0);
+    rewind($fp);
+    fwrite($fp, json_encode($attempts));
+    fflush($fp);
+    flock($fp, LOCK_UN);
+    fclose($fp);
 }
 
 // --- Logging ---
@@ -396,4 +471,92 @@ function apiLog(string $level, string $message, array $context = []): void
     $line .= "\n";
 
     file_put_contents($file, $line, FILE_APPEND | LOCK_EX);
+}
+
+// --- CSRF (Doble Submit Cookie) ---
+
+function generateCsrfToken(): string
+{
+    $token = bin2hex(random_bytes(32));
+    setcookie('csrf_token', $token, [
+        'expires'  => time() + 3600,
+        'path'     => '/',
+        'secure'   => isSecureRequest(),
+        'httponly'  => false,
+        'samesite' => 'Strict',
+    ]);
+    return $token;
+}
+
+function validateCsrfToken(): void
+{
+    $cookieToken = $_COOKIE['csrf_token'] ?? '';
+    $headerToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+
+    if ($cookieToken === '' || $headerToken === '' || !hash_equals($cookieToken, $headerToken)) {
+        jsonError('Token CSRF inválido', 403);
+    }
+}
+
+// --- Refresh Tokens ---
+
+function createRefreshToken(int $userId): string
+{
+    $rawToken = bin2hex(random_bytes(32));
+    $tokenHash = hash('sha256', $rawToken);
+    $expiresAt = date('Y-m-d H:i:s', time() + 604800); // 7 days
+
+    try {
+        $db = \App\Config\Database::getConnection();
+        $stmt = $db->prepare(
+            'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (:user_id, :token_hash, :expires_at)'
+        );
+        $stmt->execute([
+            'user_id' => $userId,
+            'token_hash' => $tokenHash,
+            'expires_at' => $expiresAt,
+        ]);
+    } catch (\Throwable $e) {
+        apiLog('ERROR', 'Failed to create refresh token: ' . $e->getMessage());
+        jsonError('Error al crear refresh token', 500);
+    }
+
+    return $rawToken;
+}
+
+function verifyRefreshToken(string $rawToken): ?int
+{
+    $tokenHash = hash('sha256', $rawToken);
+
+    try {
+        $db = \App\Config\Database::getConnection();
+        $stmt = $db->prepare(
+            'SELECT id, user_id FROM refresh_tokens WHERE token_hash = :hash AND expires_at > NOW() LIMIT 1'
+        );
+        $stmt->execute(['hash' => $tokenHash]);
+        $row = $stmt->fetch();
+
+        if ($row === null) {
+            return null;
+        }
+
+        // Delete used token (one-time use)
+        $db->prepare('DELETE FROM refresh_tokens WHERE id = :id')->execute(['id' => $row['id']]);
+
+        return (int) $row['user_id'];
+    } catch (\Throwable $e) {
+        apiLog('ERROR', 'Failed to verify refresh token: ' . $e->getMessage());
+        return null;
+    }
+}
+
+function cleanupExpiredTokens(): void
+{
+    try {
+        $db = \App\Config\Database::getConnection();
+        $db->exec("DELETE FROM token_blacklist WHERE expires_at < NOW()");
+        $db->exec("DELETE FROM refresh_tokens WHERE expires_at < NOW()");
+    } catch (\Throwable) {
+        // Silent cleanup
+    }
 }
