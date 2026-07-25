@@ -1,5 +1,6 @@
 ---
 import ScrollReveal from '../atoms/ScrollReveal.astro';
+import Icon from '../atoms/Icon.astro';
 
 interface Props {
   icon: string;
@@ -23,17 +24,11 @@ const iconFills: Record<string, string> = {
   highlighted: 'fill-secondary',
   primary: 'fill-white',
 };
-
-import { iconPaths } from '../../lib/icons';
-
-const pathData = iconPaths[icon] ?? iconPaths['warehouse'];
 ---
 
 <ScrollReveal class={className}>
   <article class:list={['h-full rounded-xl p-sp-lg flex flex-col justify-center', variants[variant]]}>
-    <svg class:list={['w-8 h-8 mb-sp-sm', iconFills[variant]]} viewBox="0 0 24 24">
-      <path d={pathData} />
-    </svg>
+    <Icon name={icon} size="lg" class:list={['mb-sp-sm', iconFills[variant]]} />
     {badge && (
       <span class:list={[
         'text-label-sm font-label-sm mb-sp-xs block',

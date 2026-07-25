@@ -2,16 +2,16 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/organisms/Header.astro';
 import Footer from '../components/organisms/Footer.astro';
+import PageHeader from '../components/molecules/PageHeader.astro';
 ---
 
 <BaseLayout title="Política de Privacidad | Shipping Agency" description="Conoce cómo Shipping Agency recopila, usa y protege tu información personal.">
   <Header />
   <main id="main-content" class="pt-24 pb-xl px-margin-mobile md:px-sp-xl max-w-container-max mx-auto">
     <article class="max-w-3xl mx-auto">
-      <header class="mb-sp-xl">
-        <h1 class="font-headline-lg text-headline-lg text-primary mb-sp-xs">Política de Privacidad</h1>
-        <p class="text-label-md text-outline">Última actualización: Julio 2026</p>
-      </header>
+      <PageHeader title="Política de Privacidad">
+        <p class="text-label-md text-outline mt-sp-xs">Última actualización: Julio 2026</p>
+      </PageHeader>
 
       <section class="mb-sp-lg">
         <h2 class="font-headline-md text-headline-md text-primary mb-sp-sm">1. Información que Recopilamos</h2>

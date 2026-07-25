@@ -5,17 +5,16 @@ import Footer from '../components/organisms/Footer.astro';
 import WhatsAppButton from '../components/organisms/WhatsAppButton.astro';
 import TrackingInput from '../components/molecules/TrackingInput.astro';
 import Icon from '../components/atoms/Icon.astro';
+import PageHeader from '../components/molecules/PageHeader.astro';
 ---
 
 <BaseLayout title="Rastreo de Paquetes | Shipping Agency" description="Rastrea tu paquete en tiempo real desde Miami hasta Nicaragua. Ingresa tu número de tracking y conoce el estado de tu envío.">
   <Header activePage="rastreo" />
   <main id="main-content" class="pt-24 pb-xl px-margin-mobile md:px-sp-xl max-w-container-max mx-auto">
-    <header class="mb-sp-xl text-center">
-      <h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary mb-sp-xs">Rastreo de Paquetes</h1>
-      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
-        Ingresa tu número de rastreo para conocer el estado actual de tu envío.
-      </p>
-    </header>
+    <PageHeader
+      title="Rastreo de Paquetes"
+      description="Ingresa tu número de rastreo para conocer el estado actual de tu envío."
+    />
 
     <section class="max-w-2xl mx-auto" aria-label="Formulario de rastreo">
       <TrackingInput />

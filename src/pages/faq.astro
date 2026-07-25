@@ -5,6 +5,7 @@ import Footer from '../components/organisms/Footer.astro';
 import WhatsAppButton from '../components/organisms/WhatsAppButton.astro';
 import CTASection from '../components/organisms/CTASection.astro';
 import FAQItem from '../components/molecules/FAQItem.astro';
+import PageHeader from '../components/molecules/PageHeader.astro';
 
 const faqItems = [
   {
@@ -45,12 +46,10 @@ const faqItems = [
 <BaseLayout title="Preguntas Frecuentes | Shipping Agency" description="Resuelve tus dudas sobre envíos de paquetes de Miami a Nicaragua. Precios, tiempos de entrega, rastreo y más.">
   <Header activePage="faq" />
   <main id="main-content" class="pt-24 pb-xl px-margin-mobile md:px-sp-xl max-w-container-max mx-auto">
-    <header class="mb-sp-xl text-center">
-      <h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary mb-sp-xs">Preguntas Frecuentes</h1>
-      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
-        Encuentra respuestas a las preguntas más comunes sobre nuestros servicios de envío.
-      </p>
-    </header>
+    <PageHeader
+      title="Preguntas Frecuentes"
+      description="Encuentra respuestas a las preguntas más comunes sobre nuestros servicios de envío."
+    />
 
     <section class="max-w-3xl mx-auto space-y-sp-sm" aria-label="Preguntas frecuentes">
       {faqItems.map((item) => (

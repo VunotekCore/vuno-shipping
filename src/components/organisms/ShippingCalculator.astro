@@ -1,5 +1,7 @@
 ---
 import ScrollReveal from '../atoms/ScrollReveal.astro';
+import Input from '../atoms/Input.astro';
+import Select from '../atoms/Select.astro';
 ---
 
 <section class="py-sp-xl px-margin-mobile md:px-sp-xl bg-surface-container-low" aria-label="Calculadora de envío">
@@ -10,22 +12,22 @@ import ScrollReveal from '../atoms/ScrollReveal.astro';
         <div class="space-y-sp-sm">
           <div>
             <label class="text-label-sm font-label-sm text-outline block mb-sp-xs" for="calc-weight">Peso (Lbs)</label>
-            <input id="calc-weight" class="w-full bg-white text-primary px-sp-md py-base rounded-lg border border-outline-variant focus:ring-2 focus:ring-primary-container focus:outline-none" placeholder="0.00" type="number" />
+            <Input id="calc-weight" type="number" placeholder="0.00" min="0" step="0.01" />
           </div>
           <div>
             <label class="text-label-sm font-label-sm text-outline block mb-sp-xs" for="calc-type">Tipo de Artículo</label>
-            <select id="calc-type" class="w-full bg-white text-primary px-sp-md py-base rounded-lg border border-outline-variant focus:ring-2 focus:ring-primary-container focus:outline-none">
+            <Select id="calc-type">
               <option value="0">Ropa y Calzado</option>
               <option value="1">Electrónicos</option>
               <option value="2">Hogar</option>
-            </select>
+            </Select>
           </div>
           <div>
             <label class="text-label-sm font-label-sm text-outline block mb-sp-xs" for="calc-mode">Tipo de Envío</label>
-            <select id="calc-mode" class="w-full bg-white text-primary px-sp-md py-base rounded-lg border border-outline-variant focus:ring-2 focus:ring-primary-container focus:outline-none">
+            <Select id="calc-mode">
               <option value="air">Courier Aéreo ($8.99/lb)</option>
               <option value="sea">Courier Marítimo ($4.99/lb)</option>
-            </select>
+            </Select>
           </div>
           <button id="calc-btn" class="w-full bg-primary text-on-primary py-base rounded-lg font-label-md mt-sp-md hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 cursor-pointer">Calcular Tarifa</button>
           <div id="calc-result" class="mt-sp-md p-sp-md bg-surface-container-low rounded-lg border border-outline-variant hidden">

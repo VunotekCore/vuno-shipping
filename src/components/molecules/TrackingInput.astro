@@ -2,6 +2,7 @@
 import Button from '../atoms/Button.astro';
 import ScrollReveal from '../atoms/ScrollReveal.astro';
 import Icon from '../atoms/Icon.astro';
+import Input from '../atoms/Input.astro';
 ---
 
 <ScrollReveal>
@@ -18,7 +19,7 @@ import Icon from '../atoms/Icon.astro';
     <form class="flex flex-col md:flex-row gap-base" id="tracking-form">
       <div class="relative flex-grow">
         <Icon name="search" size="sm" class="absolute left-4 top-1/2 -translate-y-1/2 fill-outline" />
-        <input id="tracking-input" class="w-full pl-12 pr-4 py-4 rounded-lg border border-outline-variant bg-white focus:ring-2 focus:ring-primary-container focus:outline-none text-body-md transition-all" placeholder="ej. MG-8829-NI" type="text" />
+        <Input id="tracking-input" placeholder="ej. MG-8829-NI" class="pl-12 py-4" aria-label="Número de rastreo" />
       </div>
       <Button type="submit" variant="secondary" class="md:w-auto uppercase tracking-wider">
         Consultar

@@ -1,5 +1,6 @@
 ---
 import ScrollReveal from '../atoms/ScrollReveal.astro';
+import Icon from '../atoms/Icon.astro';
 
 interface Props {
   number: string;
@@ -9,14 +10,12 @@ interface Props {
 }
 
 const { number, icon, title, description } = Astro.props;
-
-import { iconPaths } from '../../lib/icons';
 ---
 
 <ScrollReveal>
   <article class="relative z-10 bg-surface-container-lowest p-sp-lg rounded-xl shadow-sm border border-outline-variant hover:shadow-md transition-shadow group text-center">
     <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-sp-md group-hover:bg-secondary transition-colors">
-      <svg class="w-8 h-8 fill-white" viewBox="0 0 24 24"><path d={iconPaths[icon]} /></svg>
+      <Icon name={icon} size="lg" class="fill-white" />
     </div>
     <span class="text-secondary font-bold text-label-md mb-sp-xs block">{number}</span>
     <h4 class="font-headline-md text-headline-md text-primary mb-sp-sm">{title}</h4>

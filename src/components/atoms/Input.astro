@@ -6,6 +6,12 @@ interface Props {
   placeholder?: string;
   value?: string;
   required?: boolean;
+  disabled?: boolean;
+  min?: string;
+  max?: string;
+  step?: string;
+  'aria-label'?: string;
+  autocomplete?: string;
   class?: string;
 }
 
@@ -16,6 +22,12 @@ const {
   placeholder,
   value,
   required = false,
+  disabled = false,
+  min,
+  max,
+  step,
+  'aria-label': ariaLabel,
+  autocomplete,
   class: className = '',
 } = Astro.props;
 
@@ -29,5 +41,11 @@ const base = 'w-full px-sp-md py-base rounded-lg border border-outline-variant b
   placeholder={placeholder}
   value={value}
   required={required}
+  disabled={disabled}
+  min={min}
+  max={max}
+  step={step}
+  aria-label={ariaLabel}
+  autocomplete={autocomplete}
   class={`${base} ${className}`}
 />

@@ -7,6 +7,7 @@ import TrackingInput from '../components/molecules/TrackingInput.astro';
 import ContactFormData from '../components/molecules/ContactFormData.astro';
 import LocationCard from '../components/molecules/LocationCard.astro';
 import SocialLinks from '../components/molecules/SocialLinks.astro';
+import PageHeader from '../components/molecules/PageHeader.astro';
 
 const socials = [
   { label: 'FB', href: 'https://facebook.com' },
@@ -18,12 +19,10 @@ const socials = [
 <BaseLayout title="Contacto & Rastreo | Shipping Agency">
   <Header activePage="contacto" />
   <main id="main-content" class="pt-24 pb-xl px-margin-mobile md:px-sp-xl max-w-container-max mx-auto">
-    <header class="mb-sp-lg text-center md:text-left">
-      <h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary mb-sp-xs">Rastreo & Contacto</h1>
-      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
-        Administra tus envíos de Miami a Nicaragua con precisión. Actualizaciones en tiempo real y soporte dedicado a tu alcance.
-      </p>
-    </header>
+    <PageHeader
+      title="Rastreo & Contacto"
+      description="Administra tus envíos de Miami a Nicaragua con precisión. Actualizaciones en tiempo real y soporte dedicado a tu alcance."
+    />
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
       <section class="lg:col-span-12 xl:col-span-8">
         <TrackingInput />

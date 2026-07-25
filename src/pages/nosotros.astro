@@ -5,6 +5,7 @@ import Footer from '../components/organisms/Footer.astro';
 import WhatsAppButton from '../components/organisms/WhatsAppButton.astro';
 import ScrollReveal from '../components/atoms/ScrollReveal.astro';
 import Icon from '../components/atoms/Icon.astro';
+import PageHeader from '../components/molecules/PageHeader.astro';
 
 const values = [
   {
@@ -30,10 +31,11 @@ const values = [
   <main id="main-content" class="pt-24 pb-xl">
     <section class="px-margin-mobile md:px-sp-xl py-sp-xl bg-surface-container-low">
       <div class="max-w-container-max mx-auto text-center">
-        <h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary mb-sp-md">Sobre Shipping Agency</h1>
-        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-3xl mx-auto mb-sp-lg">
-          Somos una empresa de logística especializada en el envío de paquetes desde Miami hasta Nicaragua. Nuestra misión es hacer que tus compras internacionales lleguen de forma rápida, segura y accesible a la puerta de tu casa.
-        </p>
+        <PageHeader
+          title="Sobre Shipping Agency"
+          description="Somos una empresa de logística especializada en el envío de paquetes desde Miami hasta Nicaragua. Nuestra misión es hacer que tus compras internacionales lleguen de forma rápida, segura y accesible a la puerta de tu casa."
+          class="mb-sp-lg"
+        />
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-sp-md max-w-2xl mx-auto">
           <div class="bg-white p-sp-md rounded-xl border border-outline-variant text-center">
             <div class="text-headline-lg font-bold text-primary">5+</div>
