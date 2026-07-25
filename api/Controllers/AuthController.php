@@ -36,7 +36,7 @@ class AuthController
         }
 
         $email = validateEmail($email);
-        validatePassword($password, false);
+        validatePassword($password);
 
         $user = $this->userModel->findByEmail($email);
 
@@ -84,7 +84,7 @@ class AuthController
     public function verify(): never
     {
         requireMethod('GET', 'POST');
-        rateLimit('verify', 30, 900);
+        rateLimit('verify', 15, 900);
 
         $payload = $this->requireAuth();
 

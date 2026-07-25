@@ -48,7 +48,6 @@ class UserModel
 
     public function getEffectivePermissions(int $roleId, int $userId): array
     {
-        // 1. Permisos del rol
         $stmt = $this->db->prepare("
             SELECT p.module, p.action FROM role_permission rp
             JOIN permission p ON p.id = rp.permission_id
@@ -57,7 +56,6 @@ class UserModel
         $stmt->execute(['role_id' => $roleId]);
         $rolePerms = $stmt->fetchAll();
 
-        // 2. Permisos extra del usuario
         $stmt = $this->db->prepare("
             SELECT p.module, p.action, up.granted FROM user_permission up
             JOIN permission p ON p.id = up.permission_id
@@ -66,7 +64,6 @@ class UserModel
         $stmt->execute(['user_id' => $userId]);
         $userPerms = $stmt->fetchAll();
 
-        // 3. Merge
         $permissions = [];
         foreach ($rolePerms as $p) {
             $permissions[$p['module']][] = $p['action'];
@@ -91,14 +88,34 @@ class UserModel
         return $permissions;
     }
 
-    public function list(): array
+    public function count(): int
     {
-        $stmt = $this->db->query("
+        return (int) $this->db->query("SELECT COUNT(*) FROM `user`")->fetchColumn();
+    }
+
+    public function countByRoleSlug(string $slug): int
+    {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) FROM `user` u
+            JOIN role r ON r.id = u.role_id
+            WHERE r.slug = :slug
+        ");
+        $stmt->execute(['slug' => $slug]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function listPaginated(int $limit, int $offset): array
+    {
+        $stmt = $this->db->prepare("
             SELECT u.id, u.email, u.name, u.role_id, r.name AS role_name, r.slug AS role_slug, u.created_at
             FROM `user` u
             JOIN role r ON r.id = u.role_id
             ORDER BY u.created_at DESC
+            LIMIT :limit OFFSET :offset
         ");
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll();
     }
 

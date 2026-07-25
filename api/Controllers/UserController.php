@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\UserModel;
+use App\Models\RoleModel;
 use App\Config\Database;
 
 class UserController
@@ -24,14 +25,29 @@ class UserController
             jsonError('No tenés permiso para ver usuarios', 403);
         }
 
-        $users = $this->model->list();
-        jsonSuccess(['users' => $users]);
+        $page  = max(1, (int) ($_GET['page'] ?? 1));
+        $limit = max(1, min(100, (int) ($_GET['limit'] ?? 20)));
+        $offset = ($page - 1) * $limit;
+
+        $total = $this->model->count();
+        $users = $this->model->listPaginated($limit, $offset);
+
+        jsonSuccess([
+            'users' => $users,
+            'pagination' => [
+                'page'  => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'pages' => (int) ceil($total / $limit),
+            ],
+        ]);
     }
 
     public function create(): never
     {
         requireMethod('POST');
         $payload = requireAuthMiddleware();
+        rateLimit('user_create', 10, 900);
 
         if (!hasPermission($payload, 'user', 'create')) {
             jsonError('No tenés permiso para crear usuarios', 403);
@@ -50,11 +66,17 @@ class UserController
 
         $email    = validateEmail($email);
         $name     = sanitizeString($name, 100);
-        validatePassword($password, true);
+        validatePassword($password);
 
         $existing = $this->model->findByEmail($email);
         if ($existing !== null) {
             jsonError('Ya existe un usuario con ese email', 409);
+        }
+
+        $roleModel = new RoleModel(Database::getConnection());
+        $role = $roleModel->findById($roleId);
+        if ($role === null) {
+            jsonError('El rol seleccionado no existe', 422);
         }
 
         $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
@@ -68,6 +90,7 @@ class UserController
     {
         requireMethod('PUT');
         $payload = requireAuthMiddleware();
+        rateLimit('user_update', 20, 900);
 
         if (!hasPermission($payload, 'user', 'edit')) {
             jsonError('No tenés permiso para editar usuarios', 403);
@@ -100,12 +123,24 @@ class UserController
             $updateData['name'] = sanitizeString($data['name'], 100);
         }
 
-        if (isset($data['role_id']) && (int) $data['role_id'] !== 0) {
-            $updateData['role_id'] = (int) $data['role_id'];
+        if (isset($data['role_id']) && (int) $data['role_id'] !== (int) $existing['role_id']) {
+            $newRoleId = (int) $data['role_id'];
+
+            if ((int) $payload['sub'] === $id) {
+                jsonError('No podés cambiar tu propio rol', 409);
+            }
+
+            $roleModel = new RoleModel(Database::getConnection());
+            $role = $roleModel->findById($newRoleId);
+            if ($role === null) {
+                jsonError('El rol seleccionado no existe', 422);
+            }
+
+            $updateData['role_id'] = $newRoleId;
         }
 
         if (!empty($data['password'])) {
-            validatePassword($data['password'], false);
+            validatePassword($data['password']);
             $updateData['password'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]);
         }
 
@@ -123,6 +158,7 @@ class UserController
     {
         requireMethod('DELETE');
         $payload = requireAuthMiddleware();
+        rateLimit('user_delete', 5, 900);
 
         if (!hasPermission($payload, 'user', 'delete')) {
             jsonError('No tenés permiso para eliminar usuarios', 403);
@@ -142,6 +178,13 @@ class UserController
 
         if ((int) $payload['sub'] === $id) {
             jsonError('No podés eliminar tu propio usuario', 409);
+        }
+
+        if ($existing['role_slug'] === 'admin') {
+            $adminCount = $this->model->countByRoleSlug('admin');
+            if ($adminCount <= 1) {
+                jsonError('No se puede eliminar: es el último administrador del sistema', 409);
+            }
         }
 
         $this->model->delete($id);

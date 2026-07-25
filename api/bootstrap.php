@@ -6,6 +6,14 @@ declare(strict_types=1);
  * Cada entry point require_once este archivo.
  */
 
+// --- Exception Handler (before Dotenv so bootstrap errors are caught) ---
+set_exception_handler(function (\Throwable $e): void {
+    $message = $e->getMessage();
+    $trace = $e->getTraceAsString();
+    error_log("[shipping-api] ERROR: {$message}\n{$trace}");
+    jsonResponse(['success' => false, 'message' => 'Error interno del servidor'], 500);
+});
+
 // --- Dotenv (.env) ---
 $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
 $dotenv->load();
@@ -30,43 +38,14 @@ config([
         'debug'           => ($_ENV['APP_DEBUG'] ?? 'false') === 'true',
         'timezone'        => $_ENV['APP_TIMEZONE'] ?? 'America/Managua',
     ],
+    'trusted_proxies' => array_map('trim', explode(',', $_ENV['TRUSTED_PROXIES'] ?? '')),
 ]);
 
 // --- Timezone ---
 date_default_timezone_set(config()['app']['timezone']);
 
-// --- Global Exception Handler ---
-set_exception_handler(function (\Throwable $e): void {
-    apiLog('ERROR', $e->getMessage(), [
-        'file'  => $e->getFile(),
-        'line'  => $e->getLine(),
-        'trace' => $e->getTraceAsString(),
-    ]);
-
-    $debug = config()['app']['debug'] ?? false;
-    $message = $debug ? $e->getMessage() : 'Error interno del servidor';
-    jsonError($message, 500);
-});
-
 // --- Composer Autoloader ---
 require_once __DIR__ . '/vendor/autoload.php';
-
-// --- PSR-4 Autoloader ---
-spl_autoload_register(function (string $class): void {
-    $prefix = 'App\\';
-    $baseDir = __DIR__ . '/';
-
-    if (!str_starts_with($class, $prefix)) {
-        return;
-    }
-
-    $relativeClass = substr($class, strlen($prefix));
-    $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
-
-    if (file_exists($file)) {
-        require $file;
-    }
-});
 
 // --- CORS ---
 setCorsHeaders();
@@ -98,6 +77,7 @@ function setCorsHeaders(): void
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, Authorization');
         header('Access-Control-Allow-Credentials: true');
+        header('Access-Control-Max-Age: 86400');
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -113,6 +93,7 @@ function setSecurityHeaders(): void
     header('Referrer-Policy: no-referrer');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
     header('X-XSS-Protection: 0');
+    header("Content-Security-Policy: default-src 'self'; frame-ancestors 'none'");
 
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
                || (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443);
@@ -189,13 +170,13 @@ function validateEmail(string $email): string
     return $email;
 }
 
-function validatePassword(string $password, bool $isCreation = true): string
+function validatePassword(string $password): string
 {
     if (mb_strlen($password) > 128) {
         jsonError('Contraseña inválida', 422, ['password' => 'La contraseña no puede exceder 128 caracteres']);
     }
 
-    if ($isCreation && mb_strlen($password) < 8) {
+    if (mb_strlen($password) < 8) {
         jsonError('Contraseña inválida', 422, ['password' => 'La contraseña debe tener al menos 8 caracteres']);
     }
 
@@ -277,6 +258,7 @@ function verifyJwt(string $token): ?array
     [$header, $body, $signature] = $parts;
     $config = config();
     $secret = $config['jwt']['secret'];
+    $issuer = $config['jwt']['issuer'] ?? 'shipping.vunotek.com';
 
     $expectedSig = base64UrlEncode(hash_hmac('sha256', "$header.$body", $secret, true));
 
@@ -287,6 +269,10 @@ function verifyJwt(string $token): ?array
     $claims = json_decode(base64_decode(strtr($body, '-_', '+/')), true);
 
     if ($claims === null || !isset($claims['exp']) || $claims['exp'] < time()) {
+        return null;
+    }
+
+    if (!isset($claims['iss']) || $claims['iss'] !== $issuer) {
         return null;
     }
 
@@ -322,7 +308,20 @@ function slugify(string $text): string
 
 function getClientIp(): string
 {
-    $headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CF_CONNECTING_IP', 'REMOTE_ADDR'];
+    $trustedProxies = config()['trusted_proxies'] ?? [];
+
+    if (empty($trustedProxies)) {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
+    }
+
+    $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!in_array($remoteAddr, $trustedProxies, true)) {
+        $ip = $remoteAddr;
+        return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
+    }
+
+    $headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CF_CONNECTING_IP'];
     foreach ($headers as $header) {
         if (!empty($_SERVER[$header])) {
             $ip = explode(',', $_SERVER[$header])[0];
@@ -332,7 +331,9 @@ function getClientIp(): string
             }
         }
     }
-    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
 }
 
 function rateLimit(string $key, int $maxAttempts, int $windowSeconds): void

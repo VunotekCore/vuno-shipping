@@ -91,19 +91,26 @@ class RoleModel
 
     public function setPermissions(int $roleId, array $permissionIds): void
     {
-        $this->db->prepare('DELETE FROM role_permission WHERE role_id = :role_id')
-                 ->execute(['role_id' => $roleId]);
+        $this->db->beginTransaction();
 
-        if (empty($permissionIds)) {
-            return;
-        }
+        try {
+            $this->db->prepare('DELETE FROM role_permission WHERE role_id = :role_id')
+                     ->execute(['role_id' => $roleId]);
 
-        $stmt = $this->db->prepare(
-            'INSERT INTO role_permission (role_id, permission_id) VALUES (:role_id, :permission_id)'
-        );
+            if (!empty($permissionIds)) {
+                $stmt = $this->db->prepare(
+                    'INSERT INTO role_permission (role_id, permission_id) VALUES (:role_id, :permission_id)'
+                );
 
-        foreach ($permissionIds as $pid) {
-            $stmt->execute(['role_id' => $roleId, 'permission_id' => (int) $pid]);
+                foreach ($permissionIds as $pid) {
+                    $stmt->execute(['role_id' => $roleId, 'permission_id' => (int) $pid]);
+                }
+            }
+
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
         }
     }
 }

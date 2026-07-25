@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS role_permission (
     permission_id INT NOT NULL,
     FOREIGN KEY (role_id) REFERENCES role(id) ON DELETE CASCADE,
     FOREIGN KEY (permission_id) REFERENCES permission(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_role_permission (role_id, permission_id)
+    UNIQUE KEY unique_role_permission (role_id, permission_id),
+    INDEX idx_role_permission_role (role_id),
+    INDEX idx_role_permission_permission (permission_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `user` (
@@ -34,7 +36,8 @@ CREATE TABLE IF NOT EXISTS `user` (
     role_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (role_id) REFERENCES role(id) ON DELETE RESTRICT
+    FOREIGN KEY (role_id) REFERENCES role(id) ON DELETE RESTRICT,
+    INDEX idx_user_role (role_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS user_permission (
@@ -44,5 +47,7 @@ CREATE TABLE IF NOT EXISTS user_permission (
     granted TINYINT(1) DEFAULT 1,
     FOREIGN KEY (user_id) REFERENCES `user`(id) ON DELETE CASCADE,
     FOREIGN KEY (permission_id) REFERENCES permission(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_user_permission (user_id, permission_id)
+    UNIQUE KEY unique_user_permission (user_id, permission_id),
+    INDEX idx_user_permission_user (user_id),
+    INDEX idx_user_permission_permission (permission_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

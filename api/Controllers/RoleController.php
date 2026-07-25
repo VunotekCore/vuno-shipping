@@ -32,6 +32,7 @@ class RoleController
     {
         requireMethod('POST');
         $payload = requireAuthMiddleware();
+        rateLimit('role_create', 10, 900);
 
         if (!hasPermission($payload, 'role', 'create')) {
             jsonError('No tenés permiso para crear roles', 403);
@@ -65,6 +66,7 @@ class RoleController
     {
         requireMethod('PUT');
         $payload = requireAuthMiddleware();
+        rateLimit('role_update', 20, 900);
 
         if (!hasPermission($payload, 'role', 'edit')) {
             jsonError('No tenés permiso para editar roles', 403);
@@ -108,6 +110,7 @@ class RoleController
     {
         requireMethod('DELETE');
         $payload = requireAuthMiddleware();
+        rateLimit('role_delete', 5, 900);
 
         if (!hasPermission($payload, 'role', 'delete')) {
             jsonError('No tenés permiso para eliminar roles', 403);
@@ -123,6 +126,10 @@ class RoleController
         $existing = $this->model->findById($id);
         if ($existing === null) {
             jsonError('Rol no encontrado', 404);
+        }
+
+        if ($existing['slug'] === 'admin') {
+            jsonError('No se puede eliminar el rol admin', 409);
         }
 
         $userCount = $this->model->countUsers($id);
@@ -167,6 +174,8 @@ class RoleController
         if (!hasPermission($payload, 'role', 'edit')) {
             jsonError('No tenés permiso para asignar permisos', 403);
         }
+
+        rateLimit('role_permissions', 10, 900);
 
         $data = getJsonInput();
         $permissionIds = $data['permission_ids'] ?? [];

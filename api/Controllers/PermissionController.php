@@ -32,6 +32,7 @@ class PermissionController
     {
         requireMethod('POST');
         $payload = requireAuthMiddleware();
+        rateLimit('permission_create', 10, 900);
 
         if (!hasPermission($payload, 'permission', 'create')) {
             jsonError('No tenés permiso para crear permisos', 403);
@@ -70,6 +71,7 @@ class PermissionController
     {
         requireMethod('PUT');
         $payload = requireAuthMiddleware();
+        rateLimit('permission_update', 20, 900);
 
         if (!hasPermission($payload, 'permission', 'edit')) {
             jsonError('No tenés permiso para editar permisos', 403);
@@ -118,6 +120,7 @@ class PermissionController
     {
         requireMethod('DELETE');
         $payload = requireAuthMiddleware();
+        rateLimit('permission_delete', 5, 900);
 
         if (!hasPermission($payload, 'permission', 'delete')) {
             jsonError('No tenés permiso para eliminar permisos', 403);
