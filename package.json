@@ -7,6 +7,9 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "dev:api": "php -S localhost:8000 -t api",
+    "dev:backoffice": "cd backoffice && npm run dev",
+    "dev:all": "concurrently -n api,backoffice,astro -c blue,green,magenta \"pnpm dev:api\" \"pnpm dev:backoffice\" \"pnpm dev\"",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
@@ -21,6 +24,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "concurrently": "^10.0.4",
     "typescript": "^6.0.3"
   }
 }
