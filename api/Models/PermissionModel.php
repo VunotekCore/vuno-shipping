@@ -19,6 +19,25 @@ class PermissionModel
         return $stmt->fetchAll();
     }
 
+    public function count(): int
+    {
+        return (int) $this->db->query("SELECT COUNT(*) FROM permission")->fetchColumn();
+    }
+
+    public function listPaginated(int $limit, int $offset): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT id, module, action, label, created_at
+            FROM permission
+            ORDER BY module, action
+            LIMIT :limit OFFSET :offset
+        ");
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare(

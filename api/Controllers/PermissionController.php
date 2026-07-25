@@ -24,8 +24,22 @@ class PermissionController
             jsonError('No tenés permiso para ver permisos', 403);
         }
 
-        $permissions = $this->model->list();
-        jsonSuccess(['permissions' => $permissions]);
+        $page  = max(1, (int) ($_GET['page'] ?? 1));
+        $limit = max(1, min(100, (int) ($_GET['limit'] ?? 20)));
+        $offset = ($page - 1) * $limit;
+
+        $total = $this->model->count();
+        $permissions = $this->model->listPaginated($limit, $offset);
+
+        jsonSuccess([
+            'permissions' => $permissions,
+            'pagination' => [
+                'page'  => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'pages' => (int) ceil($total / $limit),
+            ],
+        ]);
     }
 
     public function create(): never

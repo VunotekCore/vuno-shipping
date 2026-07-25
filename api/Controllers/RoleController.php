@@ -24,8 +24,22 @@ class RoleController
             jsonError('No tenés permiso para ver roles', 403);
         }
 
-        $roles = $this->model->list();
-        jsonSuccess(['roles' => $roles]);
+        $page  = max(1, (int) ($_GET['page'] ?? 1));
+        $limit = max(1, min(100, (int) ($_GET['limit'] ?? 20)));
+        $offset = ($page - 1) * $limit;
+
+        $total = $this->model->count();
+        $roles = $this->model->listPaginated($limit, $offset);
+
+        jsonSuccess([
+            'roles' => $roles,
+            'pagination' => [
+                'page'  => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'pages' => (int) ceil($total / $limit),
+            ],
+        ]);
     }
 
     public function create(): never

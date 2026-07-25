@@ -24,6 +24,30 @@ class RoleModel
         return $stmt->fetchAll();
     }
 
+    public function count(): int
+    {
+        return (int) $this->db->query("SELECT COUNT(*) FROM role")->fetchColumn();
+    }
+
+    public function listPaginated(int $limit, int $offset): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT r.id, r.name, r.slug, r.created_at,
+                   COUNT(DISTINCT rp.permission_id) AS permission_count,
+                   COUNT(DISTINCT u.id) AS user_count
+            FROM role r
+            LEFT JOIN role_permission rp ON rp.role_id = r.id
+            LEFT JOIN `user` u ON u.role_id = r.id
+            GROUP BY r.id
+            ORDER BY r.name
+            LIMIT :limit OFFSET :offset
+        ");
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare(
