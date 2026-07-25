@@ -1,43 +1,57 @@
-# Astro Starter Kit: Minimal
+# Shipping Agency — Envios Miami a Nicaragua
 
-```sh
-pnpm create astro@latest -- --template minimal
+Plataforma web para un negocio de logistica que permite a nicaragüenses comprar en tiendas online de Estados Unidos y recibir sus paquetes en Nicaragua.
+
+## Stack
+
+- **Frontend:** Astro 6 · Tailwind 4 · Atomic Design
+- **Backoffice:** Vue 3 · Pinia · Axios · Tailwind 4
+- **Backend:** PHP 8.1 SOA · JWT Auth · RBAC
+
+## Comandos
+
+```bash
+# Frontend publico
+pnpm dev              # Dev server -> http://localhost:4321
+pnpm build            # Build estatico -> dist/
+pnpm astro check      # Type check
+
+# Backend PHP
+cd api && composer install
+php -l api/**/*.php   # Syntax check
+
+# Backoffice Vue SPA
+cd backoffice && npm install
+cd backoffice && npm run dev    # Dev server -> http://localhost:5173
+cd backoffice && npm run build  # Build produccion
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Estructura
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
+```
 /
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+├── src/              # Frontend publico (Astro)
+│   ├── components/   # Atomic Design (atoms/molecules/organisms)
+│   ├── pages/        # 8 paginas publicas
+│   └── lib/          # Icons, nav data
+├── backoffice/       # Vue SPA (admin panel)
+│   └── src/
+│       ├── pages/    # Login, Dashboard, Users, Roles, Permissions
+│       ├── stores/   # Pinia auth store
+│       └── services/ # API services + auth
+├── api/              # Backend PHP SOA
+│   ├── Controllers/  # Auth, User, Role, Permission
+│   ├── Models/       # PDO models
+│   ├── Services/     # AuthService (bcrypt)
+│   └── admin/        # Login, verify, logout, refresh endpoints
+└── AGENTS.md         # Desarrollo reference
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Seguridad
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- JWT con HTTP-only cookies + refresh tokens
+- RBAC completo con permisos dinamicos
+- Rate limiting con `flock()` (atomic)
+- Token blacklist para revocacion
+- Prepared statements (PDO)
+- Security headers (CSP, HSTS, X-Frame-Options)
