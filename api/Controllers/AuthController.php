@@ -5,13 +5,10 @@ namespace App\Controllers;
 
 use App\Models\UserModel;
 use App\Services\AuthService;
-use App\Traits\JwtAuth;
 use App\Config\Database;
 
 class AuthController
 {
-    use JwtAuth;
-
     private UserModel $userModel;
     private AuthService $authService;
 
@@ -46,7 +43,7 @@ class AuthController
 
         $permissions = $this->userModel->getEffectivePermissions($user['role_id'], $user['id']);
 
-        $token = $this->createToken([
+        $token = createJwt([
             'sub'         => $user['id'],
             'email'       => $user['email'],
             'role_id'     => $user['role_id'],
@@ -54,21 +51,23 @@ class AuthController
             'permissions' => $permissions,
         ]);
 
-        $config = $this->getConfig();
+        $config = config();
         $expiresIn = $config['jwt']['expires_in'] ?? 86400;
-
-        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-                    || (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443);
 
         setcookie('admin_token', $token, [
             'expires'  => time() + $expiresIn,
             'path'     => '/',
-            'secure'   => $isSecure,
+            'secure'   => isSecureRequest(),
             'httponly'  => true,
             'samesite' => 'Lax',
         ]);
 
+        $refreshToken = createRefreshToken($user['id']);
+        $csrfToken = generateCsrfToken();
+
         jsonSuccess([
+            'refresh_token' => $refreshToken,
+            'csrf_token' => $csrfToken,
             'user' => [
                 'id'          => $user['id'],
                 'email'       => $user['email'],
@@ -86,7 +85,7 @@ class AuthController
         requireMethod('GET', 'POST');
         rateLimit('verify', 15, 900);
 
-        $payload = $this->requireAuth();
+        $payload = requireAuth();
 
         $user = $this->userModel->findWithPermissions((int) $payload['sub']);
 
@@ -100,15 +99,14 @@ class AuthController
     public function logout(): never
     {
         requireMethod('POST');
-        $this->requireAuth();
+        $payload = requireAuth();
 
-        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-                    || (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443);
+        blacklistToken($payload['jti'] ?? '', $payload['exp'] ?? time());
 
         setcookie('admin_token', '', [
             'expires'  => time() - 3600,
             'path'     => '/',
-            'secure'   => $isSecure,
+            'secure'   => isSecureRequest(),
             'httponly'  => true,
             'samesite' => 'Lax',
         ]);

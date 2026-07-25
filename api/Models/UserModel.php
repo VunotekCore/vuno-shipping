@@ -147,7 +147,7 @@ class UserModel
 
         if (!empty($data['password'])) {
             $fields[] = 'password = :password';
-            $params['password'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]);
+            $params['password'] = $data['password'];
         }
 
         if (empty($fields)) {

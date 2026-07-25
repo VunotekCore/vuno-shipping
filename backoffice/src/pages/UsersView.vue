@@ -1,25 +1,38 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { userService, type User } from '../services/userService'
 import { roleService, type Role } from '../services/roleService'
-import { useToast } from '../composables/useToast'
+import { useCrudView } from '../composables/useCrudView'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 
-const toast = useToast()
-
-const users = ref<User[]>([])
 const roles = ref<Role[]>([])
-const loading = ref(true)
-const showModal = ref(false)
-const showDelete = ref(false)
-const editing = ref<User | null>(null)
-const deleting = ref<User | null>(null)
-const saving = ref(false)
 
-const form = ref({ email: '', password: '', name: '', role_id: 0 })
+const {
+  items: users, loading, showModal, showDelete,
+  editing, deleting, saving, form,
+  load: loadCrud, openCreate, openEdit, openDelete, save, confirmDelete,
+} = useCrudView<User>({
+  service: userService,
+  dataKey: 'users',
+  entityName: 'Usuario',
+  getDefaultForm: () => ({ email: '', password: '', name: '', role_id: roles.value[0]?.id ?? 0 }),
+  populateForm: (u) => ({ email: u.email, password: '', name: u.name, role_id: u.role_id }),
+  validateForm: (f, isEdit) => {
+    if (!f.name || !f.email || !f.role_id) return 'Nombre, email y rol son requeridos'
+    if (!isEdit && !f.password) return 'La contraseña es requerida'
+    return null
+  },
+  getEntityId: (u) => u.id,
+  prepareCreateData: (f) => ({ email: f.email, password: f.password, name: f.name, role_id: f.role_id }),
+  prepareUpdateData: (f, u) => {
+    const data: Record<string, unknown> = { id: u.id, email: f.email, name: f.name, role_id: f.role_id }
+    if (f.password) data.password = f.password
+    return data
+  },
+})
 
 const columns: TableColumn[] = [
   { key: 'name', label: 'Nombre', width: '180px' },
@@ -29,84 +42,19 @@ const columns: TableColumn[] = [
   { key: 'actions', label: '', width: '100px', align: 'right' },
 ]
 
-onMounted(() => load())
-
 async function load() {
-  loading.value = true
-  try {
-    const [usersRes, rolesRes] = await Promise.all([
-      userService.list(),
-      roleService.list(),
-    ])
-    users.value = usersRes.data.data?.users ?? []
-    roles.value = rolesRes.data.data?.roles ?? []
-  } catch {
-    toast.error('Error al cargar datos')
-  } finally {
-    loading.value = false
-  }
-}
-
-function openCreate() {
-  editing.value = null
-  form.value = { email: '', password: '', name: '', role_id: roles.value[0]?.id ?? 0 }
-  showModal.value = true
-}
-
-function openEdit(u: User) {
-  editing.value = u
-  form.value = { email: u.email, password: '', name: u.name, role_id: u.role_id }
-  showModal.value = true
-}
-
-function openDelete(u: User) {
-  deleting.value = u
-  showDelete.value = true
+  const [, rolesRes] = await Promise.all([
+    loadCrud(),
+    roleService.list().catch(() => ({ data: { data: { roles: [] as Role[] } } })),
+  ])
+  roles.value = rolesRes.data.data?.roles ?? []
 }
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-NI', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-async function save() {
-  saving.value = true
-  try {
-    if (editing.value) {
-      const data: Record<string, unknown> = {
-        id: editing.value.id,
-        email: form.value.email,
-        name: form.value.name,
-        role_id: form.value.role_id,
-      }
-      if (form.value.password) {
-        data.password = form.value.password
-      }
-      await userService.update(data as { id: number; email: string; name: string; role_id: number; password?: string })
-      toast.success('Usuario actualizado')
-    } else {
-      await userService.create(form.value)
-      toast.success('Usuario creado')
-    }
-    showModal.value = false
-    await load()
-  } catch (e: any) {
-    toast.error(e?.response?.data?.message || 'Error al guardar')
-  } finally {
-    saving.value = false
-  }
-}
-
-async function confirmDelete() {
-  if (!deleting.value) return
-  try {
-    await userService.delete(deleting.value.id)
-    toast.success('Usuario eliminado')
-    showDelete.value = false
-    await load()
-  } catch (e: any) {
-    toast.error(e?.response?.data?.message || 'Error al eliminar')
-  }
-}
+onMounted(() => load())
 </script>
 
 <template>
@@ -130,7 +78,7 @@ async function confirmDelete() {
           <td>
             <span class="admin-badge admin-badge-info">{{ u.role_name }}</span>
           </td>
-          <td class="text-[#64748b]">{{ formatDate(u.created_at) }}</td>
+          <td class="text-[#64748b]">{{ u.created_at ? formatDate(u.created_at) : '—' }}</td>
           <td class="text-right">
             <div class="flex items-center justify-end gap-1">
               <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(u)" title="Editar">

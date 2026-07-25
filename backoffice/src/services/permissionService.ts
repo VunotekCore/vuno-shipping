@@ -1,12 +1,7 @@
 import api from './api'
+import type { Permission } from '../types'
 
-export interface Permission {
-  id: number
-  module: string
-  action: string
-  label: string
-  created_at: string
-}
+export type { Permission }
 
 export const permissionService = {
   list() {

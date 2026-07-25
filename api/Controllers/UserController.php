@@ -5,15 +5,18 @@ namespace App\Controllers;
 
 use App\Models\UserModel;
 use App\Models\RoleModel;
+use App\Services\AuthService;
 use App\Config\Database;
 
 class UserController
 {
     private UserModel $model;
+    private AuthService $authService;
 
     public function __construct()
     {
         $this->model = new UserModel(Database::getConnection());
+        $this->authService = new AuthService();
     }
 
     public function list(): never
@@ -79,7 +82,7 @@ class UserController
             jsonError('El rol seleccionado no existe', 422);
         }
 
-        $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+        $hash = $this->authService->hashPassword($password);
         $id = $this->model->create($email, $hash, $name, $roleId);
         $user = $this->model->findById($id);
 
@@ -141,7 +144,7 @@ class UserController
 
         if (!empty($data['password'])) {
             validatePassword($data['password']);
-            $updateData['password'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]);
+            $updateData['password'] = $this->authService->hashPassword($data['password']);
         }
 
         if (empty($updateData)) {

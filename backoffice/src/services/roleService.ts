@@ -1,20 +1,8 @@
 import api from './api'
+import type { Role, Permission } from '../types'
 
-export interface Role {
-  id: number
-  name: string
-  slug: string
-  permission_count: number
-  user_count: number
-  created_at: string
-}
-
-export interface RolePermission {
-  id: number
-  module: string
-  action: string
-  label: string
-}
+export type { Role }
+export type RolePermission = Pick<Permission, 'id' | 'module' | 'action' | 'label'>
 
 export const roleService = {
   list() {

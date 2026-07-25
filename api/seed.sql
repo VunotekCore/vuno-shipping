@@ -38,9 +38,7 @@ INSERT INTO role_permission (role_id, permission_id)
 SELECT 3, id FROM permission WHERE action = 'read'
 ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
 
--- Admin user default
--- Password: admin123 (cambiar en producción)
--- Hash: php -r "echo password_hash('admin123', PASSWORD_BCRYPT);"
+-- Admin user default (cambiar contraseña en primer login)
 INSERT INTO `user` (email, password, name, role_id) VALUES
 ('admin@shipping.vunotek.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 1)
 ON DUPLICATE KEY UPDATE email = email;

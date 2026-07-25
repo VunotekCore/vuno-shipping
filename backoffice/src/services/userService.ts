@@ -1,14 +1,7 @@
 import api from './api'
+import type { User } from '../types'
 
-export interface User {
-  id: number
-  email: string
-  name: string
-  role_id: number
-  role_name: string
-  role_slug: string
-  created_at: string
-}
+export type { User }
 
 export const userService = {
   list() {

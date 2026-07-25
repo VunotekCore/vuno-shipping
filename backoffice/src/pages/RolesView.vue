@@ -1,30 +1,36 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { roleService, type Role } from '../services/roleService'
 import { permissionService, type Permission } from '../services/permissionService'
-import { useToast } from '../composables/useToast'
+import { useCrudView } from '../composables/useCrudView'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 
-const toast = useToast()
-
-const roles = ref<Role[]>([])
 const allPermissions = ref<Permission[]>([])
-const loading = ref(true)
-const showModal = ref(false)
 const showPermsModal = ref(false)
-const showDelete = ref(false)
-const editing = ref<Role | null>(null)
-const deleting = ref<Role | null>(null)
-const saving = ref(false)
 const savingPerms = ref(false)
-
-const form = ref({ name: '', slug: '' })
 const permRole = ref<Role | null>(null)
 const selectedPerms = ref<Set<number>>(new Set())
+
+const {
+  items: roles, loading, showModal, showDelete,
+  editing, deleting, saving, form,
+  load: loadCrud, openCreate, openEdit, openDelete, save, confirmDelete,
+} = useCrudView<Role>({
+  service: roleService,
+  dataKey: 'roles',
+  entityName: 'Rol',
+  getDefaultForm: () => ({ name: '', slug: '' }),
+  populateForm: (r) => ({ name: r.name, slug: r.slug }),
+  validateForm: (f) => {
+    if (!f.name) return 'El nombre es requerido'
+    return null
+  },
+  getEntityId: (r) => r.id,
+})
 
 const columns: TableColumn[] = [
   { key: 'name', label: 'Nombre', width: '180px' },
@@ -43,34 +49,12 @@ const groupedPerms = computed(() => {
   return groups
 })
 
-onMounted(() => load())
-
 async function load() {
-  loading.value = true
-  try {
-    const [rolesRes, permsRes] = await Promise.all([
-      roleService.list(),
-      permissionService.list(),
-    ])
-    roles.value = rolesRes.data.data?.roles ?? []
-    allPermissions.value = permsRes.data.data?.permissions ?? []
-  } catch {
-    toast.error('Error al cargar datos')
-  } finally {
-    loading.value = false
-  }
-}
-
-function openCreate() {
-  editing.value = null
-  form.value = { name: '', slug: '' }
-  showModal.value = true
-}
-
-function openEdit(r: Role) {
-  editing.value = r
-  form.value = { name: r.name, slug: r.slug }
-  showModal.value = true
+  const [, permsRes] = await Promise.all([
+    loadCrud(),
+    permissionService.list().catch(() => ({ data: { data: { permissions: [] as Permission[] } } })),
+  ])
+  allPermissions.value = permsRes.data.data?.permissions ?? []
 }
 
 function openPerms(r: Role) {
@@ -86,7 +70,8 @@ async function loadRolePermissions(roleId: number) {
     const perms = data.data?.permissions ?? []
     selectedPerms.value = new Set(perms.map((p) => p.id))
   } catch {
-    toast.error('Error al cargar permisos del rol')
+    const { useToast } = await import('../composables/useToast')
+    useToast().error('Error al cargar permisos del rol')
   }
 }
 
@@ -113,56 +98,25 @@ function isModuleChecked(_module: string, perms: Permission[]): boolean {
   return perms.every((p) => selectedPerms.value.has(p.id))
 }
 
-function openDelete(r: Role) {
-  deleting.value = r
-  showDelete.value = true
-}
-
-async function save() {
-  saving.value = true
-  try {
-    if (editing.value) {
-      await roleService.update({ id: editing.value.id, ...form.value })
-      toast.success('Rol actualizado')
-    } else {
-      await roleService.create(form.value)
-      toast.success('Rol creado')
-    }
-    showModal.value = false
-    await load()
-  } catch (e: any) {
-    toast.error(e?.response?.data?.message || 'Error al guardar')
-  } finally {
-    saving.value = false
-  }
-}
-
 async function savePerms() {
   if (!permRole.value) return
   savingPerms.value = true
   try {
     await roleService.setPermissions(permRole.value.id, Array.from(selectedPerms.value))
-    toast.success('Permisos actualizados')
+    const { useToast } = await import('../composables/useToast')
+    useToast().success('Permisos actualizados')
     showPermsModal.value = false
     await load()
-  } catch (e: any) {
-    toast.error(e?.response?.data?.message || 'Error al guardar permisos')
+  } catch (e: unknown) {
+    const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+    const { useToast } = await import('../composables/useToast')
+    useToast().error(msg || 'Error al guardar permisos')
   } finally {
     savingPerms.value = false
   }
 }
 
-async function confirmDelete() {
-  if (!deleting.value) return
-  try {
-    await roleService.delete(deleting.value.id)
-    toast.success('Rol eliminado')
-    showDelete.value = false
-    await load()
-  } catch (e: any) {
-    toast.error(e?.response?.data?.message || 'Error al eliminar')
-  }
-}
+onMounted(() => load())
 </script>
 
 <template>

@@ -1,23 +1,28 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { permissionService, type Permission } from '../services/permissionService'
-import { useToast } from '../composables/useToast'
+import { useCrudView } from '../composables/useCrudView'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 
-const toast = useToast()
-
-const permissions = ref<Permission[]>([])
-const loading = ref(true)
-const showModal = ref(false)
-const showDelete = ref(false)
-const editing = ref<Permission | null>(null)
-const deleting = ref<Permission | null>(null)
-const saving = ref(false)
-
-const form = ref({ module: '', action: '', label: '' })
+const {
+  items: permissions, loading, showModal, showDelete,
+  editing, deleting, saving, form,
+  load, openCreate, openEdit, openDelete, save, confirmDelete,
+} = useCrudView<Permission>({
+  service: permissionService,
+  dataKey: 'permissions',
+  entityName: 'Permiso',
+  getDefaultForm: () => ({ module: '', action: '', label: '' }),
+  populateForm: (p) => ({ module: p.module, action: p.action, label: p.label }),
+  validateForm: (f, _isEdit) => {
+    if (!f.module || !f.action) return 'Módulo y acción son requeridos'
+    return null
+  },
+  getEntityId: (p) => p.id,
+})
 
 const columns: TableColumn[] = [
   { key: 'module', label: 'Módulo', width: '150px' },
@@ -27,66 +32,6 @@ const columns: TableColumn[] = [
 ]
 
 onMounted(() => load())
-
-async function load() {
-  loading.value = true
-  try {
-    const { data } = await permissionService.list()
-    permissions.value = data.data?.permissions ?? []
-  } catch {
-    toast.error('Error al cargar permisos')
-  } finally {
-    loading.value = false
-  }
-}
-
-function openCreate() {
-  editing.value = null
-  form.value = { module: '', action: '', label: '' }
-  showModal.value = true
-}
-
-function openEdit(p: Permission) {
-  editing.value = p
-  form.value = { module: p.module, action: p.action, label: p.label }
-  showModal.value = true
-}
-
-function openDelete(p: Permission) {
-  deleting.value = p
-  showDelete.value = true
-}
-
-async function save() {
-  saving.value = true
-  try {
-    if (editing.value) {
-      await permissionService.update({ id: editing.value.id, ...form.value })
-      toast.success('Permiso actualizado')
-    } else {
-      await permissionService.create(form.value)
-      toast.success('Permiso creado')
-    }
-    showModal.value = false
-    await load()
-  } catch (e: any) {
-    toast.error(e?.response?.data?.message || 'Error al guardar')
-  } finally {
-    saving.value = false
-  }
-}
-
-async function confirmDelete() {
-  if (!deleting.value) return
-  try {
-    await permissionService.delete(deleting.value.id)
-    toast.success('Permiso eliminado')
-    showDelete.value = false
-    await load()
-  } catch (e: any) {
-    toast.error(e?.response?.data?.message || 'Error al eliminar')
-  }
-}
 </script>
 
 <template>
@@ -104,7 +49,7 @@ async function confirmDelete() {
 
     <div class="admin-card">
       <AppTable :columns="columns" :loading="loading" empty-title="Sin permisos" empty-desc="Creá el primer permiso del sistema.">
-        <tr v-for="p in permissions" :key="p.id" class="admin-table-row">
+        <tr v-for="p in permissions" :key="p.id">
           <td>
             <span class="admin-badge admin-badge-info">{{ p.module }}</span>
           </td>
