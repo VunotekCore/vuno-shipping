@@ -1,19 +1,18 @@
 ---
+import Icon from '../atoms/Icon.astro';
+
 interface Props {
   question: string;
   answer: string;
-  id?: string;
 }
 
-const { question, answer, id } = Astro.props;
+const { question, answer } = Astro.props;
 ---
 
 <details class="group border border-outline-variant rounded-xl overflow-hidden">
   <summary class="flex items-center justify-between p-sp-md cursor-pointer list-none bg-white hover:bg-surface-container-low transition-colors">
     <h3 class="font-headline-md text-headline-md text-primary pr-sp-sm">{question}</h3>
-    <svg class="w-5 h-5 fill-outline shrink-0 transition-transform duration-300 group-open:rotate-180" viewBox="0 0 24 24">
-      <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
-    </svg>
+    <Icon name="chevron_down" size="sm" class="fill-outline shrink-0 transition-transform duration-300 group-open:rotate-180" />
   </summary>
   <div class="px-sp-md pb-sp-md text-on-surface-variant">
     <p>{answer}</p>

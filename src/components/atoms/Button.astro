@@ -6,6 +6,7 @@ interface Props {
   type?: 'button' | 'submit' | 'reset';
   class?: string;
   fullWidth?: boolean;
+  id?: string;
 }
 
 const {
@@ -15,6 +16,7 @@ const {
   type = 'button',
   class: className = '',
   fullWidth = false,
+  id,
 } = Astro.props;
 
 const base = 'inline-flex items-center justify-center gap-sp-xs font-label-md rounded-lg transition-all active:scale-95 cursor-pointer no-underline';
@@ -36,11 +38,11 @@ const classes = `${base} ${variants[variant]} ${sizes[size]} ${fullWidth ? 'w-fu
 ---
 
 {href ? (
-  <a href={href} class={classes}>
+  <a href={href} class={classes} id={id}>
     <slot />
   </a>
 ) : (
-  <button type={type} class={classes}>
+  <button type={type} class={classes} id={id}>
     <slot />
   </button>
 )}

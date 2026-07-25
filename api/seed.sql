@@ -1,0 +1,46 @@
+-- vuno_db_shipping — Seed Data
+-- Permisos iniciales: user, role, permission (4 acciones cada uno)
+
+INSERT INTO permission (module, action, label) VALUES
+('user', 'read', 'Ver usuarios'),
+('user', 'create', 'Crear usuario'),
+('user', 'edit', 'Editar usuario'),
+('user', 'delete', 'Eliminar usuario'),
+('role', 'read', 'Ver roles'),
+('role', 'create', 'Crear rol'),
+('role', 'edit', 'Editar rol'),
+('role', 'delete', 'Eliminar rol'),
+('permission', 'read', 'Ver permisos'),
+('permission', 'create', 'Crear permiso'),
+('permission', 'edit', 'Editar permiso'),
+('permission', 'delete', 'Eliminar permiso')
+ON DUPLICATE KEY UPDATE label = VALUES(label);
+
+-- Roles iniciales
+INSERT INTO role (name, slug) VALUES
+('Admin', 'admin'),
+('Editor', 'editor'),
+('Viewer', 'viewer')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- Admin: todos los permisos
+INSERT INTO role_permission (role_id, permission_id)
+SELECT 1, id FROM permission
+ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
+
+-- Editor: read + edit
+INSERT INTO role_permission (role_id, permission_id)
+SELECT 2, id FROM permission WHERE action IN ('read', 'edit')
+ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
+
+-- Viewer: solo read
+INSERT INTO role_permission (role_id, permission_id)
+SELECT 3, id FROM permission WHERE action = 'read'
+ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
+
+-- Admin user default
+-- Password: admin123 (cambiar en producción)
+-- Hash: php -r "echo password_hash('admin123', PASSWORD_BCRYPT);"
+INSERT INTO `user` (email, password, name, role_id) VALUES
+('admin@shipping.vunotek.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 1)
+ON DUPLICATE KEY UPDATE email = email;

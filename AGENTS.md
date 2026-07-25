@@ -2,8 +2,8 @@
 
 > **Negocio:** Agency de receiving y envío de paquetes desde Miami hasta Nicaragua
 > **Modelo:** Usuarios compran en Amazon/eBay/Shein → envían a almacén Miami → Mg consolida y envía a Nicaragua → entrega a domicilio
-> **Estado:** Fase 1 completada — Frontend público funcional
-> **Stack:** Astro 6 · TypeScript strict · Tailwind 4 · MD3 Design Tokens
+> **Estado:** Phase 1 + Phase 2 (CRUD) completadas
+> **Stack:** Astro 6 · Vue 3 + Pinia · PHP 8.1 SOA · Tailwind 4 · MD3 Design Tokens
 
 ---
 
@@ -16,8 +16,8 @@ Shipping Agency es una plataforma web para un negocio de logística que permite 
 | Componente | Estado |
 |-----------|--------|
 | Frontend público (Astro) | ✅ 8 páginas funcionales |
-| Backoffice (Vue islands) | 🔜 Phase 2 |
-| Backend (PHP) | 🔜 Phase 3 |
+| Backoffice (Vue SPA) | ✅ Phase 2 — CRUD completo |
+| Backend (PHP SOA) | ✅ Phase 2 — Auth + RBAC CRUD |
 
 ---
 
@@ -44,10 +44,7 @@ src/components/
 │   ├── Button.astro
 │   ├── Input.astro
 │   ├── Textarea.astro
-│   ├── Select.astro
-│   ├── Badge.astro
 │   ├── Icon.astro
-│   ├── Card.astro
 │   └── ScrollReveal.astro
 ├── molecules/      # Combinaciones de atoms
 │   ├── FormField.astro
@@ -59,21 +56,27 @@ src/components/
 │   ├── SocialLinks.astro
 │   ├── StepCard.astro
 │   ├── FeatureCard.astro
+│   ├── CopyrightBar.astro
 │   ├── FAQItem.astro
 │   └── NavLinks.astro
-└── organisms/      # Secciones completas de página
-    ├── Header.astro
-    ├── Footer.astro
-    ├── HeroSection.astro
-    ├── ProcessSteps.astro
-    ├── FeaturesBento.astro
-    ├── TrackingStepper.astro
-    ├── CTASection.astro
-    ├── ServiceHero.astro
-    ├── ServiceCards.astro
-    ├── ShippingCalculator.astro
-    ├── PricingTable.astro
-    └── WhatsAppButton.astro
+├── organisms/      # Secciones completas de página
+│   ├── Header.astro
+│   ├── Footer.astro
+│   ├── HeroSection.astro
+│   ├── ProcessSteps.astro
+│   ├── FeaturesBento.astro
+│   ├── TrackingStepper.astro
+│   ├── CTASection.astro
+│   ├── ServiceHero.astro
+│   ├── ServiceCards.astro
+│   ├── ShippingCalculator.astro
+│   ├── PricingTable.astro
+│   └── WhatsAppButton.astro
+└── (no crear componentes sin consumidor)
+
+src/lib/             # Datos compartidos y utilidades
+├── icons.ts         # Registro centralizado de paths SVG
+└── nav.ts           # Links de navegación + interfaz NavLink
 ```
 
 ### Reglas de Componentes
@@ -81,7 +84,11 @@ src/components/
 - **Archivos ≤500 líneas** — Si excede, dividir en subcomponentes
 - **HTML semántico** — `<main>`, `<section>`, `<article>`, `<aside>`, `<header>`, `<footer>`, `<nav>`
 - **Sin dependencias externas** — Solo Tailwind CSS (sin shadcn, sin React, sin Vue en front)
-- **Iconos inline** — Material Symbols via SVG inline (no font icons)
+- **Iconos centralizados** — Siempre usar `<Icon name="..." />` desde `src/components/atoms/Icon.astro`. No definir `iconPaths` localmente ni duplicar SVG inline. Para agregar un icono nuevo, añadir su path al mapa en `src/lib/icons.ts`
+- **Usar atoms existentes** — No escribir `<input>`, `<select>`, `<button>` inline cuando existen atoms (`Input.astro`, `Button.astro`). Si el atom no cubre el caso de uso, extenderlo o crear uno nuevo en atoms/
+- **Interfaces compartidas** — No duplicar interfaces. Importar de `src/lib/` (ej: `NavLink` de `nav.ts`)
+- **Sin código muerto** — No crear componentes, funciones o variables sin consumidor. Antes de crear, verificar que no existe uno equivalente
+- **Imports limpios** — Solo importar lo que se usa. Ejecutar `pnpm astro check` para detectar imports huérfanos
 
 ---
 
@@ -131,6 +138,9 @@ src/components/
 │   │   └── organisms/
 │   ├── layouts/
 │   │   └── BaseLayout.astro        # Layout público (SEO, fonts, meta tags)
+│   ├── lib/
+│   │   ├── icons.ts                # Registro centralizado de paths SVG
+│   │   └── nav.ts                  # Links de navegación compartidos
 │   ├── pages/
 │   │   ├── index.astro             # Home
 │   │   ├── servicios.astro         # Servicios
@@ -140,9 +150,94 @@ src/components/
 │   │   ├── faq.astro               # Preguntas frecuentes
 │   │   ├── privacidad.astro        # Política de privacidad
 │   │   └── terminos.astro          # Términos de servicio
+│   ├── scripts/
+│   │   └── hero-slider.js          # Slider del hero
 │   ├── styles/
 │   │   └── global.css              # Tailwind @theme + MD3 tokens + breakpoints
 │   └── env.d.ts
+├── api/                             # Backend PHP SOA
+│   ├── bootstrap.php                # Entry point: config, JWT, CORS, helpers
+│   ├── schema.sql                   # Tablas RBAC
+│   ├── seed.sql                     # Datos iniciales
+│   ├── composer.json                # PHP deps (vlucas/phpdotenv)
+│   ├── .htaccess                    # Seguridad: bloquea acceso directo
+│   ├── Config/
+│   │   └── Database.php            # PDO singleton
+│   ├── Controllers/
+│   │   ├── AuthController.php       # Login/verify/logout
+│   │   ├── PermissionController.php # CRUD permisos
+│   │   ├── RoleController.php       # CRUD roles + permisos
+│   │   └── UserController.php       # CRUD usuarios
+│   ├── Models/
+│   │   ├── PermissionModel.php
+│   │   ├── RoleModel.php
+│   │   └── UserModel.php
+│   ├── Services/
+│   │   └── AuthService.php          # bcrypt hash/verify
+│   ├── Traits/
+│   │   ├── ApiResponse.php
+│   │   └── JwtAuth.php
+│   ├── admin/                       # Auth endpoints
+│   │   ├── login.php
+│   │   ├── verify.php
+│   │   └── logout.php
+│   ├── permission/                  # Permission CRUD
+│   │   ├── list.php
+│   │   ├── create.php
+│   │   ├── update.php
+│   │   └── delete.php
+│   ├── role/                        # Role CRUD
+│   │   ├── list.php
+│   │   ├── create.php
+│   │   ├── update.php
+│   │   ├── delete.php
+│   │   └── permissions.php
+│   └── user/                        # User CRUD
+│       ├── list.php
+│       ├── create.php
+│       ├── update.php
+│       └── delete.php
+├── backoffice/                      # Vue SPA (admin)
+│   ├── .htaccess                    # Vue Router history mode fallback
+│   ├── index.html
+│   ├── package.json                 # Vue 3, Pinia, Axios, Tailwind 4
+│   ├── vite.config.ts               # Dev proxy /api → localhost:8000
+│   ├── tsconfig.json
+│   └── src/
+│       ├── main.ts
+│       ├── App.vue
+│       ├── router/index.ts          # Vue Router + auth guard
+│       ├── stores/auth.ts           # Pinia auth (cookie-based)
+│       ├── services/
+│       │   ├── api.ts               # Axios instance
+│       │   ├── authService.ts       # Login/verify/logout
+│       │   ├── permissionService.ts
+│       │   ├── roleService.ts
+│       │   └── userService.ts
+│       ├── composables/
+│       │   └── useToast.ts
+│       ├── styles/
+│       │   ├── main.css
+│       │   └── admin.css            # Dark theme (~380 lines)
+│       ├── pages/
+│       │   ├── LoginView.vue        # Split-panel login
+│       │   ├── AdminLayout.vue      # Sidebar + header + RouterView
+│       │   ├── DashboardView.vue
+│       │   ├── UsersView.vue
+│       │   ├── RolesView.vue
+│       │   └── PermissionsView.vue
+│       └── components/
+│           ├── layout/
+│           │   ├── AdminSidebar.vue
+│           │   └── AdminHeader.vue
+│           └── ui/
+│               ├── AppModal.vue
+│               ├── AppTable.vue
+│               ├── AppPagination.vue
+│               ├── AppSwitch.vue
+│               ├── AppConfirmDialog.vue
+│               ├── AppToast.vue
+│               └── AppSkeleton.vue
 ├── html-designs/                   # Diseños HTML de referencia
 ├── .env.example
 ├── astro.config.mjs                # output: "static"
@@ -193,10 +288,20 @@ src/components/
 ## 7. Comandos
 
 ```bash
+# Frontend público
 pnpm dev              # Dev server → http://localhost:4321
 pnpm build            # Build estático → dist/
 pnpm preview          # Preview del build
 pnpm astro check      # Type check (0 errores = saludable)
+
+# Backend PHP
+cd api && composer install   # Instalar deps PHP
+php -l api/**/*.php          # Syntax check todos los PHP
+
+# Backoffice Vue SPA
+cd backoffice && npm install  # Instalar deps Vue
+cd backoffice && npm run dev  # Dev server → http://localhost:5173
+cd backoffice && npm run build  # Build para producción
 ```
 
 ---
@@ -212,24 +317,29 @@ pnpm astro check      # Type check (0 errores = saludable)
 - [x] SEO básico (meta, OG, robots.txt)
 - [x] Navegación responsive con hamburger menu
 
-### 🔜 Phase 2 — Backoffice con Vue Islands
+### ✅ Phase 2 — Backoffice con Vue SPA + Backend PHP SOA
 
-- [ ] Dashboard admin con estadísticas
-- [ ] Gestión de envíos y tracking
+- [x] Backend PHP SOA con JWT auth + HTTP-only cookies
+- [x] RBAC completo: permisos dinámicos, roles, usuarios
+- [x] Security headers, rate limiting, exception handling
+- [x] Backoffice Vue SPA con login, dashboard, sidebar
+- [x] CRUD de usuarios, roles, permisos con UI completa
+- [x] Permissions matrix para roles (toggle por módulo/acción)
+- [x] Componentes UI reutilizables: AppModal, AppTable, AppPagination, AppSwitch, AppConfirmDialog, AppToast, AppSkeleton
+- [x] Dark theme admin (#0a1022 bg, #69dca4 green, #00A8FF blue)
+- [x] `composer install` + `npm install` + build limpio
+
+### 🔜 Phase 3 — Shipping Features
+
+- [ ] Tablas de negocio: clients, shipments, packages, tracking_events
+- [ ] Gestión de envíos y tracking en backoffice
 - [ ] Gestión de clientes
-- [ ] Formularios con validación Vue
 - [ ] Upload de comprobantes de pago
-
-### 🔜 Phase 3 — Backend PHP
-
-- [ ] API REST para datos de envíos
-- [ ] Base de datos (MySQL/PostgreSQL)
-- [ ] Autenticación JWT
 - [ ] Integración con APIs de tracking
 - [ ] Webhooks para notificaciones
 - [ ] Pagos con Stripe/PayPal
 
-### 🔜 Phase 4 — Features
+### 🔜 Phase 4 — Features Avanzados
 
 - [ ] Calculadora de envíos real con API
 - [ ] Tracking en tiempo real
@@ -256,6 +366,13 @@ pnpm astro check      # Type check (0 errores = saludable)
 3. Siempre con frontmatter (aunque sea `const x = 1;`)
 4. Usar Tailwind utilities — no CSS custom
 5. Responsive: base mobile, `md:` para desktop
+6. **Checklist pre-commit:**
+   - ¿Se reusan atoms existentes (Input, Button, Icon, ScrollReveal)?
+   - ¿Los iconos usan `<Icon name="..." />` y no SVG inline?
+   - ¿Las interfaces se importan de `src/lib/` en vez de duplicarse?
+   - ¿Todos los imports se usan? (verificar con `pnpm astro check`)
+   - ¿El componente tiene al menos un consumidor?
+   - ¿El build pasa sin errores? (`pnpm build && pnpm astro check`)
 
 ### Separación Public vs Backoffice
 
@@ -267,4 +384,4 @@ pnpm astro check      # Type check (0 errores = saludable)
 ---
 
 > **Creado:** 24/07/2026
-> **Última actualización:** Phase 1 completada
+> **Última actualización:** Phase 2 completa — CRUD backend + backoffice (25/07/2026)

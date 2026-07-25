@@ -1,27 +1,18 @@
 ---
 import NavLinks from '../molecules/NavLinks.astro';
 import Button from '../atoms/Button.astro';
+import { navLinks } from '../../lib/nav';
 
 interface Props {
   activePage?: 'home' | 'servicios' | 'contacto' | 'rastreo' | 'nosotros' | 'faq';
 }
 
 const { activePage = 'home' } = Astro.props;
-
-const links = [
-  { href: '/', label: 'Inicio', id: 'home' },
-  { href: '/servicios', label: 'Servicios', id: 'servicios' },
-  { href: '/rastreo', label: 'Rastreo', id: 'rastreo' },
-  { href: '/nosotros', label: 'Nosotros', id: 'nosotros' },
-  { href: '/faq', label: 'FAQ', id: 'faq' },
-  { href: '/contacto', label: 'Contacto', id: 'contacto' },
-];
 ---
 
 <header
   class="fixed top-0 left-0 w-full z-50 h-20 bg-surface shadow-sm transition-all duration-300"
   id="main-header"
-  role="banner"
 >
   <div id="scroll-progress" class="progress-bar"></div>
   <div class="flex justify-between items-center h-full max-w-container-max mx-auto px-margin-mobile md:px-sp-lg">
@@ -30,7 +21,7 @@ const links = [
     </a>
 
     <div class="hidden lg:flex items-center gap-sp-lg">
-      <NavLinks links={links} activePage={activePage} />
+      <NavLinks links={navLinks} activePage={activePage} />
     </div>
 
     <div class="hidden sm:flex items-center gap-sp-sm">
@@ -54,11 +45,10 @@ const links = [
   <div
     id="mobile-menu"
     class="lg:hidden hidden fixed top-20 left-0 w-full bg-surface shadow-lg border-t border-outline-variant"
-    role="navigation"
     aria-label="Menú móvil"
   >
     <div class="flex flex-col px-margin-mobile py-sp-md gap-sp-sm">
-      <NavLinks links={links} activePage={activePage} direction="vertical" />
+      <NavLinks links={navLinks} activePage={activePage} direction="vertical" />
       <div class="flex flex-col gap-sp-sm mt-sp-md pt-sp-md border-t border-outline-variant sm:hidden">
         <Button variant="ghost" size="sm">Iniciar Sesión</Button>
         <Button variant="primary" size="sm" href="/rastreo" fullWidth>Abrir Casillero</Button>

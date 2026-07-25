@@ -1,5 +1,6 @@
 ---
 import ScrollReveal from '../atoms/ScrollReveal.astro';
+import Icon from '../atoms/Icon.astro';
 
 interface Props {
   badge: string;
@@ -52,7 +53,7 @@ const { badge, title, price, priceNote, features, highlighted = false } = Astro.
     <ul class="text-left space-y-sp-sm mb-sp-lg">
       {features.map((feature) => (
         <li class="flex items-center gap-sp-xs text-body-md">
-          <svg class="w-5 h-5 fill-secondary-container shrink-0" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <Icon name="check" size="sm" class="fill-secondary-container shrink-0" />
           {feature}
         </li>
       ))}

@@ -1,0 +1,14 @@
+RewriteEngine On
+RewriteBase /shipping/backoffice/
+
+# Handle API requests
+RewriteRule ^api/ - [L]
+
+# Handle asset files
+RewriteRule ^assets/ - [L]
+
+# Handle Vue Router history mode
+RewriteRule ^(?!assets/).*\.(html|htm|css|js|json|xml|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ /backoffice/index.html [L]

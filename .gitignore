@@ -1,27 +1,41 @@
-# build output
+# Build output
 dist/
-# generated types
+
+# Generated types
 .astro/
 
-# dependencies
+# Dependencies
 node_modules/
 
-# logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-
-# environment variables
+# Environment
 .env
 .env.production
 
-# macOS-specific files
+# PHP sensitive config
+api/config.php
+api/vendor/
+composer.lock
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+
+# OS
 .DS_Store
 
-# jetbrains setting folder
-.idea/
+# Agent config
+.agents/
 
-# html reference designs
+# Design references
 html-designs/
+
+# Backoffice
+backoffice/node_modules/
+backoffice/dist/
+backoffice/tsconfig.tsbuildinfo

@@ -4,12 +4,13 @@ import Input from '../atoms/Input.astro';
 import Textarea from '../atoms/Textarea.astro';
 import Button from '../atoms/Button.astro';
 import ScrollReveal from '../atoms/ScrollReveal.astro';
+import Icon from '../atoms/Icon.astro';
 ---
 
 <ScrollReveal>
   <div class="bg-white p-sp-lg rounded-xl border border-outline-variant shadow-[0px_4px_20px_rgba(0,0,0,0.05)]">
     <h2 class="font-headline-md text-headline-md text-primary mb-sp-lg flex items-center gap-sp-xs">
-      <svg class="w-7 h-7 fill-primary" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+      <Icon name="email" size="md" class="fill-primary" />
       Envíanos un Mensaje
     </h2>
     <form class="space-y-sp-md" id="contact-form">

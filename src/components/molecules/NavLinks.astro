@@ -1,12 +1,8 @@
 ---
-interface Link {
-  href: string;
-  label: string;
-  id: string;
-}
+import type { NavLink } from '../../lib/nav';
 
 interface Props {
-  links: Link[];
+  links: NavLink[];
   activePage?: string;
   direction?: 'horizontal' | 'vertical';
   class?: string;

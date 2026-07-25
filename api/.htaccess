@@ -1,0 +1,21 @@
+# Bloquear archivos sensibles
+<Files "config.php">
+  Require all denied
+</Files>
+
+<Files "config.example.php">
+  Require all denied
+</Files>
+
+<Files "bootstrap.php">
+  Require all denied
+</Files>
+
+# Deshabilitar directory listing
+Options -Indexes
+
+# Bloquear acceso directo a directorios SOA
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^(Config|Controllers|Models|Services|Traits)/ - [F,L]
+</IfModule>
