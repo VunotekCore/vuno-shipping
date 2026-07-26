@@ -6,6 +6,7 @@ import { useCrudView } from '../composables/useCrudView'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
+import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 
 const roles = ref<Role[]>([])
@@ -13,7 +14,8 @@ const roles = ref<Role[]>([])
 const {
   items: users, loading, showModal, showDelete,
   editing, deleting, saving, form,
-  load: loadCrud, openCreate, openEdit, openDelete, save, confirmDelete,
+  page, limit, total, pages,
+  load: loadCrud, openCreate, openEdit, openDelete, save, confirmDelete, goToPage, setLimit,
 } = useCrudView<User>({
   service: userService,
   dataKey: 'users',
@@ -71,7 +73,7 @@ onMounted(() => load())
     </div>
 
     <div class="admin-card">
-      <AppTable :columns="columns" :loading="loading" empty-title="Sin usuarios" empty-desc="Creá el primer usuario del sistema.">
+      <AppTable :columns="columns" :loading="loading" :is-empty="users.length === 0" empty-title="Sin usuarios" empty-desc="Creá el primer usuario del sistema.">
         <tr v-for="u in users" :key="u.id">
           <td class="font-medium text-[#dae2fd]">{{ u.name }}</td>
           <td class="text-[#94a3b8]">{{ u.email }}</td>
@@ -91,6 +93,7 @@ onMounted(() => load())
           </td>
         </tr>
       </AppTable>
+      <AppPagination :page="page" :pages="pages" :total="total" :limit="limit" @update:page="goToPage" @update:limit="setLimit" />
     </div>
 
     <!-- Create / Edit Modal -->

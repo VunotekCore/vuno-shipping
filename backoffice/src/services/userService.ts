@@ -1,11 +1,14 @@
 import api from './api'
 import type { User } from '../types'
+import { buildPageParams } from './pagination'
 
 export type { User }
 
 export const userService = {
-  list() {
-    return api.get<{ success: boolean; data: { users: User[] } }>('/user/list.php')
+  list(params?: { page?: number; limit?: number }) {
+    return api.get<{ success: boolean; data: { users: User[]; pagination: import('./pagination').Pagination } }>(
+      `/user/list.php${buildPageParams(params)}`
+    )
   },
 
   create(data: { email: string; password: string; name: string; role_id: number }) {

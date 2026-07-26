@@ -1,8 +1,17 @@
 import { ref, type Ref } from 'vue'
 import { useToast } from './useToast'
 
-export interface CrudService<T> {
-  list(): Promise<{ data: { data?: Record<string, T[]> } }>
+export interface Pagination {
+  page: number
+  limit: number
+  total: number
+  pages: number
+}
+
+export interface CrudService<_T> {
+  list(params?: { page?: number; limit?: number }): Promise<{
+    data: { data?: Record<string, unknown>; pagination?: Pagination }
+  }>
   create(data: Record<string, unknown>): Promise<unknown>
   update(data: Record<string, unknown>): Promise<unknown>
   delete(id: number): Promise<unknown>
@@ -32,16 +41,37 @@ export function useCrudView<T extends { id: number }>(options: CrudOptions<T>) {
   const saving = ref(false)
   const form = ref<Record<string, unknown>>({})
 
+  const page = ref(1)
+  const limit = ref(50)
+  const total = ref(0)
+  const pages = ref(0)
+
   async function load() {
     loading.value = true
     try {
-      const { data } = await options.service.list()
-      items.value = data.data?.[options.dataKey] ?? []
+      const { data } = await options.service.list({ page: page.value, limit: limit.value })
+      items.value = (data.data?.[options.dataKey] as T[]) ?? []
+      const p = data.data?.pagination as Pagination | undefined
+      if (p) {
+        total.value = p.total
+        pages.value = p.pages
+      }
     } catch {
       toast.error(`Error al cargar ${options.entityName}s`)
     } finally {
       loading.value = false
     }
+  }
+
+  function goToPage(n: number) {
+    page.value = n
+    load()
+  }
+
+  function setLimit(newLimit: number) {
+    limit.value = newLimit
+    page.value = 1
+    load()
   }
 
   function openCreate() {
@@ -115,7 +145,13 @@ export function useCrudView<T extends { id: number }>(options: CrudOptions<T>) {
     deleting,
     saving,
     form,
+    page,
+    limit,
+    total,
+    pages,
     load,
+    goToPage,
+    setLimit,
     openCreate,
     openEdit,
     openDelete,

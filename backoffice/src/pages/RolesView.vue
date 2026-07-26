@@ -8,6 +8,7 @@ import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
+import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 
 const allPermissions = ref<Permission[]>([])
@@ -19,7 +20,8 @@ const selectedPerms = ref<Set<number>>(new Set())
 const {
   items: roles, loading, showModal, showDelete,
   editing, deleting, saving, form,
-  load: loadCrud, openCreate, openEdit, openDelete, save, confirmDelete,
+  page, limit, total, pages,
+  load: loadCrud, openCreate, openEdit, openDelete, save, confirmDelete, goToPage, setLimit,
 } = useCrudView<Role>({
   service: roleService,
   dataKey: 'roles',
@@ -131,7 +133,7 @@ onMounted(() => load())
     </div>
 
     <div class="admin-card">
-      <AppTable :columns="columns" :loading="loading" empty-title="Sin roles" empty-desc="Creá el primer rol del sistema.">
+      <AppTable :columns="columns" :loading="loading" :is-empty="roles.length === 0" empty-title="Sin roles" empty-desc="Creá el primer rol del sistema.">
         <tr v-for="r in roles" :key="r.id">
           <td class="font-medium text-[#dae2fd]">{{ r.name }}</td>
           <td><span class="admin-badge admin-badge-info">{{ r.slug }}</span></td>
@@ -157,6 +159,7 @@ onMounted(() => load())
           </td>
         </tr>
       </AppTable>
+      <AppPagination :page="page" :pages="pages" :total="total" :limit="limit" @update:page="goToPage" @update:limit="setLimit" />
     </div>
 
     <!-- Create / Edit Modal -->

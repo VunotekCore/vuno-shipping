@@ -247,6 +247,59 @@ select.admin-input {
   max-width: 280px;
 }
 
+/* ── Glass card (login) ───────────────────────────────────────────────── */
+
+.admin-glass-card {
+  background: rgba(11, 19, 38, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(105, 220, 164, 0.1);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.admin-glass-card:hover {
+  border-color: rgba(105, 220, 164, 0.2);
+  box-shadow: 0 0 30px rgba(105, 220, 164, 0.04);
+}
+
+/* ── Password input with toggle ───────────────────────────────────────── */
+
+.admin-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.admin-input-group .admin-input {
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+}
+.admin-input-group .admin-input-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: #64748b;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+.admin-input-group .admin-input-toggle {
+  position: absolute;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  color: #64748b;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  border-radius: 0.25rem;
+  transition: color 0.15s;
+}
+.admin-input-group .admin-input-toggle:hover {
+  color: #94a3b8;
+}
+
 /* ── Focus-visible indicators ──────────────────────────────────────────── */
 
 button:focus-visible,
@@ -254,4 +307,99 @@ a:focus-visible {
   outline: 2px solid #69dca4;
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* ── Pagination ────────────────────────────────────────────────────────── */
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #1e293b;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.admin-pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.admin-pagination-select {
+  background: #1e293b;
+  border: 1.5px solid #404944;
+  color: #dae2fd;
+  padding: 0.25rem 1.75rem 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 0.375rem;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  cursor: pointer;
+}
+.admin-pagination-select:focus {
+  border-color: #69dca4;
+}
+.admin-pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.admin-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.admin-pagination-btn:hover:not(:disabled):not(.active) {
+  background: rgba(255, 255, 255, 0.06);
+  color: #dae2fd;
+}
+.admin-pagination-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.admin-pagination-btn.active {
+  background: #00A8FF;
+  color: #fff;
+  border-color: #00A8FF;
+}
+.admin-pagination-num {
+  font-variant-numeric: tabular-nums;
+}
+.admin-pagination-dots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  .admin-pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .admin-pagination-info {
+    justify-content: space-between;
+  }
+  .admin-pagination-buttons {
+    justify-content: center;
+  }
 }
