@@ -6,6 +6,9 @@ declare(strict_types=1);
  * Cada entry point require_once este archivo.
  */
 
+// --- Composer Autoloader (must be first) ---
+require_once __DIR__ . '/vendor/autoload.php';
+
 // --- Exception Handler (before Dotenv so bootstrap errors are caught) ---
 set_exception_handler(function (\Throwable $e): void {
     $message = $e->getMessage();
@@ -38,14 +41,15 @@ config([
         'debug'           => ($_ENV['APP_DEBUG'] ?? 'false') === 'true',
         'timezone'        => $_ENV['APP_TIMEZONE'] ?? 'America/Managua',
     ],
+    'imagekit' => [
+        'private_key'  => $_ENV['IMAGEKIT_PRIVATE_KEY'] ?? '',
+        'url_endpoint' => $_ENV['IMAGEKIT_URL_ENDPOINT'] ?? '',
+    ],
     'trusted_proxies' => array_map('trim', explode(',', $_ENV['TRUSTED_PROXIES'] ?? '')),
 ]);
 
 // --- Timezone ---
 date_default_timezone_set(config()['app']['timezone']);
-
-// --- Composer Autoloader ---
-require_once __DIR__ . '/vendor/autoload.php';
 
 // --- CORS ---
 setCorsHeaders();
@@ -416,7 +420,7 @@ function rateLimit(string $key, int $maxAttempts, int $windowSeconds): void
         return;
     }
 
-    fchmod($fp, 0600);
+    chmod($file, 0600);
     flock($fp, LOCK_EX);
 
     $now = time();

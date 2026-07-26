@@ -13,7 +13,25 @@ INSERT INTO permission (module, action, label) VALUES
 ('permission', 'read', 'Ver permisos'),
 ('permission', 'create', 'Crear permiso'),
 ('permission', 'edit', 'Editar permiso'),
-('permission', 'delete', 'Eliminar permiso')
+('permission', 'delete', 'Eliminar permiso'),
+('company', 'read', 'Ver empresa'),
+('company', 'edit', 'Editar empresa'),
+('document_sequence', 'read', 'Ver secuencias'),
+('document_sequence', 'create', 'Crear secuencia'),
+('document_sequence', 'edit', 'Editar secuencia'),
+('document_sequence', 'delete', 'Eliminar secuencia'),
+('direccion', 'read', 'Ver direcciones'),
+('direccion', 'create', 'Crear direccion'),
+('direccion', 'edit', 'Editar direccion'),
+('direccion', 'delete', 'Eliminar direccion'),
+('puesto', 'read', 'Ver puestos'),
+('puesto', 'create', 'Crear puesto'),
+('puesto', 'edit', 'Editar puesto'),
+('puesto', 'delete', 'Eliminar puesto'),
+('empleado', 'read', 'Ver empleados'),
+('empleado', 'create', 'Crear empleado'),
+('empleado', 'edit', 'Editar empleado'),
+('empleado', 'delete', 'Eliminar empleado')
 ON DUPLICATE KEY UPDATE label = VALUES(label);
 
 -- Roles iniciales
@@ -40,5 +58,5 @@ ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
 
 -- Admin user default (debe cambiar contraseña en primer login)
 INSERT INTO `user` (email, password, name, role_id, must_change_password) VALUES
-('admin@shipping.vunotek.com', '$2y$12$iYHofg5UxMEvuhp.Myr8PuysEzxnNxPTuhGPMTW42Jmipx.QvO.FG', 'Admin', 1, 1)
+('admin@vunotek.com', '$2y$12$iYHofg5UxMEvuhp.Myr8PuysEzxnNxPTuhGPMTW42Jmipx.QvO.FG', 'Admin', 1, 1)
 ON DUPLICATE KEY UPDATE email = email;

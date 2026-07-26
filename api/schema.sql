@@ -73,3 +73,63 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     INDEX idx_refresh_tokens_hash (token_hash),
     INDEX idx_refresh_tokens_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- === Business Tables ===
+
+CREATE TABLE IF NOT EXISTS company (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    logo VARCHAR(255) NULL,
+    ruc VARCHAR(30) NULL,
+    address TEXT NULL,
+    phone VARCHAR(30) NULL,
+    email VARCHAR(255) NULL,
+    website VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS document_sequence (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    document_code VARCHAR(20) NOT NULL UNIQUE,
+    description VARCHAR(100) NULL,
+    prefix VARCHAR(10) NULL,
+    current_number INT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS direccion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS puesto (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT NULL,
+    direccion_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (direccion_id) REFERENCES direccion(id) ON DELETE RESTRICT,
+    INDEX idx_puesto_direccion (direccion_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS empleado (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NULL,
+    phone VARCHAR(30) NULL,
+    cedula VARCHAR(30) NULL UNIQUE,
+    fecha_ingreso DATE NULL,
+    puesto_id INT NOT NULL,
+    user_id INT NULL UNIQUE,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (puesto_id) REFERENCES puesto(id) ON DELETE RESTRICT,
+    FOREIGN KEY (user_id) REFERENCES `user`(id) ON DELETE SET NULL,
+    INDEX idx_empleado_puesto (puesto_id),
+    INDEX idx_empleado_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -37,3 +37,58 @@ export interface Pagination {
   total: number
   pages: number
 }
+
+export interface Company {
+  id: number
+  name: string
+  logo: string | null
+  ruc: string | null
+  address: string | null
+  phone: string | null
+  email: string | null
+  website: string | null
+  created_at: string
+}
+
+export interface DocumentSequence {
+  id: number
+  document_code: string
+  description: string | null
+  prefix: string | null
+  current_number: number
+  created_at: string
+}
+
+export interface Direccion {
+  id: number
+  name: string
+  description: string | null
+  puesto_count: number
+  created_at: string
+}
+
+export interface Puesto {
+  id: number
+  name: string
+  description: string | null
+  direccion_id: number
+  direccion_name: string
+  empleado_count: number
+  created_at: string
+}
+
+export interface Empleado {
+  id: number
+  name: string
+  email: string | null
+  phone: string | null
+  cedula: string | null
+  fecha_ingreso: string | null
+  puesto_id: number
+  puesto_name: string
+  user_id: number | null
+  user_email: string | null
+  user_name: string | null
+  is_active: boolean
+  created_at: string
+}
