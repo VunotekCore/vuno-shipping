@@ -9,6 +9,7 @@ const auth = useAuthStore()
 
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const error = ref('')
 const loading = ref(false)
 
@@ -23,7 +24,7 @@ async function handleLogin() {
     }
   } catch (e: unknown) {
     const err = e as { response?: { data?: { message?: string } } }
-    error.value = err?.response?.data?.message || 'Error al iniciar sesión'
+    error.value = err?.response?.data?.message || 'Error al iniciar sesion'
   } finally {
     loading.value = false
   }
@@ -32,34 +33,66 @@ async function handleLogin() {
 
 <template>
   <div class="flex min-h-screen bg-[#0a1022]">
-    <!-- Left panel — brand -->
-    <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center bg-gradient-to-br from-[#0b1326] to-[#111d2e]">
+    <!-- Left panel - brand (hidden on mobile) -->
+    <div class="hidden lg:flex lg:w-[480px] xl:w-1/2 relative overflow-hidden flex-col bg-[#0b1326]">
+      <!-- Decorative background patterns -->
       <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(circle at 1px 1px, #69dca4 1px, transparent 0); background-size: 40px 40px;"></div>
+      <div class="absolute inset-0 opacity-[0.015]" style="background-image: linear-gradient(rgba(105,220,164,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(105,220,164,0.3) 1px, transparent 1px); background-size: 40px 40px;"></div>
 
-      <div class="relative z-10 flex flex-col items-center gap-6 px-12 text-center">
+      <!-- Centered content -->
+      <div class="relative z-10 flex flex-1 flex-col items-center justify-center gap-6 px-12 text-center">
+        <!-- Logo -->
         <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#69dca4]/10 text-[#69dca4]">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
           </svg>
         </div>
+
+        <!-- Brand -->
         <div>
           <h1 class="text-2xl font-bold text-[#dae2fd] tracking-tight">Shipping Agency</h1>
-          <p class="mt-2 text-sm text-[#64748b] leading-relaxed">Panel de administración</p>
+          <p class="mt-2 text-sm text-[#64748b] leading-relaxed">Panel de administracion</p>
         </div>
-        <div class="mt-4 flex gap-3 text-xs text-[#64748b]">
-          <span class="flex items-center gap-1.5 rounded-full bg-white/[0.04] px-3 py-1.5">
-            <span class="h-1.5 w-1.5 rounded-full bg-[#69dca4]"></span>
-            Envíos Miami → Nicaragua
-          </span>
-          <span class="flex items-center gap-1.5 rounded-full bg-white/[0.04] px-3 py-1.5">
-            <span class="h-1.5 w-1.5 rounded-full bg-[#00A8FF]"></span>
-            Gestión de paquetes
-          </span>
+
+        <!-- Divider -->
+        <div class="h-px w-12 bg-[#69dca4]/20"></div>
+
+        <!-- Features -->
+        <div class="mt-2 space-y-3 text-sm text-[#64748b]">
+          <div class="flex items-center gap-2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#69dca4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span>Gestion de envios Miami a Nicaragua</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#69dca4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span>Control de usuarios y permisos</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#69dca4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span>Tracking en tiempo real</span>
+          </div>
         </div>
+      </div>
+
+      <!-- Footer bar — pinned to bottom, spread to edges -->
+      <div class="relative z-10 flex items-center justify-between px-6 py-4 text-xs text-[#64748b]">
+        <div class="flex items-center gap-1.5">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
+          </svg>
+          <span>Conexion segura - SSL</span>
+        </div>
+        <span>&copy; {{ new Date().getFullYear() }} Shipping Agency</span>
       </div>
     </div>
 
-    <!-- Right panel — login form -->
+    <!-- Right panel - login form -->
     <div class="flex flex-1 items-center justify-center px-6 py-12">
       <div class="w-full max-w-sm">
         <!-- Mobile-only logo -->
@@ -70,57 +103,129 @@ async function handleLogin() {
             </svg>
           </div>
           <h1 class="text-xl font-bold text-[#dae2fd]">Shipping Agency</h1>
+          <p class="text-xs text-[#69dca4]">admin panel</p>
         </div>
 
-        <div>
-          <h2 class="text-xl font-bold text-[#dae2fd]">Iniciar sesión</h2>
-          <p class="mt-1.5 text-sm text-[#64748b]">Ingresá tus credenciales para acceder</p>
-        </div>
-
-        <form class="mt-8 space-y-5" @submit.prevent="handleLogin">
-          <div>
-            <label for="email" class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Email</label>
-            <input
-              id="email"
-              v-model="email"
-              type="email"
-              required
-              autocomplete="email"
-              placeholder="admin@shipping.com"
-              class="admin-input"
-              :disabled="loading"
-            />
+        <!-- Glass card -->
+        <div class="admin-glass-card">
+          <!-- Desktop card header -->
+          <div class="mb-6 hidden flex-col items-center gap-2 lg:flex">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#69dca4]/10 text-[#69dca4]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
+              </svg>
+            </div>
+            <h2 class="text-lg font-bold text-[#dae2fd]">Bienvenido a Shipping Agency</h2>
+            <p class="text-center text-sm text-[#64748b]">Ingresa tus credenciales para acceder al panel de administracion.</p>
           </div>
 
-          <div>
-            <label for="password" class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Contraseña</label>
-            <input
-              id="password"
-              v-model="password"
-              type="password"
-              required
-              autocomplete="current-password"
-              placeholder="••••••••"
-              class="admin-input"
-              :disabled="loading"
-            />
+          <!-- Mobile heading -->
+          <div class="mb-6 lg:hidden">
+            <h2 class="text-lg font-bold text-[#dae2fd]">Iniciar sesion</h2>
+            <p class="mt-1.5 text-sm text-[#64748b]">Ingresa tus credenciales para acceder</p>
           </div>
 
+          <!-- Error -->
           <Transition name="fade">
-            <p v-if="error" class="rounded-lg border border-[#DC2626]/20 bg-[#DC2626]/10 px-3 py-2 text-sm text-[#f87171]">
-              {{ error }}
-            </p>
+            <div v-if="error" class="mb-5 flex items-center gap-2.5 rounded-lg border border-[#DC2626]/20 bg-[#DC2626]/10 px-3 py-2.5 text-sm text-[#f87171]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{{ error }}</span>
+            </div>
           </Transition>
 
-          <button
-            type="submit"
-            :disabled="loading || !email || !password"
-            class="admin-btn admin-btn-primary w-full py-2.5 text-sm"
-          >
-            <svg v-if="loading" class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31.4159265" stroke-dashoffset="10" /></svg>
-            <span>{{ loading ? 'Ingresando...' : 'Iniciar sesión' }}</span>
-          </button>
-        </form>
+          <!-- Form -->
+          <form class="space-y-4" @submit.prevent="handleLogin">
+            <!-- Email -->
+            <div>
+              <label for="email" class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Email</label>
+              <div class="admin-input-group">
+                <span class="admin-input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+                  </svg>
+                </span>
+                <input
+                  id="email"
+                  v-model="email"
+                  type="email"
+                  required
+                  autocomplete="email"
+                  placeholder="admin@shipping.com"
+                  class="admin-input"
+                  :disabled="loading"
+                />
+              </div>
+            </div>
+
+            <!-- Password -->
+            <div>
+              <label for="password" class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Contrasena</label>
+              <div class="admin-input-group">
+                <span class="admin-input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
+                  </svg>
+                </span>
+                <input
+                  id="password"
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  required
+                  autocomplete="current-password"
+                  placeholder="Ingresa tu contrasena"
+                  class="admin-input"
+                  :disabled="loading"
+                />
+                <button
+                  type="button"
+                  class="admin-input-toggle"
+                  :aria-label="showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'"
+                  :aria-pressed="showPassword"
+                  @click="showPassword = !showPassword"
+                >
+                  <!-- Eye open -->
+                  <svg v-if="!showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <!-- Eye closed -->
+                  <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Submit -->
+            <button
+              type="submit"
+              :disabled="loading || !email || !password"
+              class="admin-btn admin-btn-primary w-full py-2.5 text-sm uppercase tracking-wide"
+            >
+              <svg v-if="loading" class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" stroke-dasharray="31.4159265" stroke-dashoffset="10" />
+              </svg>
+              <template v-else>
+                <span>{{ loading ? 'Ingresando...' : 'Iniciar sesion' }}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                </svg>
+              </template>
+            </button>
+          </form>
+        </div>
+
+        <!-- Mobile footer -->
+        <div class="mt-6 flex flex-col items-center gap-2 text-xs text-[#64748b] lg:hidden">
+          <div class="flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
+            </svg>
+            <span>Conexion segura - SSL</span>
+          </div>
+          <span>&copy; {{ new Date().getFullYear() }} Shipping Agency</span>
+        </div>
       </div>
     </div>
 

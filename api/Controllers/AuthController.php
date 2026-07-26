@@ -94,6 +94,30 @@ class AuthController
             jsonError('Usuario no encontrado', 401);
         }
 
+        $dbPerms = $user['permissions'] ?? [];
+        $jwtPerms = $payload['permissions'] ?? [];
+
+        if ($dbPerms !== $jwtPerms) {
+            $newToken = createJwt([
+                'sub'         => $user['id'],
+                'email'       => $user['email'],
+                'role_id'     => $user['role_id'],
+                'role_slug'   => $user['role_slug'],
+                'permissions' => $dbPerms,
+            ]);
+
+            $config = config();
+            $expiresIn = $config['jwt']['expires_in'] ?? 86400;
+
+            setcookie('admin_token', $newToken, [
+                'expires'  => time() + $expiresIn,
+                'path'     => '/',
+                'secure'   => isSecureRequest(),
+                'httponly'  => true,
+                'samesite' => 'Lax',
+            ]);
+        }
+
         jsonSuccess([
             'user' => $user,
             'must_change_password' => (bool) ($user['must_change_password'] ?? false),
