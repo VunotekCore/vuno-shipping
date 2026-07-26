@@ -107,4 +107,105 @@ class PermissionModel
         $stmt->execute(['id' => $permissionId]);
         return (int) $stmt->fetchColumn();
     }
+
+    public function listModules(): array
+    {
+        $stmt = $this->db->query(
+            "SELECT DISTINCT module FROM permission ORDER BY module"
+        );
+        return array_column($stmt->fetchAll(), 'module');
+    }
+
+    public function findByModule(string $module): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT id, module, action, label FROM permission WHERE module = :module'
+        );
+        $stmt->execute(['module' => $module]);
+        return $stmt->fetchAll();
+    }
+
+    public function syncFromDatabase(): array
+    {
+        $excluded = ['permission', 'token_blacklist', 'refresh_tokens'];
+        $singleRecordModules = ['company'];
+
+        $defaultActions = ['create', 'read', 'edit', 'delete'];
+        $singleRecordActions = ['read', 'edit'];
+
+        $stmt = $this->db->query("SHOW TABLES");
+        $tables = array_column($stmt->fetchAll(\PDO::FETCH_NUM), 0);
+
+        $created = [];
+        $skipped = [];
+
+        $this->db->beginTransaction();
+
+        try {
+            foreach ($tables as $table) {
+                if (in_array($table, $excluded, true)) {
+                    $skipped[] = ['module' => $table, 'reason' => 'excluded'];
+                    continue;
+                }
+
+                $check = $this->db->prepare(
+                    'SELECT COUNT(*) FROM permission WHERE module = :module'
+                );
+                $check->execute(['module' => $table]);
+                $existingCount = (int) $check->fetchColumn();
+
+                if ($existingCount > 0) {
+                    $skipped[] = ['module' => $table, 'reason' => 'exists', 'count' => $existingCount];
+                    continue;
+                }
+
+                $actions = in_array($table, $singleRecordModules, true)
+                    ? $singleRecordActions
+                    : $defaultActions;
+
+                foreach ($actions as $action) {
+                    $label = $this->generateLabel($table, $action);
+                    $insert = $this->db->prepare(
+                        'INSERT INTO permission (module, action, label) VALUES (:module, :action, :label)'
+                    );
+                    $insert->execute([
+                        'module' => $table,
+                        'action' => $action,
+                        'label' => $label,
+                    ]);
+                    $permId = (int) $this->db->lastInsertId();
+
+                    $assignAdmin = $this->db->prepare(
+                        'INSERT IGNORE INTO role_permission (role_id, permission_id) VALUES (:role_id, :permission_id)'
+                    );
+                    $assignAdmin->execute([
+                        'role_id' => 1,
+                        'permission_id' => $permId,
+                    ]);
+
+                    $created[] = ['module' => $table, 'action' => $action, 'label' => $label];
+                }
+            }
+
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+
+        return ['created' => $created, 'skipped' => $skipped];
+    }
+
+    private function generateLabel(string $table, string $action): string
+    {
+        $moduleName = ucfirst($table);
+        $actionLabels = [
+            'create' => 'Crear',
+            'read'   => 'Ver',
+            'edit'   => 'Editar',
+            'delete' => 'Eliminar',
+        ];
+        $actionLabel = $actionLabels[$action] ?? ucfirst($action);
+        return "{$actionLabel} {$moduleName}";
+    }
 }

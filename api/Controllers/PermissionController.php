@@ -165,4 +165,29 @@ class PermissionController
         $this->model->delete($id);
         jsonSuccess(null, 'Permiso eliminado');
     }
+
+    public function sync(): never
+    {
+        requireMethod('POST');
+        $payload = requireAuthMiddleware(true);
+        rateLimit('permission_sync', 5, 900);
+
+        if (!hasPermission($payload, 'permission', 'create')) {
+            jsonError('No tenés permiso para sincronizar permisos', 403);
+        }
+
+        $result = $this->model->syncFromDatabase();
+
+        $createdCount = count($result['created']);
+        $skippedCount = count($result['skipped']);
+
+        $message = "{$createdCount} permisos creados, {$skippedCount} módulos ya existían";
+
+        jsonSuccess([
+            'created' => $result['created'],
+            'skipped' => $result['skipped'],
+            'created_count' => $createdCount,
+            'skipped_count' => $skippedCount,
+        ], $message);
+    }
 }

@@ -1,35 +1,109 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { permissionService, type Permission } from '../services/permissionService'
-import { useCrudView } from '../composables/useCrudView'
+import { useToast } from '../composables/useToast'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
-import AppModal from '../components/ui/AppModal.vue'
+import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 
-const {
-  items: permissions, loading, showModal, showDelete,
-  editing, deleting, saving, form,
-  load, openCreate, openEdit, openDelete, save, confirmDelete,
-} = useCrudView<Permission>({
-  service: permissionService,
-  dataKey: 'permissions',
-  entityName: 'Permiso',
-  getDefaultForm: () => ({ module: '', action: '', label: '' }),
-  populateForm: (p) => ({ module: p.module, action: p.action, label: p.label }),
-  validateForm: (f, _isEdit) => {
-    if (!f.module || !f.action) return 'Módulo y acción son requeridos'
-    return null
-  },
-  getEntityId: (p) => p.id,
+const toast = useToast()
+
+const permissions = ref<Permission[]>([])
+const loading = ref(true)
+const syncing = ref(false)
+const showDelete = ref(false)
+const deleting = ref<Permission | null>(null)
+const saving = ref(false)
+
+const page = ref(1)
+const limit = ref(50)
+const total = ref(0)
+const pages = ref(0)
+
+const grouped = computed(() => {
+  const map = new Map<string, Permission[]>()
+  for (const p of permissions.value) {
+    if (!map.has(p.module)) map.set(p.module, [])
+    map.get(p.module)!.push(p)
+  }
+  return map
 })
 
 const columns: TableColumn[] = [
   { key: 'module', label: 'Módulo', width: '150px' },
   { key: 'action', label: 'Acción', width: '150px' },
   { key: 'label', label: 'Etiqueta' },
-  { key: 'actions', label: '', width: '100px', align: 'right' },
+  { key: 'actions', label: '', width: '60px', align: 'right' },
 ]
+
+async function load() {
+  loading.value = true
+  try {
+    const { data } = await permissionService.list({ page: page.value, limit: limit.value })
+    permissions.value = data.data?.permissions ?? []
+    const p = data.data?.pagination
+    if (p) {
+      total.value = p.total
+      pages.value = p.pages
+    }
+  } catch {
+    toast.error('Error al cargar permisos')
+  } finally {
+    loading.value = false
+  }
+}
+
+function goToPage(n: number) {
+  page.value = n
+  load()
+}
+
+function setLimit(newLimit: number) {
+  limit.value = newLimit
+  page.value = 1
+  load()
+}
+
+async function sync() {
+  syncing.value = true
+  try {
+    const { data } = await permissionService.sync()
+    const result = data.data
+    if (result.created_count > 0) {
+      toast.success(`${result.created_count} permisos nuevos creados y asignados al admin`)
+    } else {
+      toast.info('No hay permisos nuevos por sincronizar')
+    }
+    await load()
+  } catch (e: unknown) {
+    const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+    toast.error(msg || 'Error al sincronizar permisos')
+  } finally {
+    syncing.value = false
+  }
+}
+
+function openDelete(item: Permission) {
+  deleting.value = item
+  showDelete.value = true
+}
+
+async function confirmDelete() {
+  if (!deleting.value) return
+  saving.value = true
+  try {
+    await permissionService.delete(deleting.value.id)
+    toast.success('Permiso eliminado')
+    showDelete.value = false
+    await load()
+  } catch (e: unknown) {
+    const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+    toast.error(msg || 'Error al eliminar permiso')
+  } finally {
+    saving.value = false
+  }
+}
 
 onMounted(() => load())
 </script>
@@ -39,69 +113,57 @@ onMounted(() => load())
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-bold text-[#dae2fd]">Permisos</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Gestionar permisos del sistema RBAC</p>
+        <p class="mt-1 text-sm text-[#64748b]">Permisos del sistema RBAC — generados desde la base de datos</p>
       </div>
-      <button class="admin-btn admin-btn-primary" @click="openCreate">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Crear permiso
+      <button class="admin-btn admin-btn-primary" :disabled="syncing" @click="sync">
+        <svg
+          width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          :class="{ 'animate-spin': syncing }"
+        >
+          <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9" />
+        </svg>
+        {{ syncing ? 'Sincronizando...' : 'Sincronizar permisos' }}
       </button>
     </div>
 
     <div class="admin-card">
-      <AppTable :columns="columns" :loading="loading" empty-title="Sin permisos" empty-desc="Creá el primer permiso del sistema.">
-        <tr v-for="p in permissions" :key="p.id">
-          <td>
-            <span class="admin-badge admin-badge-info">{{ p.module }}</span>
-          </td>
-          <td>
-            <span class="admin-badge admin-badge-success">{{ p.action }}</span>
-          </td>
-          <td class="text-[#94a3b8]">{{ p.label || '—' }}</td>
-          <td class="text-right">
-            <div class="flex items-center justify-end gap-1">
-              <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(p)" title="Editar">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(p)" title="Eliminar">
+      <AppTable
+        :columns="columns"
+        :loading="loading"
+        :is-empty="permissions.length === 0"
+        empty-title="Sin permisos"
+        empty-desc="Usá el botón sincronizar para generar permisos desde las tablas de la base de datos."
+      >
+        <template v-for="[module, perms] in grouped" :key="module">
+          <tr class="bg-[#111d2e]/50">
+            <td :colspan="4" class="px-4 py-2">
+              <span class="text-xs font-semibold uppercase tracking-wider text-[#64748b]">{{ module }}</span>
+            </td>
+          </tr>
+          <tr v-for="p in perms" :key="p.id">
+            <td>
+              <span class="admin-badge admin-badge-info">{{ p.module }}</span>
+            </td>
+            <td>
+              <span class="admin-badge admin-badge-success">{{ p.action }}</span>
+            </td>
+            <td class="text-[#94a3b8]">{{ p.label || '—' }}</td>
+            <td class="text-right">
+              <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" title="Eliminar" @click="openDelete(p)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               </button>
-            </div>
-          </td>
-        </tr>
+            </td>
+          </tr>
+        </template>
       </AppTable>
+      <AppPagination :page="page" :pages="pages" :total="total" :limit="limit" @update:page="goToPage" @update:limit="setLimit" />
     </div>
 
-    <!-- Create / Edit Modal -->
-    <AppModal :visible="showModal" :title="editing ? 'Editar permiso' : 'Crear permiso'" @close="showModal = false">
-      <form class="space-y-4" @submit.prevent="save">
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Módulo</label>
-          <input v-model="form.module" class="admin-input" placeholder="ej: user, role, shipment" required :disabled="saving" />
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Acción</label>
-          <input v-model="form.action" class="admin-input" placeholder="ej: read, create, edit, delete" required :disabled="saving" />
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Etiqueta (opcional)</label>
-          <input v-model="form.label" class="admin-input" placeholder="Descripción legible" :disabled="saving" />
-        </div>
-      </form>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <button class="admin-btn admin-btn-ghost" @click="showModal = false" :disabled="saving">Cancelar</button>
-          <button class="admin-btn admin-btn-primary" @click="save" :disabled="saving || !form.module || !form.action">
-            {{ saving ? 'Guardando...' : (editing ? 'Actualizar' : 'Crear') }}
-          </button>
-        </div>
-      </template>
-    </AppModal>
-
-    <!-- Delete Confirmation -->
     <AppConfirmDialog
       :visible="showDelete"
       title="Eliminar permiso"
-      :message="`¿Seguro que querés eliminar el permiso ${deleting?.module}.${deleting?.action}? Esta acción no se puede deshacer.`"
+      :message="`¿Seguro que querés eliminar el permiso ${deleting?.module}.${deleting?.action}? Podés regenerarlo con el botón sincronizar.`"
       confirm-text="Eliminar"
       variant="danger"
       @confirm="confirmDelete"
