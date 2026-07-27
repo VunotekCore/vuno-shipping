@@ -50,6 +50,8 @@ setcookie('admin_token', $token, [
     'samesite' => 'Lax',
 ]);
 
+generateCsrfToken();
+
 jsonSuccess([
     'refresh_token' => $newRefreshToken,
     'user' => [

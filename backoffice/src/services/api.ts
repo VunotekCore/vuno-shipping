@@ -6,9 +6,6 @@ function getCsrfToken(): string {
 }
 
 export function getApiUrl(): string {
-  if (import.meta.env.DEV) {
-    return ''
-  }
   const envUrl = import.meta.env.VITE_API_URL as string | undefined
   if (envUrl) {
     return envUrl

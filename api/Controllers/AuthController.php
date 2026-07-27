@@ -118,6 +118,8 @@ class AuthController
             ]);
         }
 
+        generateCsrfToken();
+
         jsonSuccess([
             'user' => $user,
             'must_change_password' => (bool) ($user['must_change_password'] ?? false),

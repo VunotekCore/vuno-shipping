@@ -79,7 +79,7 @@ function setCorsHeaders(): void
     if (in_array($origin, $allowedOrigins, true)) {
         header("Access-Control-Allow-Origin: $origin");
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, Authorization');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-CSRF-Token');
         header('Access-Control-Allow-Credentials: true');
         header('Access-Control-Max-Age: 86400');
     }

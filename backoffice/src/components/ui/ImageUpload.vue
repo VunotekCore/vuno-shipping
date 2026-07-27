@@ -70,10 +70,13 @@ async function uploadFile(file: File) {
     fd.append('file', file)
     fd.append('folder', props.folder || 'uploads')
 
+    const csrf = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/)?.[1] ?? ''
+
     const res = await fetch(`${getApiUrl()}/imagekit/upload.php`, {
       method: 'POST',
       body: fd,
       credentials: 'include',
+      headers: { 'X-CSRF-Token': csrf },
     })
 
     const data = await res.json()
