@@ -200,4 +200,54 @@ class UserController
         $this->model->delete($id);
         jsonSuccess(null, 'Usuario eliminado');
     }
+
+    public function permissions(): never
+    {
+        requireMethod('GET', 'PUT');
+        $payload = requireAuthMiddleware($_SERVER['REQUEST_METHOD'] === 'PUT');
+
+        if (!hasPermission($payload, 'user', 'read')) {
+            jsonError('No tenés permiso para ver usuarios', 403);
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $id = (int) ($_GET['id'] ?? 0);
+        } else {
+            $data = getJsonInput();
+            $id   = (int) ($data['id'] ?? 0);
+        }
+
+        if ($id <= 0) {
+            jsonError('ID de usuario inválido', 422);
+        }
+
+        $existing = $this->model->findById($id);
+        if ($existing === null) {
+            jsonError('Usuario no encontrado', 404);
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $permissions = $this->model->getPermissions($id);
+            jsonSuccess(['permissions' => $permissions]);
+        }
+
+        if (!hasPermission($payload, 'user', 'edit')) {
+            jsonError('No tenés permiso para asignar permisos', 403);
+        }
+
+        rateLimit('user_permissions', 10, 900);
+
+        $data = getJsonInput();
+        $grantedIds = $data['granted_ids'] ?? [];
+        $revokedIds = $data['revoked_ids'] ?? [];
+
+        if (!is_array($grantedIds) || !is_array($revokedIds)) {
+            jsonError('granted_ids y revoked_ids deben ser arrays', 422);
+        }
+
+        $this->model->setPermissions($id, $grantedIds, $revokedIds);
+        $updated = $this->model->getPermissions($id);
+
+        jsonSuccess(['permissions' => $updated], 'Permisos actualizados');
+    }
 }

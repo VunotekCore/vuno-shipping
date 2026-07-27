@@ -1,5 +1,5 @@
 import api from './api'
-import type { User } from '../types'
+import type { User, UserPermission } from '../types'
 import { buildPageParams } from './pagination'
 
 export type { User }
@@ -21,5 +21,13 @@ export const userService = {
 
   delete(id: number) {
     return api.delete('/user/delete.php', { data: { id } })
+  },
+
+  getPermissions(userId: number) {
+    return api.get<{ success: boolean; data: { permissions: UserPermission[] } }>('/user/permissions.php', { params: { id: userId } })
+  },
+
+  setPermissions(userId: number, grantedIds: number[], revokedIds: number[]) {
+    return api.put('/user/permissions.php', { id: userId, granted_ids: grantedIds, revoked_ids: revokedIds })
   },
 }

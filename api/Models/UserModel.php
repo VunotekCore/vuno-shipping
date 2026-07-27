@@ -163,4 +163,44 @@ class UserModel
         $stmt = $this->db->prepare('DELETE FROM `user` WHERE id = :id');
         return $stmt->execute(['id' => $id]);
     }
+
+    public function getPermissions(int $userId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT p.id, p.module, p.action, p.label, up.granted
+            FROM user_permission up
+            JOIN permission p ON p.id = up.permission_id
+            WHERE up.user_id = :user_id
+            ORDER BY p.module, p.action
+        ");
+        $stmt->execute(['user_id' => $userId]);
+        return $stmt->fetchAll();
+    }
+
+    public function setPermissions(int $userId, array $grantedIds, array $revokedIds): void
+    {
+        $this->db->beginTransaction();
+
+        try {
+            $this->db->prepare('DELETE FROM user_permission WHERE user_id = :user_id')
+                     ->execute(['user_id' => $userId]);
+
+            $stmt = $this->db->prepare(
+                'INSERT INTO user_permission (user_id, permission_id, granted) VALUES (:user_id, :permission_id, :granted)'
+            );
+
+            foreach ($grantedIds as $pid) {
+                $stmt->execute(['user_id' => $userId, 'permission_id' => (int) $pid, 'granted' => 1]);
+            }
+
+            foreach ($revokedIds as $pid) {
+                $stmt->execute(['user_id' => $userId, 'permission_id' => (int) $pid, 'granted' => 0]);
+            }
+
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
 }
