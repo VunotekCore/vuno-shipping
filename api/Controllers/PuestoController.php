@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\PuestoModel;
-use App\Models\DireccionModel;
+use App\Models\AreaModel;
 use App\Config\Database;
 
 class PuestoController
@@ -70,23 +70,23 @@ class PuestoController
 
         $name = sanitizeString($data['name'] ?? '', 100);
         $description = isset($data['description']) ? trim($data['description']) : null;
-        $direccionId = (int) ($data['direccion_id'] ?? 0);
+        $areaId = (int) ($data['area_id'] ?? 0);
 
         if ($name === '') {
             jsonError('El nombre es requerido', 422);
         }
 
-        if ($direccionId <= 0) {
-            jsonError('La dirección es requerida', 422);
+        if ($areaId <= 0) {
+            jsonError('El área es requerida', 422);
         }
 
-        $direccionModel = new DireccionModel(Database::getConnection());
-        $direccion = $direccionModel->findById($direccionId);
-        if ($direccion === null) {
-            jsonError('La dirección seleccionada no existe', 422);
+        $areaModel = new AreaModel(Database::getConnection());
+        $area = $areaModel->findById($areaId);
+        if ($area === null) {
+            jsonError('El área seleccionada no existe', 422);
         }
 
-        $id = $this->model->create($name, $description, $direccionId);
+        $id = $this->model->create($name, $description, $areaId);
         $puesto = $this->model->findById($id);
 
         jsonSuccess(['puesto' => $puesto], 'Puesto creado', 201);
@@ -118,21 +118,21 @@ class PuestoController
         $description = array_key_exists('description', $data)
             ? ($data['description'] !== null ? trim($data['description']) : null)
             : $existing['description'];
-        $direccionId = (int) ($data['direccion_id'] ?? $existing['direccion_id']);
+        $areaId = (int) ($data['area_id'] ?? $existing['area_id']);
 
         if ($name === '') {
             jsonError('El nombre es requerido', 422);
         }
 
-        if ($direccionId !== (int) $existing['direccion_id']) {
-            $direccionModel = new DireccionModel(Database::getConnection());
-            $direccion = $direccionModel->findById($direccionId);
-            if ($direccion === null) {
-                jsonError('La dirección seleccionada no existe', 422);
+        if ($areaId !== (int) $existing['area_id']) {
+            $areaModel = new AreaModel(Database::getConnection());
+            $area = $areaModel->findById($areaId);
+            if ($area === null) {
+                jsonError('El área seleccionada no existe', 422);
             }
         }
 
-        $this->model->update($id, $name, $description, $direccionId);
+        $this->model->update($id, $name, $description, $areaId);
         $updated = $this->model->findById($id);
 
         jsonSuccess(['puesto' => $updated], 'Puesto actualizado');

@@ -47,10 +47,10 @@ const router = createRouter({
           meta: { permission: 'company', action: 'read' },
         },
         {
-          path: 'direcciones',
-          name: 'direcciones',
-          component: () => import('../pages/DireccionesView.vue'),
-          meta: { permission: 'direccion', action: 'read' },
+          path: 'areas',
+          name: 'areas',
+          component: () => import('../pages/AreasView.vue'),
+          meta: { permission: 'area', action: 'read' },
         },
         {
           path: 'puestos',

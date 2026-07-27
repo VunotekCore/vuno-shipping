@@ -31,6 +31,10 @@ export interface Permission {
   created_at: string
 }
 
+export interface UserPermission extends Pick<Permission, 'id' | 'module' | 'action' | 'label'> {
+  granted: number
+}
+
 export interface Pagination {
   page: number
   limit: number
@@ -59,7 +63,7 @@ export interface DocumentSequence {
   created_at: string
 }
 
-export interface Direccion {
+export interface Area {
   id: number
   name: string
   description: string | null
@@ -71,8 +75,8 @@ export interface Puesto {
   id: number
   name: string
   description: string | null
-  direccion_id: number
-  direccion_name: string
+  area_id: number
+  area_name: string
   empleado_count: number
   created_at: string
 }

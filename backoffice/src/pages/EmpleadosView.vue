@@ -10,7 +10,7 @@ import AppModal from '../components/ui/AppModal.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 
-const puestos = ref<Pick<Puesto, 'id' | 'name' | 'direccion_name'>[]>([])
+const puestos = ref<Pick<Puesto, 'id' | 'name' | 'area_name'>[]>([])
 const usuarios = ref<Pick<User, 'id' | 'name' | 'email'>[]>([])
 
 const {
@@ -64,7 +64,7 @@ function availableUsers() {
 async function load() {
   const [, puestoRes, userRes] = await Promise.all([
     loadCrud(),
-    puestoService.listAll().catch(() => ({ data: { data: { puestos: [] as Pick<Puesto, 'id' | 'name' | 'direccion_name'>[] } } })),
+    puestoService.listAll().catch(() => ({ data: { data: { puestos: [] as Pick<Puesto, 'id' | 'name' | 'area_name'>[] } } })),
     userService.list().catch(() => ({ data: { data: { users: [] as Pick<User, 'id' | 'name' | 'email'>[] } } })),
   ])
   puestos.value = puestoRes.data.data?.puestos ?? []
@@ -76,51 +76,104 @@ onMounted(() => load())
 
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 class="text-xl font-bold text-[#dae2fd]">Empleados</h1>
         <p class="mt-1 text-sm text-[#64748b]">Gestionar empleados y su acceso al sistema</p>
       </div>
-      <button class="admin-btn admin-btn-primary" @click="openCreate">
+      <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
         Crear empleado
       </button>
     </div>
 
-    <div class="admin-card">
-      <AppTable :columns="columns" :loading="loading" :is-empty="empleados.length === 0" empty-title="Sin empleados" empty-desc="Creá el primer empleado.">
-        <tr v-for="e in empleados" :key="e.id">
-          <td>
-            <div>
-              <p class="font-medium text-[#dae2fd]">{{ e.name }}</p>
-              <p v-if="e.email" class="text-xs text-[#64748b]">{{ e.email }}</p>
+    <!-- Desktop: Table view (lg+) -->
+    <div class="hidden lg:block">
+      <div class="admin-card">
+        <AppTable :columns="columns" :loading="loading" :is-empty="empleados.length === 0" empty-title="Sin empleados" empty-desc="Creá el primer empleado.">
+          <tr v-for="e in empleados" :key="e.id">
+            <td>
+              <div>
+                <p class="font-medium text-[#dae2fd]">{{ e.name }}</p>
+                <p v-if="e.email" class="text-xs text-[#64748b]">{{ e.email }}</p>
+              </div>
+            </td>
+            <td class="text-[#94a3b8]">{{ e.cedula || '—' }}</td>
+            <td>
+              <span class="admin-badge admin-badge-info">{{ e.puesto_name }}</span>
+            </td>
+            <td class="text-[#94a3b8]">{{ e.phone || '—' }}</td>
+            <td class="text-[#94a3b8]">{{ e.user_name || '—' }}</td>
+            <td class="text-center">
+              <span
+                :class="e.is_active ? 'admin-badge admin-badge-success' : 'admin-badge admin-badge-danger'"
+              >
+                {{ e.is_active ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="flex items-center justify-end gap-1">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(e)" title="Editar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(e)" title="Eliminar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </AppTable>
+        <AppPagination :page="page" :pages="pages" :total="total" :limit="limit" @update:page="goToPage" @update:limit="setLimit" />
+      </div>
+    </div>
+
+    <!-- Mobile/Tablet: Card view (< lg) -->
+    <div class="lg:hidden space-y-3">
+      <template v-if="loading">
+        <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
+            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
+          </div>
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
+          <div class="border-t border-[#1e293b] pt-3">
+            <div class="flex gap-2">
+              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
             </div>
-          </td>
-          <td class="text-[#94a3b8]">{{ e.cedula || '—' }}</td>
-          <td>
-            <span class="admin-badge admin-badge-info">{{ e.puesto_name }}</span>
-          </td>
-          <td class="text-[#94a3b8]">{{ e.phone || '—' }}</td>
-          <td class="text-[#94a3b8]">{{ e.user_name || '—' }}</td>
-          <td class="text-center">
-            <span
-              :class="e.is_active ? 'admin-badge admin-badge-success' : 'admin-badge admin-badge-danger'"
-            >
+          </div>
+        </div>
+      </template>
+      <template v-else-if="empleados.length > 0">
+        <div v-for="e in empleados" :key="e.id" class="admin-card p-4 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <p class="font-medium text-[#dae2fd] truncate">{{ e.name }}</p>
+            <span :class="e.is_active ? 'admin-badge admin-badge-success shrink-0' : 'admin-badge admin-badge-danger shrink-0'">
               {{ e.is_active ? 'Activo' : 'Inactivo' }}
             </span>
-          </td>
-          <td class="text-right">
-            <div class="flex items-center justify-end gap-1">
-              <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(e)" title="Editar">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(e)" title="Eliminar">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </AppTable>
+          </div>
+          <p class="text-sm text-[#94a3b8]">{{ e.cedula || '—' }} · {{ e.puesto_name }} · {{ e.phone || '—' }}</p>
+          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+            <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(e)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Editar
+            </button>
+            <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(e)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </template>
+      <div v-else class="admin-card">
+        <div class="admin-empty-state py-12">
+          <svg class="admin-empty-state-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" />
+          </svg>
+          <p class="admin-empty-state-title">Sin empleados</p>
+          <p class="admin-empty-state-desc">Creá el primer empleado.</p>
+        </div>
+      </div>
       <AppPagination :page="page" :pages="pages" :total="total" :limit="limit" @update:page="goToPage" @update:limit="setLimit" />
     </div>
 
@@ -130,7 +183,7 @@ onMounted(() => load())
           <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Nombre *</label>
           <input v-model="form.name" class="admin-input" placeholder="Nombre completo" required :disabled="saving" maxlength="100" />
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Cédula</label>
             <input v-model="form.cedula" class="admin-input" placeholder="000-000000-0000A" :disabled="saving" maxlength="30" />
@@ -140,7 +193,7 @@ onMounted(() => load())
             <input v-model="form.phone" class="admin-input" placeholder="+505 8888-8888" :disabled="saving" maxlength="30" />
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Email</label>
             <input v-model="form.email" type="email" class="admin-input" placeholder="correo@ejemplo.com" :disabled="saving" />
@@ -154,7 +207,7 @@ onMounted(() => load())
           <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Puesto *</label>
           <select v-model="form.puesto_id" class="admin-select" required :disabled="saving">
             <option :value="0" disabled>Seleccionar puesto</option>
-            <option v-for="p in puestos" :key="p.id" :value="p.id">{{ p.name }} ({{ p.direccion_name }})</option>
+            <option v-for="p in puestos" :key="p.id" :value="p.id">{{ p.name }} ({{ p.area_name }})</option>
           </select>
         </div>
         <div>

@@ -17,13 +17,13 @@ class PuestoModel
     public function listPaginated(int $limit, int $offset): array
     {
         $stmt = $this->db->prepare("
-            SELECT p.id, p.name, p.description, p.direccion_id, d.name AS direccion_name, p.created_at,
+            SELECT p.id, p.name, p.description, p.area_id, a.name AS area_name, p.created_at,
                    COUNT(e.id) AS empleado_count
             FROM puesto p
-            JOIN direccion d ON d.id = p.direccion_id
+            JOIN area a ON a.id = p.area_id
             LEFT JOIN empleado e ON e.puesto_id = p.id
             GROUP BY p.id
-            ORDER BY d.name, p.name
+            ORDER BY a.name, p.name
             LIMIT :limit OFFSET :offset
         ");
         $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
@@ -35,10 +35,10 @@ class PuestoModel
     public function listAll(): array
     {
         $stmt = $this->db->query("
-            SELECT p.id, p.name, d.name AS direccion_name
+            SELECT p.id, p.name, a.name AS area_name
             FROM puesto p
-            JOIN direccion d ON d.id = p.direccion_id
-            ORDER BY d.name, p.name
+            JOIN area a ON a.id = p.area_id
+            ORDER BY a.name, p.name
         ");
         return $stmt->fetchAll();
     }
@@ -46,9 +46,9 @@ class PuestoModel
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare("
-            SELECT p.id, p.name, p.description, p.direccion_id, d.name AS direccion_name, p.created_at
+            SELECT p.id, p.name, p.description, p.area_id, a.name AS area_name, p.created_at
             FROM puesto p
-            JOIN direccion d ON d.id = p.direccion_id
+            JOIN area a ON a.id = p.area_id
             WHERE p.id = :id LIMIT 1
         ");
         $stmt->execute(['id' => $id]);
@@ -56,21 +56,21 @@ class PuestoModel
         return $row ?: null;
     }
 
-    public function create(string $name, ?string $description, int $direccionId): int
+    public function create(string $name, ?string $description, int $areaId): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO puesto (name, description, direccion_id) VALUES (:name, :description, :direccion_id)'
+            'INSERT INTO puesto (name, description, area_id) VALUES (:name, :description, :area_id)'
         );
-        $stmt->execute(['name' => $name, 'description' => $description, 'direccion_id' => $direccionId]);
+        $stmt->execute(['name' => $name, 'description' => $description, 'area_id' => $areaId]);
         return (int) $this->db->lastInsertId();
     }
 
-    public function update(int $id, string $name, ?string $description, int $direccionId): bool
+    public function update(int $id, string $name, ?string $description, int $areaId): bool
     {
         $stmt = $this->db->prepare(
-            'UPDATE puesto SET name = :name, description = :description, direccion_id = :direccion_id WHERE id = :id'
+            'UPDATE puesto SET name = :name, description = :description, area_id = :area_id WHERE id = :id'
         );
-        return $stmt->execute(['id' => $id, 'name' => $name, 'description' => $description, 'direccion_id' => $direccionId]);
+        return $stmt->execute(['id' => $id, 'name' => $name, 'description' => $description, 'area_id' => $areaId]);
     }
 
     public function delete(int $id): bool

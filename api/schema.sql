@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS document_sequence (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS direccion (
+CREATE TABLE IF NOT EXISTS area (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT NULL,
@@ -110,10 +110,10 @@ CREATE TABLE IF NOT EXISTS puesto (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT NULL,
-    direccion_id INT NOT NULL,
+    area_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (direccion_id) REFERENCES direccion(id) ON DELETE RESTRICT,
-    INDEX idx_puesto_direccion (direccion_id)
+    FOREIGN KEY (area_id) REFERENCES area(id) ON DELETE RESTRICT,
+    INDEX idx_puesto_area (area_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS empleado (

@@ -5,24 +5,24 @@ namespace App\Models;
 
 use PDO;
 
-class DireccionModel
+class AreaModel
 {
     public function __construct(private PDO $db) {}
 
     public function count(): int
     {
-        return (int) $this->db->query('SELECT COUNT(*) FROM direccion')->fetchColumn();
+        return (int) $this->db->query('SELECT COUNT(*) FROM area')->fetchColumn();
     }
 
     public function listPaginated(int $limit, int $offset): array
     {
         $stmt = $this->db->prepare("
-            SELECT d.id, d.name, d.description, d.created_at,
+            SELECT a.id, a.name, a.description, a.created_at,
                    COUNT(p.id) AS puesto_count
-            FROM direccion d
-            LEFT JOIN puesto p ON p.direccion_id = d.id
-            GROUP BY d.id
-            ORDER BY d.name
+            FROM area a
+            LEFT JOIN puesto p ON p.area_id = a.id
+            GROUP BY a.id
+            ORDER BY a.name
             LIMIT :limit OFFSET :offset
         ");
         $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
@@ -33,14 +33,14 @@ class DireccionModel
 
     public function listAll(): array
     {
-        $stmt = $this->db->query('SELECT id, name FROM direccion ORDER BY name');
+        $stmt = $this->db->query('SELECT id, name FROM area ORDER BY name');
         return $stmt->fetchAll();
     }
 
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT id, name, description, created_at FROM direccion WHERE id = :id LIMIT 1'
+            'SELECT id, name, description, created_at FROM area WHERE id = :id LIMIT 1'
         );
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
@@ -50,7 +50,7 @@ class DireccionModel
     public function create(string $name, ?string $description): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO direccion (name, description) VALUES (:name, :description)'
+            'INSERT INTO area (name, description) VALUES (:name, :description)'
         );
         $stmt->execute(['name' => $name, 'description' => $description]);
         return (int) $this->db->lastInsertId();
@@ -59,21 +59,21 @@ class DireccionModel
     public function update(int $id, string $name, ?string $description): bool
     {
         $stmt = $this->db->prepare(
-            'UPDATE direccion SET name = :name, description = :description WHERE id = :id'
+            'UPDATE area SET name = :name, description = :description WHERE id = :id'
         );
         return $stmt->execute(['id' => $id, 'name' => $name, 'description' => $description]);
     }
 
     public function delete(int $id): bool
     {
-        $stmt = $this->db->prepare('DELETE FROM direccion WHERE id = :id');
+        $stmt = $this->db->prepare('DELETE FROM area WHERE id = :id');
         return $stmt->execute(['id' => $id]);
     }
 
-    public function countPuestos(int $direccionId): int
+    public function countPuestos(int $areaId): int
     {
-        $stmt = $this->db->prepare('SELECT COUNT(*) FROM puesto WHERE direccion_id = :id');
-        $stmt->execute(['id' => $direccionId]);
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM puesto WHERE area_id = :id');
+        $stmt->execute(['id' => $areaId]);
         return (int) $stmt->fetchColumn();
     }
 }
