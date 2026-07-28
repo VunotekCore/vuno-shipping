@@ -392,7 +392,7 @@ onMounted(async () => {
               <AppFormField
                 :model-value="fv('percentage_of_value')"
                 @update:model-value="(v: string | number | null) => form.percentage_of_value = v"
-                label="% del valor"
+                label="Del valor"
                 type="number"
                 icon="percent"
                 placeholder="0.00"
