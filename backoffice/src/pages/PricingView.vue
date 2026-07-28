@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, computed } from 'vue'
+import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { pricingRuleService, type PricingRule } from '../services/pricingRuleService'
 import { zoneService, type Zone } from '../services/zoneService'
 import { useCrudView } from '../composables/useCrudView'
@@ -50,12 +50,28 @@ const {
   getEntityId: (r) => r.id,
 })
 
-const typeName = computed(() => {
+const visibleTypeName = ref<string | null>(null)
+
+watch(showModal, () => {
+  if (!showModal.value) return
   const tid = form.value.type_id
-  if (tid == null) return null
+  if (tid == null) { visibleTypeName.value = null; return }
   const t = ruleTypes.value.find(t => t.id === tid)
-  return t?.name ?? null
+  visibleTypeName.value = t?.name ?? null
 })
+
+function onTypeChange(e: Event) {
+  const raw = (e.target as HTMLSelectElement).value
+  if (raw === '') {
+    form.value.type_id = null
+    visibleTypeName.value = null
+    return
+  }
+  const id = Number(raw)
+  form.value.type_id = id
+  const t = ruleTypes.value.find(t => t.id === id)
+  visibleTypeName.value = t?.name ?? null
+}
 
 const fieldErrors = reactive<Record<string, string>>({
   name: '', base_price: '', percentage_of_value: '',
@@ -299,7 +315,7 @@ onMounted(async () => {
                 <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Tipo de cálculo</label>
                 <select
                   :value="form.type_id ?? ''"
-                  @change="form.type_id = ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null"
+                  @change="onTypeChange"
                   class="admin-input"
                   :disabled="saving"
                 >
@@ -364,7 +380,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div v-if="typeName === 'percentage_value'">
+        <div v-if="visibleTypeName === 'percentage_value'">
           <div class="admin-form-divider" />
           <!-- Sección: % del valor -->
           <div>
@@ -393,7 +409,7 @@ onMounted(async () => {
         </div>
 
         <!-- Sección: Cálculo volumétrico -->
-        <div v-if="typeName === null || typeName === 'weight' || typeName === 'volume'">
+        <div v-if="visibleTypeName === null || visibleTypeName === 'weight' || visibleTypeName === 'volume'">
           <div class="admin-form-divider" />
           <div class="admin-form-section">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
@@ -420,14 +436,14 @@ onMounted(async () => {
         <div class="admin-form-divider" />
 
         <!-- Sección: Costo por unidad -->
-        <template v-if="typeName !== null && typeName !== 'percentage_value' && typeName !== 'fixed'">
+        <template v-if="visibleTypeName !== null && visibleTypeName !== 'percentage_value' && visibleTypeName !== 'fixed'">
           <div class="admin-form-divider" />
           <div>
             <div class="admin-form-section">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
               Costo por unidad
             </div>
-            <div v-if="typeName === 'weight'" class="mt-3">
+            <div v-if="visibleTypeName === 'weight'" class="mt-3">
               <AppFormField
                 :model-value="fv('price_per_kg')"
                 @update:model-value="(v: string | number | null) => form.price_per_kg = v"
@@ -443,7 +459,7 @@ onMounted(async () => {
                 @input="clearError('price_per_kg')"
               />
             </div>
-            <div v-if="typeName === 'volume'" class="mt-3">
+            <div v-if="visibleTypeName === 'volume'" class="mt-3">
               <AppFormField
                 :model-value="fv('price_per_volume')"
                 @update:model-value="(v: string | number | null) => form.price_per_volume = v"
@@ -459,7 +475,7 @@ onMounted(async () => {
                 @input="clearError('price_per_volume')"
               />
             </div>
-            <div v-if="typeName === 'distance'" class="mt-3">
+            <div v-if="visibleTypeName === 'distance'" class="mt-3">
               <AppFormField
                 :model-value="fv('price_per_km')"
                 @update:model-value="(v: string | number | null) => form.price_per_km = v"
@@ -475,7 +491,7 @@ onMounted(async () => {
                 @input="clearError('price_per_km')"
               />
             </div>
-            <div v-if="typeName === 'zone'" class="mt-3">
+            <div v-if="visibleTypeName === 'zone'" class="mt-3">
               <AppFormField
                 :model-value="fv('price_per_zone')"
                 @update:model-value="(v: string | number | null) => form.price_per_zone = v"
@@ -495,7 +511,7 @@ onMounted(async () => {
         </template>
 
         <!-- Sin tipo seleccionado: mostrar todos los costos por unidad -->
-        <template v-if="typeName === null">
+        <template v-if="visibleTypeName === null">
           <div class="admin-form-divider" />
           <div>
             <div class="admin-form-section">
@@ -538,7 +554,7 @@ onMounted(async () => {
         <div class="admin-form-divider" />
 
         <!-- Sección: Límites de peso -->
-        <div v-if="typeName === null || typeName === 'weight'">
+        <div v-if="visibleTypeName === null || visibleTypeName === 'weight'">
           <div class="admin-form-divider" />
           <div>
             <div class="admin-form-section">
@@ -579,7 +595,7 @@ onMounted(async () => {
         </div>
 
         <!-- Sección: Zonas (solo para zone / fixed) -->
-        <div v-if="typeName === 'zone' || typeName === 'fixed'">
+        <div v-if="visibleTypeName === 'zone' || visibleTypeName === 'fixed'">
           <div class="admin-form-divider" />
           <div>
             <div class="admin-form-section">
