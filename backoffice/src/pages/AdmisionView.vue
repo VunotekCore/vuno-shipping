@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../services/api'
 import { packageService, type Package } from '../services/packageService'
 import { clientService, type Client } from '../services/clientService'
 import { zoneService, type Zone } from '../services/zoneService'
@@ -34,13 +35,10 @@ const clients = ref<Client[]>([])
 const zones = ref<Zone[]>([])
 const pricingRules = ref<PricingRule[]>([])
 const deliveryTypes = ref<{ id: number; name: string; description: string | null }[]>([])
+const loadingReferences = ref(true)
 const showClientCreate = ref(false)
 const clientSearch = ref('')
 const clientCreating = ref(false)
-
-const filteredPricingRules = computed(() =>
-  pricingRules.value.filter(r => r.delivery_type_name === form.delivery_type)
-)
 
 const selectedPricingRule = computed(() =>
   pricingRules.value.find(r => r.id === form.pricing_rule_id) ?? null
@@ -108,7 +106,20 @@ const deliveryTypeLabel = computed(() => {
   return dt?.description || form.delivery_type
 })
 
+// Normalize numeric fields from PHP (DECIMAL → string → number)
+function normalizePricingRule(r: PricingRule): PricingRule {
+  return {
+    ...r,
+    base_price: Number(r.base_price),
+    price_per_kg: r.price_per_kg != null ? Number(r.price_per_kg) : null,
+    price_per_volume: r.price_per_volume != null ? Number(r.price_per_volume) : null,
+    min_price: r.min_price != null ? Number(r.min_price) : null,
+    percentage_of_value: Number(r.percentage_of_value),
+  }
+}
+
 async function loadReferenceData() {
+  loadingReferences.value = true
   const load = async <T>(fn: () => Promise<{ data: { data?: { [key: string]: T[] } } }>, key: string): Promise<T[]> => {
     try {
       const res = await fn()
@@ -126,8 +137,9 @@ async function loadReferenceData() {
   ])
   clients.value = clientsData
   zones.value = zonesData
-  pricingRules.value = rulesData
+  pricingRules.value = rulesData.map(normalizePricingRule)
   deliveryTypes.value = dtData
+  loadingReferences.value = false
 }
 
 function selectClient(client: Client | null) {
@@ -135,12 +147,11 @@ function selectClient(client: Client | null) {
   if (client) {
     form.sender_name = client.name
     form.sender_phone = client.phone || ''
-    clientSearch.value = client.name
   } else {
     form.sender_name = ''
     form.sender_phone = ''
-    clientSearch.value = ''
   }
+  clientSearch.value = ''
   showClientCreate.value = false
 }
 
@@ -190,31 +201,29 @@ async function calculatePricing() {
   const height = form.height ?? 0
   const dt = deliveryTypes.value.find((d) => d.name === form.delivery_type)
 
-  if (!dt || !form.pricing_rule_id || (weight <= 0 && length <= 0)) {
+  if (!dt || (weight <= 0 && length <= 0)) {
+    return
+  }
+  if (!form.pricing_rule_id) {
     pricingResult.value = null
     return
   }
 
   pricingLoading.value = true
   try {
-    const res = await fetch(`/api/pricing/calculate.php`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        weight,
-        length,
-        width,
-        height,
-        declared_value: form.declared_value ?? 0,
-        delivery_type_id: dt.id,
-        zone_id: form.zone_id,
-        pricing_rule_id: form.pricing_rule_id,
-      }),
+    const res = await api.post('/pricing/calculate.php', {
+      weight,
+      length,
+      width,
+      height,
+      declared_value: form.declared_value ?? 0,
+      delivery_type_id: dt.id,
+      zone_id: form.zone_id,
+      pricing_rule_id: form.pricing_rule_id,
     })
-    const json = await res.json()
-    if (json.success && json.data?.pricing) {
-      pricingResult.value = json.data.pricing
+    const body = res.data
+    if (body.success && body.data?.pricing) {
+      pricingResult.value = body.data.pricing
     } else {
       pricingResult.value = null
     }
@@ -224,6 +233,11 @@ async function calculatePricing() {
     pricingLoading.value = false
   }
 }
+
+// Reset pricing rule when delivery type changes (B1)
+watch(() => form.delivery_type, () => {
+  form.pricing_rule_id = null
+})
 
 const pricingDebounce = ref<ReturnType<typeof setTimeout> | null>(null)
 watch(
@@ -330,7 +344,29 @@ onMounted(() => loadReferenceData())
       </div>
     </div>
 
-    <template v-if="!createdPackage">
+    <!-- Loading skeleton (B4) -->
+    <template v-if="loadingReferences">
+      <div class="grid gap-6 lg:grid-cols-3">
+        <div class="space-y-6 lg:col-span-2">
+          <div v-for="i in 4" :key="i" class="admin-card p-5 space-y-4">
+            <div class="h-4 w-24 animate-pulse rounded bg-[#1e293b]" />
+            <div class="h-10 w-full animate-pulse rounded bg-[#1e293b]" />
+            <div class="grid grid-cols-2 gap-3">
+              <div class="h-10 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-10 animate-pulse rounded bg-[#1e293b]" />
+            </div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div class="admin-card p-5 space-y-3">
+            <div class="h-4 w-20 animate-pulse rounded bg-[#1e293b]" />
+            <div v-for="i in 4" :key="i" class="h-4 animate-pulse rounded bg-[#1e293b]" />
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template v-else-if="!createdPackage">
       <!-- Form -->
       <div class="grid gap-6 lg:grid-cols-3">
         <!-- Left: form fields -->
@@ -352,7 +388,7 @@ onMounted(() => loadReferenceData())
                   autocomplete="off"
                 />
                 <div
-                  v-if="clientSearch && filteredClients.length > 0"
+                  v-if="clientSearch && filteredClients.length > 0 && !selectedClient"
                   class="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-[#1e293b] bg-[#111d2e] shadow-xl"
                 >
                   <button
@@ -531,8 +567,8 @@ onMounted(() => loadReferenceData())
                 <AppDropdown
                   :model-value="form.pricing_rule_id"
                   @update:model-value="(v: string | number | null) => form.pricing_rule_id = v as number | null"
-                  :options="filteredPricingRules.map(r => ({ value: r.id, label: pricingRuleLabel(r) }))"
-                  :placeholder="filteredPricingRules.length === 0 ? 'Sin reglas para este tipo' : 'Seleccionar regla de precio...'"
+                  :options="pricingRules.map(r => ({ value: r.id, label: pricingRuleLabel(r) }))"
+                  :placeholder="pricingRules.length === 0 ? 'Sin reglas de precio' : 'Seleccionar regla de precio...'"
                 />
               </div>
               <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -675,9 +711,9 @@ onMounted(() => loadReferenceData())
               <div v-if="selectedPricingRule" class="rounded-lg bg-[#1a2744]/50 p-3 space-y-1">
                 <p class="text-xs font-medium text-[#69dca4]">{{ selectedPricingRule.name }}</p>
                 <p class="text-[11px] text-[#64748b]">
-                  {{ selectedPricingRule.type_name === 'weight' ? `$${selectedPricingRule.price_per_kg?.toFixed(2)}/lb` : '' }}
+                  {{ selectedPricingRule.type_name === 'weight' && selectedPricingRule.price_per_kg ? `$${selectedPricingRule.price_per_kg.toFixed(2)}/lb` : '' }}
                   {{ selectedPricingRule.type_name === 'percentage_value' ? `$${selectedPricingRule.base_price.toFixed(2)} base + ${selectedPricingRule.percentage_of_value}% del valor` : '' }}
-                  {{ selectedPricingRule.type_name === 'volume' ? `$${selectedPricingRule.price_per_volume?.toFixed(2)}/vol` : '' }}
+                  {{ selectedPricingRule.type_name === 'volume' && selectedPricingRule.price_per_volume ? `$${selectedPricingRule.price_per_volume.toFixed(2)}/vol` : '' }}
                   {{ selectedPricingRule.min_price && selectedPricingRule.min_price > 0 ? `· Mín $${selectedPricingRule.min_price.toFixed(2)}` : '' }}
                 </p>
               </div>

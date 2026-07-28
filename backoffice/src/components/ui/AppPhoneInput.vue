@@ -58,7 +58,7 @@ function flushFormat(input: HTMLInputElement, rawNew: string, cursorStart: numbe
 
   input.value = display
   setCursorAfterDigits(input, Math.min(cursorTarget, digits.length))
-  emit('update:modelValue', digits.length > 0 ? formatPhone(digits) : '')
+  emit('update:modelValue', digits)
 }
 
 function onBeforeInput(e: InputEvent) {
@@ -70,19 +70,23 @@ function onBeforeInput(e: InputEvent) {
   const end = input.selectionEnd ?? start
 
   let rawNew: string
+  let newCursor: number
   if (e.inputType === 'deleteContentBackward') {
     rawNew = oldVal.slice(0, Math.max(0, start - 1)) + oldVal.slice(end)
+    newCursor = Math.max(0, start - 1)
   } else if (e.inputType === 'deleteContentForward') {
     rawNew = oldVal.slice(0, start) + oldVal.slice(Math.min(end + 1, oldVal.length))
+    newCursor = start
   } else if ((e.inputType === 'insertText' || e.inputType === 'insertFromPaste') && e.data) {
     rawNew = oldVal.slice(0, start) + e.data + oldVal.slice(end)
+    newCursor = start + e.data.length
   } else {
     return
   }
 
   e.preventDefault()
   applying = true
-  flushFormat(input, rawNew, start)
+  flushFormat(input, rawNew, newCursor)
   applying = false
 }
 
@@ -92,7 +96,7 @@ function onInputFallback(e: Event) {
   const digits = extractDigits(input.value).slice(0, DIGIT_COUNT)
   const display = digits.length > 0 ? formatPhone(digits).replace(COUNTRY_PREFIX + ' ', '') : ''
   input.value = display
-  emit('update:modelValue', digits.length > 0 ? formatPhone(digits) : '')
+  emit('update:modelValue', digits)
 }
 
 function onPasteFallback(e: ClipboardEvent) {
