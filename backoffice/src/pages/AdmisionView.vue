@@ -113,7 +113,7 @@ const visibleFields = computed(() => {
   if (type === 'weight') return { weight: true, dims: false, declared: false }
   if (type === 'volume') return { weight: false, dims: true, declared: false }
   if (type === 'percentage value') return { weight: false, dims: false, declared: true }
-  return { weight: true, dims: true, declared: true }
+  return { weight: false, dims: false, declared: false }
 })
 
 // Normalize numeric fields from PHP (DECIMAL → string → number)
@@ -215,7 +215,9 @@ async function calculatePricing() {
   const height = form.height ?? 0
   const dt = deliveryTypes.value.find((d) => d.name === form.delivery_type)
 
-  if (!dt || (weight <= 0 && length <= 0)) {
+  const type = selectedPricingRule.value?.type_name
+  const needsWeightOrDims = !type || type === 'weight' || type === 'volume'
+  if (!dt || (needsWeightOrDims && weight <= 0 && length <= 0)) {
     return
   }
   if (!form.pricing_rule_id) {
