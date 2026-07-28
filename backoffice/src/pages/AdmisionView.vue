@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, reactive, onMounted } from 'vue'
+import { ref, computed, watch, reactive, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../services/api'
 import { packageService, type Package } from '../services/packageService'
@@ -18,6 +18,8 @@ const toast = useToast()
 
 const creating = ref(false)
 const pricingLoading = ref(false)
+const clienteRef = ref<HTMLElement | null>(null)
+const pricingOffset = ref(96)
 const pricingResult = ref<{
   volumetric_weight: number
   chargeable_weight: number
@@ -140,6 +142,10 @@ async function loadReferenceData() {
   pricingRules.value = rulesData.map(normalizePricingRule)
   deliveryTypes.value = dtData
   loadingReferences.value = false
+  await nextTick()
+  if (clienteRef.value) {
+    pricingOffset.value = clienteRef.value.getBoundingClientRect().top
+  }
 }
 
 function selectClient(client: Client | null) {
@@ -368,11 +374,11 @@ onMounted(() => loadReferenceData())
 
     <template v-else-if="!createdPackage">
       <!-- Form -->
-      <div class="grid gap-6 lg:grid-cols-3">
+      <div class="grid gap-6 lg:grid-cols-1 lg:mr-[380px]">
         <!-- Left: form fields -->
-        <div class="space-y-6 lg:col-span-2">
+        <div class="space-y-6">
           <!-- Cliente -->
-          <div class="admin-card p-5">
+          <div ref="clienteRef" class="admin-card p-5">
             <p class="admin-form-section mb-4">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
               Cliente</p>
@@ -668,73 +674,74 @@ onMounted(() => loadReferenceData())
           </div>
         </div>
 
-        <!-- Right: pricing preview -->
-        <div class="space-y-4">
-          <div class="admin-card p-5 lg:sticky lg:top-24" style="overflow: visible">
-            <p class="admin-form-section mb-4">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-              Cotización</p>
+      </div>
 
-            <div v-if="pricingLoading" class="space-y-3">
-              <div v-for="i in 4" :key="i" class="h-4 animate-pulse rounded bg-[#1e293b]" />
+      <!-- Pricing panel: fixed on desktop, in-flow on mobile -->
+      <div class="lg:fixed lg:right-8 lg:w-[340px] lg:z-10 space-y-4" :style="`top: ${pricingOffset}px`">
+        <div class="admin-card p-5">
+          <p class="admin-form-section mb-4">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            Cotización</p>
+
+          <div v-if="pricingLoading" class="space-y-3">
+            <div v-for="i in 4" :key="i" class="h-4 animate-pulse rounded bg-[#1e293b]" />
+          </div>
+
+          <div v-else-if="pricingResult" class="space-y-3">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-[#94a3b8]">Peso físico</span>
+              <span class="text-[#dae2fd] font-medium">{{ form.weight ? form.weight.toFixed(2) : '0' }} lb</span>
             </div>
-
-            <div v-else-if="pricingResult" class="space-y-3">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-[#94a3b8]">Peso volumétrico</span>
+              <span class="text-[#dae2fd] font-medium">{{ pricingResult.volumetric_weight.toFixed(2) }} lb</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-[#94a3b8]">Peso cobrable</span>
+              <span class="text-[#dae2fd] font-medium">{{ pricingResult.chargeable_weight.toFixed(2) }} lb</span>
+            </div>
+            <div class="border-t border-[#1e293b] pt-2">
               <div class="flex items-center justify-between text-sm">
-                <span class="text-[#94a3b8]">Peso físico</span>
-                <span class="text-[#dae2fd] font-medium">{{ form.weight ? form.weight.toFixed(2) : '0' }} lb</span>
+                <span class="text-[#94a3b8]">Flete</span>
+                <span class="text-[#dae2fd] font-medium">{{ formatCurrency(pricingResult.flete_cost) }}</span>
               </div>
               <div class="flex items-center justify-between text-sm">
-                <span class="text-[#94a3b8]">Peso volumétrico</span>
-                <span class="text-[#dae2fd] font-medium">{{ pricingResult.volumetric_weight.toFixed(2) }} lb</span>
-              </div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-[#94a3b8]">Peso cobrable</span>
-                <span class="text-[#dae2fd] font-medium">{{ pricingResult.chargeable_weight.toFixed(2) }} lb</span>
-              </div>
-              <div class="border-t border-[#1e293b] pt-2">
-                <div class="flex items-center justify-between text-sm">
-                  <span class="text-[#94a3b8]">Flete</span>
-                  <span class="text-[#dae2fd] font-medium">{{ formatCurrency(pricingResult.flete_cost) }}</span>
-                </div>
-                <div class="flex items-center justify-between text-sm">
-                  <span class="text-[#94a3b8]">Delivery</span>
-                  <span class="text-[#dae2fd] font-medium">{{ formatCurrency(pricingResult.delivery_cost) }}</span>
-                </div>
-              </div>
-              <div class="border-t border-[#1e293b] pt-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-semibold text-[#dae2fd]">Total</span>
-                  <span class="text-lg font-bold text-[#69dca4]">{{ formatCurrency(pricingResult.total_amount) }}</span>
-                </div>
-              </div>
-              <div v-if="selectedPricingRule" class="rounded-lg bg-[#1a2744]/50 p-3 space-y-1">
-                <p class="text-xs font-medium text-[#69dca4]">{{ selectedPricingRule.name }}</p>
-                <p class="text-[11px] text-[#64748b]">
-                  {{ selectedPricingRule.type_name === 'weight' && selectedPricingRule.price_per_kg ? `$${selectedPricingRule.price_per_kg.toFixed(2)}/lb` : '' }}
-                  {{ selectedPricingRule.type_name === 'percentage_value' ? `$${selectedPricingRule.base_price.toFixed(2)} base + ${selectedPricingRule.percentage_of_value}% del valor` : '' }}
-                  {{ selectedPricingRule.type_name === 'volume' && selectedPricingRule.price_per_volume ? `$${selectedPricingRule.price_per_volume.toFixed(2)}/vol` : '' }}
-                  {{ selectedPricingRule.min_price && selectedPricingRule.min_price > 0 ? `· Mín $${selectedPricingRule.min_price.toFixed(2)}` : '' }}
-                </p>
+                <span class="text-[#94a3b8]">Delivery</span>
+                <span class="text-[#dae2fd] font-medium">{{ formatCurrency(pricingResult.delivery_cost) }}</span>
               </div>
             </div>
-
-            <div v-else class="py-6 text-center">
-              <svg class="mx-auto mb-2 h-8 w-8 text-[#475569]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p class="text-sm text-[#64748b]">Seleccioná un tipo de entrega, peso y regla de precio para cotizar</p>
+            <div class="border-t border-[#1e293b] pt-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-semibold text-[#dae2fd]">Total</span>
+                <span class="text-lg font-bold text-[#69dca4]">{{ formatCurrency(pricingResult.total_amount) }}</span>
+              </div>
+            </div>
+            <div v-if="selectedPricingRule" class="rounded-lg bg-[#1a2744]/50 p-3 space-y-1">
+              <p class="text-xs font-medium text-[#69dca4]">{{ selectedPricingRule.name }}</p>
+              <p class="text-[11px] text-[#64748b]">
+                {{ selectedPricingRule.type_name === 'weight' && selectedPricingRule.price_per_kg ? `$${selectedPricingRule.price_per_kg.toFixed(2)}/lb` : '' }}
+                {{ selectedPricingRule.type_name === 'percentage_value' ? `$${selectedPricingRule.base_price.toFixed(2)} base + ${selectedPricingRule.percentage_of_value}% del valor` : '' }}
+                {{ selectedPricingRule.type_name === 'volume' && selectedPricingRule.price_per_volume ? `$${selectedPricingRule.price_per_volume.toFixed(2)}/vol` : '' }}
+                {{ selectedPricingRule.min_price && selectedPricingRule.min_price > 0 ? `· Mín $${selectedPricingRule.min_price.toFixed(2)}` : '' }}
+              </p>
             </div>
           </div>
 
-          <!-- Reference info -->
-          <div class="admin-card p-4 text-xs text-[#64748b] space-y-1">
-            <p><span class="font-medium text-[#94a3b8]">Tipo de entrega:</span> {{ deliveryTypeLabel }}</p>
-            <p v-if="form.zone_id">
-              <span class="font-medium text-[#94a3b8]">Zona:</span>
-              {{ zones.find((z) => z.id === form.zone_id)?.name || '—' }}
-            </p>
+          <div v-else class="py-6 text-center">
+            <svg class="mx-auto mb-2 h-8 w-8 text-[#475569]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p class="text-sm text-[#64748b]">Seleccioná un tipo de entrega, peso y regla de precio para cotizar</p>
           </div>
+        </div>
+
+        <!-- Reference info -->
+        <div class="admin-card p-4 text-xs text-[#64748b] space-y-1">
+          <p><span class="font-medium text-[#94a3b8]">Tipo de entrega:</span> {{ deliveryTypeLabel }}</p>
+          <p v-if="form.zone_id">
+            <span class="font-medium text-[#94a3b8]">Zona:</span>
+            {{ zones.find((z) => z.id === form.zone_id)?.name || '—' }}
+          </p>
         </div>
       </div>
     </template>
