@@ -45,7 +45,7 @@ class PricingService
             $fleteCost += $chargeableWeight * (float)($pricingRule['price_per_kg'] ?? 0);
         } elseif ($typeName === 'volume' && $volumetricWeight > 0) {
             $fleteCost += $volumetricWeight * (float)($pricingRule['price_per_volume'] ?? 0);
-        } elseif ($typeName === 'percentage_value' && $declaredValue > 0) {
+        } elseif ($typeName === 'percentage value' && $declaredValue > 0) {
             $fleteCost += $declaredValue * ((float)($pricingRule['percentage_of_value'] ?? 0) / 100);
         }
 
@@ -75,7 +75,7 @@ class PricingService
      * @param int|null $zoneId
      * @param string $deliveryType  'door'|'branch'|'aereo'|'maritimo'|'express'
      * @param float|null $declaredValue
-     * @param string|null $type  'weight'|'volume'|'distance'|'zone'|'fixed'|'percentage_value'
+     * @param string|null $type  'weight'|'volume'|'distance'|'zone'|'fixed'|'percentage value'
      * @return array {cost, rule_id, rule_name, breakdown}
      */
     public function calculate(array $packages, ?int $zoneId, string $deliveryType, ?float $declaredValue, ?string $type = null): array

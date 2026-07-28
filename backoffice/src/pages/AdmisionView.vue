@@ -52,7 +52,7 @@ function pricingRuleLabel(rule: PricingRule): string {
       return `${rule.name} — $${rule.price_per_kg?.toFixed(2) ?? '0.00'}/lb`
     case 'volume':
       return `${rule.name} — $${rule.price_per_volume?.toFixed(2) ?? '0.00'}/vol`
-    case 'percentage_value':
+    case 'percentage value':
       return `${rule.name} — $${rule.base_price.toFixed(2)} base + ${rule.percentage_of_value}% valor`
     default:
       return rule.name
@@ -106,6 +106,14 @@ const selectedClient = computed(() => {
 const deliveryTypeLabel = computed(() => {
   const dt = deliveryTypes.value.find((d) => d.name === form.delivery_type)
   return dt?.description || form.delivery_type
+})
+
+const visibleFields = computed(() => {
+  const type = selectedPricingRule.value?.type_name
+  if (type === 'weight') return { weight: true, dims: false, declared: false }
+  if (type === 'volume') return { weight: false, dims: true, declared: false }
+  if (type === 'percentage value') return { weight: false, dims: false, declared: true }
+  return { weight: true, dims: true, declared: true }
 })
 
 // Normalize numeric fields from PHP (DECIMAL → string → number)
@@ -243,6 +251,31 @@ async function calculatePricing() {
 // Reset pricing rule when delivery type changes (B1)
 watch(() => form.delivery_type, () => {
   form.pricing_rule_id = null
+})
+
+// Clear hidden fields when rule type changes
+watch(selectedPricingRule, (rule) => {
+  const type = rule?.type_name
+  if (type === 'weight') {
+    form.length = null
+    form.width = null
+    form.height = null
+    form.declared_value = null
+  } else if (type === 'volume') {
+    form.weight = null
+    form.declared_value = null
+  } else if (type === 'percentage value') {
+    form.weight = null
+    form.length = null
+    form.width = null
+    form.height = null
+  } else if (type && !['weight', 'volume', 'percentage value'].includes(type)) {
+    form.weight = null
+    form.length = null
+    form.width = null
+    form.height = null
+    form.declared_value = null
+  }
 })
 
 const pricingDebounce = ref<ReturnType<typeof setTimeout> | null>(null)
@@ -577,7 +610,7 @@ onMounted(() => loadReferenceData())
                   :placeholder="pricingRules.length === 0 ? 'Sin reglas de precio' : 'Seleccionar regla de precio...'"
                 />
               </div>
-              <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div v-if="visibleFields.weight" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <AppFormField
                   :model-value="form.weight"
                   @update:model-value="(v: string | number | null) => form.weight = v !== '' ? Number(v) : null"
@@ -588,6 +621,8 @@ onMounted(() => loadReferenceData())
                   :min="0"
                   :step="0.01"
                 />
+              </div>
+              <div v-if="visibleFields.dims" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <AppFormField
                   :model-value="form.length"
                   @update:model-value="(v: string | number | null) => form.length = v !== '' ? Number(v) : null"
@@ -620,6 +655,7 @@ onMounted(() => loadReferenceData())
                 />
               </div>
               <AppFormField
+                v-if="visibleFields.declared"
                 :model-value="form.declared_value"
                 @update:model-value="(v: string | number | null) => form.declared_value = v !== '' ? Number(v) : null"
                 label="Valor declarado ($)"
@@ -720,7 +756,7 @@ onMounted(() => loadReferenceData())
               <p class="text-xs font-medium text-[#69dca4]">{{ selectedPricingRule.name }}</p>
               <p class="text-[11px] text-[#64748b]">
                 {{ selectedPricingRule.type_name === 'weight' && selectedPricingRule.price_per_kg ? `$${selectedPricingRule.price_per_kg.toFixed(2)}/lb` : '' }}
-                {{ selectedPricingRule.type_name === 'percentage_value' ? `$${selectedPricingRule.base_price.toFixed(2)} base + ${selectedPricingRule.percentage_of_value}% del valor` : '' }}
+                {{ selectedPricingRule.type_name === 'percentage value' ? `$${selectedPricingRule.base_price.toFixed(2)} base + ${selectedPricingRule.percentage_of_value}% del valor` : '' }}
                 {{ selectedPricingRule.type_name === 'volume' && selectedPricingRule.price_per_volume ? `$${selectedPricingRule.price_per_volume.toFixed(2)}/vol` : '' }}
                 {{ selectedPricingRule.min_price && selectedPricingRule.min_price > 0 ? `· Mín $${selectedPricingRule.min_price.toFixed(2)}` : '' }}
               </p>

@@ -123,7 +123,7 @@ INSERT INTO pricing_rule_type (name, description) VALUES
 ('distance', 'Por distancia en kilómetros'),
 ('zone', 'Por zona de entrega'),
 ('fixed', 'Tarifa fija'),
-('percentage_value', 'Porcentaje del valor declarado')
+('percentage value', 'Porcentaje del valor declarado')
 ON DUPLICATE KEY UPDATE description = VALUES(description);
 
 -- === Pricing Rules (Default) ===
