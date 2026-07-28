@@ -121,7 +121,8 @@ class PricingService
             $height = (float) ($pkg['height'] ?? 0);
             $quantity = max(1, (int) ($pkg['quantity'] ?? 1));
 
-            $volumetricWeight = ($length * $width * $height) / 5000;
+            $divisor = max(1, (int)($rule['volumetric_divisor'] ?? 166));
+            $volumetricWeight = ($length * $width * $height) / $divisor;
             $billableWeight = max($weight, $volumetricWeight);
 
             $totalWeight += $billableWeight * $quantity;
