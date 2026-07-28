@@ -18,19 +18,6 @@ const deliveryTypes = ref<DeliveryType[]>([])
 const ruleTypes = ref<PricingRuleType[]>([])
 const zones = ref<Zone[]>([])
 
-const typeName = ref<string | null>(null)
-
-watch(
-  () => {
-    const tid = form.value.type_id
-    if (tid == null) return null
-    const t = ruleTypes.value.find(t => t.id === tid)
-    return t?.name ?? null
-  },
-  (val) => { typeName.value = val },
-  { immediate: true }
-)
-
 const {
   items: rules, loading, showModal, showDelete,
   editing, deleting, saving, form,
@@ -62,6 +49,19 @@ const {
   },
   getEntityId: (r) => r.id,
 })
+
+const typeName = ref<string | null>(null)
+
+watch(
+  () => {
+    const tid = form.value.type_id
+    if (tid == null) return null
+    const t = ruleTypes.value.find(t => t.id === tid)
+    return t?.name ?? null
+  },
+  (val) => { typeName.value = val },
+  { immediate: true }
+)
 
 const fieldErrors = reactive<Record<string, string>>({
   name: '', base_price: '', percentage_of_value: '',
