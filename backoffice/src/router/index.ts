@@ -71,6 +71,18 @@ const router = createRouter({
           meta: { permission: 'document_sequence', action: 'read' },
         },
         {
+          path: 'admision',
+          name: 'admision',
+          component: () => import('../pages/AdmisionView.vue'),
+          meta: { permission: 'package', action: 'create' },
+        },
+        {
+          path: 'scan',
+          name: 'scan',
+          component: () => import('../pages/ScanView.vue'),
+          meta: { permission: 'package', action: 'read' },
+        },
+        {
           path: 'packages',
           name: 'packages',
           component: () => import('../pages/PackagesView.vue'),

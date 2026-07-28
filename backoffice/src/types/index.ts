@@ -157,6 +157,7 @@ export interface PricingRule {
   price_per_zone: number | null
   percentage_of_value: number
   min_price: number | null
+  volumetric_divisor: number
   is_active: boolean
   zones?: Zone[]
   created_at: string
