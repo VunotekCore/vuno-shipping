@@ -156,11 +156,13 @@ class PackageController
                 $insertData['notes'] = sanitizeString($data['notes'], 500);
             }
 
-            $deliveryType = $data['delivery_type'] ?? 'door';
+            $deliveryType = $data['delivery_type'] ?? 'aereo';
             $deliveryTypeId = $this->model->getDeliveryTypeId($deliveryType);
             if ($deliveryTypeId !== null) {
                 $insertData['delivery_type_id'] = $deliveryTypeId;
             }
+
+            $insertData['delivery_option'] = $data['delivery_option'] ?? 'sucursal';
 
             $statusId = $this->model->getStatusId('pending');
             if ($statusId !== null) {
@@ -314,6 +316,9 @@ class PackageController
             if ($deliveryTypeId !== null) {
                 $updateData['delivery_type_id'] = $deliveryTypeId;
             }
+        }
+        if (isset($data['delivery_option'])) {
+            $updateData['delivery_option'] = $data['delivery_option'];
         }
 
         if (empty($updateData)) {

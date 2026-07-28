@@ -20,6 +20,7 @@ $width  = (float)($data['width'] ?? 0);
 $height = (float)($data['height'] ?? 0);
 $declaredValue = (float)($data['declared_value'] ?? 0);
 $deliveryTypeId = (int)($data['delivery_type_id'] ?? 0);
+$deliveryOption = $data['delivery_option'] ?? 'sucursal';
 $zoneId = isset($data['zone_id']) ? (int) $data['zone_id'] : null;
 $pricingRuleId = isset($data['pricing_rule_id']) ? (int) $data['pricing_rule_id'] : null;
 
@@ -65,6 +66,7 @@ $result = $pricingService->calculatePackageTotal([
     'height' => $height,
     'declared_value' => $declaredValue,
     'delivery_type_id' => $deliveryTypeId,
+    'delivery_option' => $deliveryOption,
 ], $rule, $zone);
 
 $result['rule_id'] = (int) $rule['id'];

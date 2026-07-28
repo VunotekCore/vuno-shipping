@@ -37,6 +37,15 @@ const clients = ref<Client[]>([])
 const zones = ref<Zone[]>([])
 const pricingRules = ref<PricingRule[]>([])
 const deliveryTypes = ref<{ id: number; name: string; description: string | null }[]>([])
+
+const shippingMethods = computed(() =>
+  deliveryTypes.value.filter(dt => ['aereo', 'maritimo', 'express'].includes(dt.name))
+)
+
+const deliveryOptions = [
+  { value: 'sucursal', label: 'Retiro en sucursal' },
+  { value: 'domicilio', label: 'Entrega a domicilio' },
+]
 const loadingReferences = ref(true)
 const showClientCreate = ref(false)
 const clientSearch = ref('')
@@ -76,7 +85,8 @@ const form = reactive({
   width: null as number | null,
   height: null as number | null,
   declared_value: null as number | null,
-  delivery_type: 'door',
+  shipping_method: 'aereo',
+  delivery_option: 'sucursal',
   pricing_rule_id: null as number | null,
   notes: '',
 })
@@ -104,8 +114,10 @@ const selectedClient = computed(() => {
 })
 
 const deliveryTypeLabel = computed(() => {
-  const dt = deliveryTypes.value.find((d) => d.name === form.delivery_type)
-  return dt?.description || form.delivery_type
+  const sm = deliveryTypes.value.find((d) => d.name === form.shipping_method)
+  const smLabel = sm?.description || form.shipping_method
+  const doLabel = deliveryOptions.find(d => d.value === form.delivery_option)?.label || form.delivery_option
+  return `${smLabel} + ${doLabel}`
 })
 
 const visibleFields = computed(() => {
@@ -213,7 +225,7 @@ async function calculatePricing() {
   const length = form.length ?? 0
   const width = form.width ?? 0
   const height = form.height ?? 0
-  const dt = deliveryTypes.value.find((d) => d.name === form.delivery_type)
+  const dt = deliveryTypes.value.find((d) => d.name === form.shipping_method)
 
   const type = selectedPricingRule.value?.type_name
   const needsWeightOrDims = !type || type === 'weight' || type === 'volume'
@@ -234,6 +246,7 @@ async function calculatePricing() {
       height,
       declared_value: form.declared_value ?? 0,
       delivery_type_id: dt.id,
+      delivery_option: form.delivery_option,
       zone_id: form.zone_id,
       pricing_rule_id: form.pricing_rule_id,
     })
@@ -250,9 +263,16 @@ async function calculatePricing() {
   }
 }
 
-// Reset pricing rule when delivery type changes (B1)
-watch(() => form.delivery_type, () => {
+// Reset pricing rule when shipping method changes
+watch(() => form.shipping_method, () => {
   form.pricing_rule_id = null
+})
+
+// Reset zone when switching to sucursal
+watch(() => form.delivery_option, (val) => {
+  if (val === 'sucursal') {
+    form.zone_id = null
+  }
 })
 
 // Clear hidden fields when rule type changes
@@ -282,7 +302,7 @@ watch(selectedPricingRule, (rule) => {
 
 const pricingDebounce = ref<ReturnType<typeof setTimeout> | null>(null)
 watch(
-  () => [form.weight, form.length, form.width, form.height, form.delivery_type, form.zone_id, form.declared_value, form.pricing_rule_id],
+  () => [form.weight, form.length, form.width, form.height, form.shipping_method, form.delivery_option, form.zone_id, form.declared_value, form.pricing_rule_id],
   () => {
     if (pricingDebounce.value) clearTimeout(pricingDebounce.value)
     pricingDebounce.value = setTimeout(calculatePricing, 400)
@@ -305,7 +325,8 @@ async function handleCreate() {
       recipient_name: form.recipient_name,
       recipient_phone: form.recipient_phone,
       recipient_address: form.recipient_address,
-      delivery_type: form.delivery_type,
+      delivery_type: form.shipping_method,
+      delivery_option: form.delivery_option,
     }
     if (form.client_id) payload.client_id = form.client_id
     if (form.recipient_city) payload.recipient_city = form.recipient_city
@@ -363,7 +384,8 @@ function resetForm() {
   form.width = null
   form.height = null
   form.declared_value = null
-  form.delivery_type = 'door'
+  form.shipping_method = 'aereo'
+  form.delivery_option = 'sucursal'
   form.pricing_rule_id = null
   form.notes = ''
   clientSearch.value = ''
@@ -572,7 +594,7 @@ onMounted(() => loadReferenceData())
                   placeholder="Depto."
                   :disabled="creating"
                 />
-                <div style="overflow: visible">
+                <div v-if="form.delivery_option === 'domicilio'" style="overflow: visible">
                   <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Zona de entrega</label>
                   <AppDropdown
                     :model-value="form.zone_id"
@@ -672,25 +694,47 @@ onMounted(() => loadReferenceData())
             </div>
           </div>
 
-          <!-- Tipo de entrega -->
-          <div class="admin-card p-5">
-            <p class="admin-form-section mb-4">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              Tipo de entrega</p>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="dt in deliveryTypes"
-                :key="dt.id"
-                :class="[
-                  'rounded-lg border px-4 py-2 text-sm font-medium transition-all',
-                  form.delivery_type === dt.name
-                    ? 'border-[#69dca4] bg-[#69dca4]/10 text-[#69dca4]'
-                    : 'border-[#1e293b] text-[#94a3b8] hover:border-[#404944] hover:text-[#dae2fd]'
-                ]"
-                @click="form.delivery_type = dt.name"
-              >
-                {{ dt.description || dt.name }}
-              </button>
+          <!-- Método de envío + Opción de entrega -->
+          <div class="admin-card p-5 space-y-4">
+            <div>
+              <p class="admin-form-section mb-3">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                Método de envío</p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="sm in shippingMethods"
+                  :key="sm.id"
+                  :class="[
+                    'rounded-lg border px-4 py-2 text-sm font-medium transition-all',
+                    form.shipping_method === sm.name
+                      ? 'border-[#69dca4] bg-[#69dca4]/10 text-[#69dca4]'
+                      : 'border-[#1e293b] text-[#94a3b8] hover:border-[#404944] hover:text-[#dae2fd]'
+                  ]"
+                  @click="form.shipping_method = sm.name"
+                >
+                  {{ sm.description || sm.name }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <p class="admin-form-section mb-3">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Opción de entrega</p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="dopt in deliveryOptions"
+                  :key="dopt.value"
+                  :class="[
+                    'rounded-lg border px-4 py-2 text-sm font-medium transition-all',
+                    form.delivery_option === dopt.value
+                      ? 'border-[#00A8FF] bg-[#00A8FF]/10 text-[#00A8FF]'
+                      : 'border-[#1e293b] text-[#94a3b8] hover:border-[#404944] hover:text-[#dae2fd]'
+                  ]"
+                  @click="form.delivery_option = dopt.value"
+                >
+                  {{ dopt.label }}
+                </button>
+              </div>
             </div>
           </div>
 

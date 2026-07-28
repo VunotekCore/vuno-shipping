@@ -25,6 +25,7 @@ $stmt = $db->prepare("
            p.recipient_address, p.tracking_token,
            ps.name AS status_name,
            dt.name AS delivery_type_name,
+           p.delivery_option,
            p.received_at, p.delivered_at, p.created_at
     FROM package p
     LEFT JOIN package_status ps ON ps.id = p.status_id

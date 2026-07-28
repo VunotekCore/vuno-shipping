@@ -21,7 +21,7 @@ class PricingService
      * Calculate package total with full cost breakdown.
      * Used at package creation time. Saves result into package row.
      *
-     * @param array $data {weight, length, width, height, declared_value, delivery_type_id}
+     * @param array $data {weight, length, width, height, declared_value, delivery_type_id, delivery_option}
      * @param array $pricingRule  Full pricing_rule row (with type_name)
      * @param array|null $zone  Zone row (with surcharge)
      * @return array {volumetric_weight, chargeable_weight, flete_cost, delivery_cost, total_amount}
@@ -55,7 +55,7 @@ class PricingService
         }
 
         $deliveryCost = 0.00;
-        if ((int)($data['delivery_type_id'] ?? 0) === 1 && $zone !== null) {
+        if (($data['delivery_option'] ?? 'sucursal') === 'domicilio' && $zone !== null) {
             $deliveryCost = (float)($zone['surcharge'] ?? 0);
         }
 

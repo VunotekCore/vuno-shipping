@@ -80,6 +80,7 @@ class PackageModel
                    p.declared_value, p.flete_cost, p.delivery_cost, p.shipping_cost,
                    p.status_id, ps.name AS status_name,
                    p.delivery_type_id, dt.name AS delivery_type_name,
+                   p.delivery_option,
                    p.assigned_to, u.name AS assigned_to_name,
                    p.received_at, p.delivered_at, p.created_at
             FROM package p
@@ -146,12 +147,12 @@ class PackageModel
              recipient_name, recipient_phone, recipient_address, recipient_city, recipient_department,
              zone_id, description, weight, length, width, height,
              volumetric_weight, chargeable_weight, declared_value, flete_cost, delivery_cost, shipping_cost,
-             pricing_rule_id, delivery_type_id, pricing_type, status_id, assigned_to, notes, created_by)
+             pricing_rule_id, delivery_type_id, delivery_option, pricing_type, status_id, assigned_to, notes, created_by)
              VALUES (:tracking_number, :tracking_token, :client_id, :sender_name, :sender_phone,
              :recipient_name, :recipient_phone, :recipient_address, :recipient_city, :recipient_department,
              :zone_id, :description, :weight, :length, :width, :height,
              :volumetric_weight, :chargeable_weight, :declared_value, :flete_cost, :delivery_cost, :shipping_cost,
-             :pricing_rule_id, :delivery_type_id, :pricing_type, :status_id, :assigned_to, :notes, :created_by)'
+             :pricing_rule_id, :delivery_type_id, :delivery_option, :pricing_type, :status_id, :assigned_to, :notes, :created_by)'
         );
         $stmt->execute([
             'tracking_number' => $data['tracking_number'],
@@ -178,6 +179,7 @@ class PackageModel
             'shipping_cost' => $data['shipping_cost'] ?? null,
             'pricing_rule_id' => $data['pricing_rule_id'] ?? null,
             'delivery_type_id' => $data['delivery_type_id'] ?? null,
+            'delivery_option' => $data['delivery_option'] ?? 'sucursal',
             'pricing_type' => $data['pricing_type'] ?? 'weight',
             'status_id' => $data['status_id'] ?? null,
             'assigned_to' => $data['assigned_to'] ?? null,
@@ -198,7 +200,7 @@ class PackageModel
                   'weight', 'length', 'width', 'height',
                   'volumetric_weight', 'chargeable_weight', 'declared_value',
                   'flete_cost', 'delivery_cost', 'shipping_cost',
-                  'pricing_rule_id', 'delivery_type_id', 'pricing_type', 'status_id', 'assigned_to',
+                  'pricing_rule_id', 'delivery_type_id', 'delivery_option', 'pricing_type', 'status_id', 'assigned_to',
                   'notes', 'received_at', 'delivered_at'] as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = :$field";

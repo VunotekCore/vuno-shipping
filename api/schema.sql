@@ -256,6 +256,7 @@ CREATE TABLE IF NOT EXISTS package (
     shipping_cost DECIMAL(10,2) NULL,
     pricing_rule_id INT NULL,
     delivery_type_id INT NULL,
+    delivery_option VARCHAR(20) DEFAULT 'sucursal',
     pricing_type VARCHAR(20) DEFAULT 'weight',
     status_id INT NULL,
     assigned_to INT NULL,

@@ -132,8 +132,8 @@ INSERT INTO pricing_rule (id, name, type_id, delivery_type_id, base_price, price
 (1, 'Aéreo por Peso',        1, 3, 0.00,  7.00, NULL, 0.00,  5.00, 166, 1),
 (2, 'Marítimo por Peso',     1, 4, 0.00,  3.00, NULL, 0.00, 10.00, 166, 1),
 (3, 'Aéreo Electrónicos',    6, 3, 5.00,  0.00, NULL, 10.00, 15.00, 166, 1),
-(4, 'Delivery a Domicilio',  4, 1, 0.00,  0.00, NULL, 0.00,  0.00, 166, 1),
-(5, 'Retiro en Sucursal',    5, 2, 0.00,  0.00, NULL, 0.00,  0.00, 166, 1)
+(4, 'Delivery a Domicilio',  4, NULL, 0.00,  0.00, NULL, 0.00,  0.00, 166, 1),
+(5, 'Retiro en Sucursal',    5, NULL, 0.00,  0.00, NULL, 0.00,  0.00, 166, 1)
 ON DUPLICATE KEY UPDATE name = VALUES(name), type_id = VALUES(type_id), delivery_type_id = VALUES(delivery_type_id),
   base_price = VALUES(base_price), price_per_kg = VALUES(price_per_kg), price_per_volume = VALUES(price_per_volume),
   percentage_of_value = VALUES(percentage_of_value), min_price = VALUES(min_price),
