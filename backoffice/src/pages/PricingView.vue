@@ -164,8 +164,8 @@ onMounted(async () => {
     pricingRuleService.listPricingRuleTypes().catch(() => null),
     zoneService.listAll().catch(() => null),
   ])
-  if (dtRes?.data?.data?.delivery_types) deliveryTypes.value = dtRes.data.data.delivery_types
-  if (rtRes?.data?.data?.pricing_rule_types) ruleTypes.value = rtRes.data.data.pricing_rule_types
+  if (dtRes?.data?.data?.delivery_types) deliveryTypes.value = dtRes.data.data.delivery_types.map(t => ({ ...t, id: Number(t.id) }))
+  if (rtRes?.data?.data?.pricing_rule_types) ruleTypes.value = rtRes.data.data.pricing_rule_types.map(t => ({ ...t, id: Number(t.id) }))
   if (zoneRes?.data?.data?.zones) zones.value = zoneRes.data.data.zones
 })
 </script>
