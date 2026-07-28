@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, computed, ref } from 'vue'
 import { pricingRuleService, type PricingRule } from '../services/pricingRuleService'
+import { zoneService, type Zone } from '../services/zoneService'
 import { useCrudView } from '../composables/useCrudView'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
@@ -15,6 +16,12 @@ interface PricingRuleType { id: number; name: string; description: string | null
 
 const deliveryTypes = ref<DeliveryType[]>([])
 const ruleTypes = ref<PricingRuleType[]>([])
+const zones = ref<Zone[]>([])
+
+const typeName = computed(() => {
+  const t = ruleTypes.value.find(t => t.id === form.value.type_id)
+  return t?.name ?? null
+})
 
 const {
   items: rules, loading, showModal, showDelete,
@@ -27,15 +34,19 @@ const {
   entityName: 'Regla de pricing',
   getDefaultForm: () => ({
     name: '', base_price: 0, price_per_kg: null, price_per_volume: null,
+    price_per_km: null, price_per_zone: null,
     percentage_of_value: 0, min_weight: null, max_weight: null,
     type_id: null, delivery_type_id: null, min_price: null, volumetric_divisor: 166, is_active: true,
+    zone_ids: [] as number[],
   }),
   populateForm: (r) => ({
     name: r.name, base_price: r.base_price, price_per_kg: r.price_per_kg,
-    price_per_volume: r.price_per_volume, percentage_of_value: r.percentage_of_value,
+    price_per_volume: r.price_per_volume, price_per_km: r.price_per_km, price_per_zone: r.price_per_zone,
+    percentage_of_value: r.percentage_of_value,
     min_weight: r.min_weight, max_weight: r.max_weight,
     type_id: r.type_id, delivery_type_id: r.delivery_type_id,
     min_price: r.min_price, volumetric_divisor: r.volumetric_divisor, is_active: r.is_active,
+    zone_ids: r.zones?.map(z => z.id) ?? [],
   }),
   validateForm: (f) => {
     if (!f.name) return 'El nombre es requerido'
@@ -46,7 +57,7 @@ const {
 
 const fieldErrors = reactive<Record<string, string>>({
   name: '', base_price: '', percentage_of_value: '',
-  price_per_kg: '', price_per_volume: '',
+  price_per_kg: '', price_per_volume: '', price_per_km: '', price_per_zone: '',
   min_weight: '', max_weight: '', min_price: '', volumetric_divisor: '',
 })
 
@@ -74,6 +85,8 @@ function validateField(key: string) {
       break
     case 'price_per_kg':
     case 'price_per_volume':
+    case 'price_per_km':
+    case 'price_per_zone':
       if (v !== null && v !== '' && Number(v) < 0) { fieldErrors[key] = 'No puede ser negativo'; return }
       fieldErrors[key] = ''
       break
@@ -98,6 +111,19 @@ function fv(key: string): string | number | null {
   if (v == null) return null
   if (typeof v === 'string' || typeof v === 'number') return v
   return null
+}
+
+function toggleZoneId(zoneId: number) {
+  const ids: number[] = (form.value.zone_ids as number[]) ?? []
+  if (ids.includes(zoneId)) {
+    form.value.zone_ids = ids.filter(id => id !== zoneId)
+  } else {
+    form.value.zone_ids = [...ids, zoneId]
+  }
+}
+
+function hasZoneId(zoneId: number): boolean {
+  return ((form.value.zone_ids as number[]) ?? []).includes(zoneId)
 }
 
 function handleSave() {
@@ -125,12 +151,14 @@ function formatCurrency(val: number | null | undefined): string {
 
 onMounted(async () => {
   load()
-  const [dtRes, rtRes] = await Promise.all([
+  const [dtRes, rtRes, zoneRes] = await Promise.all([
     pricingRuleService.listDeliveryTypes().catch(() => null),
     pricingRuleService.listPricingRuleTypes().catch(() => null),
+    zoneService.listAll().catch(() => null),
   ])
   if (dtRes?.data?.data?.delivery_types) deliveryTypes.value = dtRes.data.data.delivery_types
   if (rtRes?.data?.data?.pricing_rule_types) ruleTypes.value = rtRes.data.data.pricing_rule_types
+  if (zoneRes?.data?.data?.zones) zones.value = zoneRes.data.data.zones
 })
 </script>
 
@@ -301,7 +329,7 @@ onMounted(async () => {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
             Tarifa base
           </div>
-          <div class="mt-3 grid grid-cols-3 gap-4">
+          <div class="mt-3 grid grid-cols-2 gap-4">
             <AppFormField
               :model-value="fv('base_price')"
               @update:model-value="(v: string | number | null) => form.base_price = v"
@@ -315,20 +343,6 @@ onMounted(async () => {
               :error="fieldErrors.base_price"
               @blur="validateField('base_price')"
               @input="clearError('base_price')"
-            />
-            <AppFormField
-              :model-value="fv('percentage_of_value')"
-              @update:model-value="(v: string | number | null) => form.percentage_of_value = v"
-              label="% del valor"
-              type="number"
-              icon="percent"
-              placeholder="0.00"
-              :disabled="saving"
-              :min="0"
-              :step="0.01"
-              :error="fieldErrors.percentage_of_value"
-              @blur="validateField('percentage_of_value')"
-              @input="clearError('percentage_of_value')"
             />
             <AppFormField
               :model-value="fv('min_price')"
@@ -348,10 +362,37 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="admin-form-divider" />
+        <template v-if="typeName === 'percentage_value'">
+          <div class="admin-form-divider" />
+          <!-- Sección: % del valor -->
+          <div>
+            <div class="admin-form-section">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="6" cy="6" r="2.5" fill="none"/><circle cx="18" cy="18" r="2.5" fill="none"/></svg>
+              % del valor declarado
+            </div>
+            <div class="mt-3">
+              <AppFormField
+                :model-value="fv('percentage_of_value')"
+                @update:model-value="(v: string | number | null) => form.percentage_of_value = v"
+                label="% del valor"
+                type="number"
+                icon="percent"
+                placeholder="0.00"
+                :disabled="saving"
+                :min="0"
+                :step="0.01"
+                helper="Porcentaje aplicado sobre el valor declarado del paquete"
+                :error="fieldErrors.percentage_of_value"
+                @blur="validateField('percentage_of_value')"
+                @input="clearError('percentage_of_value')"
+              />
+            </div>
+          </div>
+        </template>
 
         <!-- Sección: Cálculo volumétrico -->
-        <div>
+        <div v-if="typeName === null || typeName === 'weight' || typeName === 'volume'">
+          <div class="admin-form-divider" />
           <div class="admin-form-section">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
             Cálculo volumétrico
@@ -377,87 +418,199 @@ onMounted(async () => {
         <div class="admin-form-divider" />
 
         <!-- Sección: Costo por unidad -->
-        <div>
-          <div class="admin-form-section">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            Costo por unidad
+        <template v-if="typeName !== null && typeName !== 'percentage_value' && typeName !== 'fixed'">
+          <div class="admin-form-divider" />
+          <div>
+            <div class="admin-form-section">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              Costo por unidad
+            </div>
+            <div v-if="typeName === 'weight'" class="mt-3">
+              <AppFormField
+                :model-value="fv('price_per_kg')"
+                @update:model-value="(v: string | number | null) => form.price_per_kg = v"
+                label="$/lb"
+                type="number"
+                placeholder="0.00"
+                :disabled="saving"
+                :min="0"
+                :step="0.01"
+                helper="Costo por libra"
+                :error="fieldErrors.price_per_kg"
+                @blur="validateField('price_per_kg')"
+                @input="clearError('price_per_kg')"
+              />
+            </div>
+            <div v-if="typeName === 'volume'" class="mt-3">
+              <AppFormField
+                :model-value="fv('price_per_volume')"
+                @update:model-value="(v: string | number | null) => form.price_per_volume = v"
+                label="$/vol"
+                type="number"
+                placeholder="0.00"
+                :disabled="saving"
+                :min="0"
+                :step="0.01"
+                helper="Costo por volumen"
+                :error="fieldErrors.price_per_volume"
+                @blur="validateField('price_per_volume')"
+                @input="clearError('price_per_volume')"
+              />
+            </div>
+            <div v-if="typeName === 'distance'" class="mt-3">
+              <AppFormField
+                :model-value="fv('price_per_km')"
+                @update:model-value="(v: string | number | null) => form.price_per_km = v"
+                label="$/km"
+                type="number"
+                placeholder="0.00"
+                :disabled="saving"
+                :min="0"
+                :step="0.01"
+                helper="Costo por kilómetro"
+                :error="fieldErrors.price_per_km"
+                @blur="validateField('price_per_km')"
+                @input="clearError('price_per_km')"
+              />
+            </div>
+            <div v-if="typeName === 'zone'" class="mt-3">
+              <AppFormField
+                :model-value="fv('price_per_zone')"
+                @update:model-value="(v: string | number | null) => form.price_per_zone = v"
+                label="$/zona"
+                type="number"
+                placeholder="0.00"
+                :disabled="saving"
+                :min="0"
+                :step="0.01"
+                helper="Cargo fijo por zona de entrega"
+                :error="fieldErrors.price_per_zone"
+                @blur="validateField('price_per_zone')"
+                @input="clearError('price_per_zone')"
+              />
+            </div>
           </div>
-          <div class="mt-3 grid grid-cols-2 gap-4">
-            <AppFormField
-              :model-value="fv('price_per_kg')"
-              @update:model-value="(v: string | number | null) => form.price_per_kg = v"
-              label="$/lb"
-              type="number"
-              placeholder="0.00"
-              :disabled="saving"
-              :min="0"
-              :step="0.01"
-              helper="Costo por libra"
-              :error="fieldErrors.price_per_kg"
-              @blur="validateField('price_per_kg')"
-              @input="clearError('price_per_kg')"
-            />
-            <AppFormField
-              :model-value="fv('price_per_volume')"
-              @update:model-value="(v: string | number | null) => form.price_per_volume = v"
-              label="$/vol"
-              type="number"
-              placeholder="0.00"
-              :disabled="saving"
-              :min="0"
-              :step="0.01"
-              helper="Costo por volumen"
-              :error="fieldErrors.price_per_volume"
-              @blur="validateField('price_per_volume')"
-              @input="clearError('price_per_volume')"
-            />
+        </template>
+
+        <!-- Sin tipo seleccionado: mostrar todos los costos por unidad -->
+        <template v-if="typeName === null">
+          <div class="admin-form-divider" />
+          <div>
+            <div class="admin-form-section">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              Costo por unidad
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-4">
+              <AppFormField
+                :model-value="fv('price_per_kg')"
+                @update:model-value="(v: string | number | null) => form.price_per_kg = v"
+                label="$/lb"
+                type="number"
+                placeholder="0.00"
+                :disabled="saving"
+                :min="0"
+                :step="0.01"
+                helper="Costo por libra"
+                :error="fieldErrors.price_per_kg"
+                @blur="validateField('price_per_kg')"
+                @input="clearError('price_per_kg')"
+              />
+              <AppFormField
+                :model-value="fv('price_per_volume')"
+                @update:model-value="(v: string | number | null) => form.price_per_volume = v"
+                label="$/vol"
+                type="number"
+                placeholder="0.00"
+                :disabled="saving"
+                :min="0"
+                :step="0.01"
+                helper="Costo por volumen"
+                :error="fieldErrors.price_per_volume"
+                @blur="validateField('price_per_volume')"
+                @input="clearError('price_per_volume')"
+              />
+            </div>
           </div>
-        </div>
+        </template>
 
         <div class="admin-form-divider" />
 
         <!-- Sección: Límites de peso -->
-        <div>
-          <div class="admin-form-section">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>
-            Límites de peso
-          </div>
-          <div class="mt-3 grid grid-cols-2 gap-4">
-            <AppFormField
-              :model-value="fv('min_weight')"
-              @update:model-value="(v: string | number | null) => form.min_weight = v"
-              label="Peso mínimo (kg)"
-              type="number"
-              placeholder="Opcional"
-              :disabled="saving"
-              :min="0"
-              :step="0.01"
-              helper="Sin límite inferior si vacío"
-              :error="fieldErrors.min_weight"
-              @blur="validateField('min_weight')"
-              @input="clearError('min_weight')"
-            />
-            <AppFormField
-              :model-value="fv('max_weight')"
-              @update:model-value="(v: string | number | null) => form.max_weight = v"
-              label="Peso máximo (kg)"
-              type="number"
-              placeholder="Opcional"
-              :disabled="saving"
-              :min="0"
-              :step="0.01"
-              helper="Sin límite superior si vacío"
-              :error="fieldErrors.max_weight"
-              @blur="validateField('max_weight')"
-              @input="clearError('max_weight')"
-            />
+        <div v-if="typeName === null || typeName === 'weight'">
+          <div class="admin-form-divider" />
+          <div>
+            <div class="admin-form-section">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>
+              Límites de peso
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-4">
+              <AppFormField
+                :model-value="fv('min_weight')"
+                @update:model-value="(v: string | number | null) => form.min_weight = v"
+                label="Peso mínimo (lb)"
+                type="number"
+                placeholder="Opcional"
+                :disabled="saving"
+                :min="0"
+                :step="0.01"
+                helper="Sin límite inferior si vacío"
+                :error="fieldErrors.min_weight"
+                @blur="validateField('min_weight')"
+                @input="clearError('min_weight')"
+              />
+              <AppFormField
+                :model-value="fv('max_weight')"
+                @update:model-value="(v: string | number | null) => form.max_weight = v"
+                label="Peso máximo (lb)"
+                type="number"
+                placeholder="Opcional"
+                :disabled="saving"
+                :min="0"
+                :step="0.01"
+                helper="Sin límite superior si vacío"
+                :error="fieldErrors.max_weight"
+                @blur="validateField('max_weight')"
+                @input="clearError('max_weight')"
+              />
+            </div>
           </div>
         </div>
 
-        <div class="admin-form-divider" />
+        <!-- Sección: Zonas (solo para zone / fixed) -->
+        <div v-if="typeName === 'zone' || typeName === 'fixed'">
+          <div class="admin-form-divider" />
+          <div>
+            <div class="admin-form-section">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Zonas
+            </div>
+            <div class="mt-3 space-y-3">
+              <p class="text-xs text-[#64748b]">Seleccioná las zonas donde aplica esta regla</p>
+              <div v-if="zones.length === 0" class="text-sm text-[#64748b] italic">No hay zonas disponibles</div>
+              <div v-else class="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto">
+                <label
+                  v-for="z in zones.filter(z => z.is_active)"
+                  :key="z.id"
+                  class="flex items-center gap-2 cursor-pointer text-sm text-[#dae2fd] hover:text-white transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    :value="z.id"
+                    :checked="hasZoneId(z.id)"
+                    @change="toggleZoneId(z.id)"
+                    class="h-4 w-4 rounded border-[#475569] bg-[#0a1022] text-[#69dca4] focus:ring-[#69dca4]"
+                  />
+                  {{ z.name }}
+                  <span v-if="z.surcharge > 0" class="text-[#64748b]">(+${{ Number(z.surcharge).toFixed(2) }})</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Sección: Estado -->
         <div>
+          <div class="admin-form-divider" />
           <div class="admin-form-section">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Estado
