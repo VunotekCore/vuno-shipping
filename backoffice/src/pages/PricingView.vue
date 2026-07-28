@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, computed, ref } from 'vue'
+import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { pricingRuleService, type PricingRule } from '../services/pricingRuleService'
 import { zoneService, type Zone } from '../services/zoneService'
 import { useCrudView } from '../composables/useCrudView'
@@ -18,10 +18,18 @@ const deliveryTypes = ref<DeliveryType[]>([])
 const ruleTypes = ref<PricingRuleType[]>([])
 const zones = ref<Zone[]>([])
 
-const typeName = computed(() => {
-  const t = ruleTypes.value.find(t => t.id === form.value.type_id)
-  return t?.name ?? null
-})
+const typeName = ref<string | null>(null)
+
+watch(
+  () => {
+    const tid = form.value.type_id
+    if (tid == null) return null
+    const t = ruleTypes.value.find(t => t.id === tid)
+    return t?.name ?? null
+  },
+  (val) => { typeName.value = val },
+  { immediate: true }
+)
 
 const {
   items: rules, loading, showModal, showDelete,
@@ -362,7 +370,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div>
+        <div v-if="typeName === 'percentage_value'">
           <div class="admin-form-divider" />
           <!-- Sección: % del valor -->
           <div>
