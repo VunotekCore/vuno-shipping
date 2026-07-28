@@ -268,9 +268,9 @@ watch(() => form.shipping_method, () => {
   form.pricing_rule_id = null
 })
 
-// Reset zone when switching to sucursal
+// Reset zone when switching to branch (sucursal)
 watch(() => form.delivery_option, (val) => {
-  if (val === 'sucursal') {
+  if (val !== 'door') {
     form.zone_id = null
   }
 })
@@ -386,7 +386,7 @@ function resetForm() {
   form.height = null
   form.declared_value = null
   form.shipping_method = 'aereo'
-  form.delivery_option = 'sucursal'
+  form.delivery_option = 'branch'
   form.pricing_rule_id = null
   form.notes = ''
   clientSearch.value = ''
@@ -595,7 +595,7 @@ onMounted(() => loadReferenceData())
                   placeholder="Depto."
                   :disabled="creating"
                 />
-                <div v-if="form.delivery_option === 'domicilio'" style="overflow: visible">
+                <div v-if="form.delivery_option === 'door'" style="overflow: visible">
                   <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Zona de entrega</label>
                   <AppDropdown
                     :model-value="form.zone_id"
