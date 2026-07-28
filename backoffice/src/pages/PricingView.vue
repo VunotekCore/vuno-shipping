@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, computed, watch } from 'vue'
+import { onMounted, reactive, ref, computed } from 'vue'
 import { pricingRuleService, type PricingRule } from '../services/pricingRuleService'
 import { zoneService, type Zone } from '../services/zoneService'
 import { useCrudView } from '../composables/useCrudView'
@@ -50,18 +50,12 @@ const {
   getEntityId: (r) => r.id,
 })
 
-const typeName = ref<string | null>(null)
-
-watch(
-  () => {
-    const tid = form.value.type_id
-    if (tid == null) return null
-    const t = ruleTypes.value.find(t => t.id === tid)
-    return t?.name ?? null
-  },
-  (val) => { typeName.value = val },
-  { immediate: true }
-)
+const typeName = computed(() => {
+  const tid = form.value.type_id
+  if (tid == null) return null
+  const t = ruleTypes.value.find(t => t.id === tid)
+  return t?.name ?? null
+})
 
 const fieldErrors = reactive<Record<string, string>>({
   name: '', base_price: '', percentage_of_value: '',
