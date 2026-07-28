@@ -23,15 +23,9 @@ $deliveryTypeId = (int)($data['delivery_type_id'] ?? 0);
 $zoneId = isset($data['zone_id']) ? (int) $data['zone_id'] : null;
 $pricingRuleId = isset($data['pricing_rule_id']) ? (int) $data['pricing_rule_id'] : null;
 
-// Validate weight or dimensions are provided
-if ($weight <= 0 && ($length <= 0 || $width <= 0 || $height <= 0)) {
-    jsonError('Debe proporcionar peso o dimensiones para cotizar', 422);
-}
-
+// Load a specific rule or find best match
 $db = Database::getConnection();
 $ruleModel = new PricingRuleModel($db);
-
-// Load a specific rule or find best match
 $rule = null;
 if ($pricingRuleId !== null) {
     $rule = $ruleModel->findById($pricingRuleId);
@@ -45,6 +39,13 @@ if ($pricingRuleId !== null) {
 
 if ($rule === null) {
     jsonError('No se encontró una regla de precios para los parámetros dados', 404);
+}
+
+// Validate weight or dimensions only for types that need them
+$typeName = $rule['type_name'] ?? 'weight';
+$needsWeightOrDims = $typeName === 'weight' || $typeName === 'volume';
+if ($needsWeightOrDims && $weight <= 0 && ($length <= 0 || $width <= 0 || $height <= 0)) {
+    jsonError('Debe proporcionar peso o dimensiones para cotizar', 422);
 }
 
 // Load zone if specified
