@@ -194,6 +194,7 @@ export interface Package {
   pricing_rule_name: string | null
   delivery_type_id: number | null
   delivery_type_name: string | null
+  delivery_option: string | null
   status_id: number | null
   status_name: string | null
   assigned_to: number | null

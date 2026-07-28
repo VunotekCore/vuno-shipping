@@ -152,8 +152,12 @@ onMounted(() => loadPackage())
                 <p class="text-sm text-[#94a3b8]">{{ pkg.client_name || '—' }}</p>
               </div>
               <div>
-                <p class="text-xs text-[#64748b] mb-1">Tipo de entrega</p>
+                <p class="text-xs text-[#64748b] mb-1">Método de envío</p>
                 <p class="text-sm text-[#94a3b8]">{{ pkg.delivery_type_name || '—' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-[#64748b] mb-1">Opción de entrega</p>
+                <p class="text-sm text-[#94a3b8]">{{ pkg.delivery_option === 'domicilio' ? 'Entrega a domicilio' : 'Retiro en sucursal' }}</p>
               </div>
 
               <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
