@@ -110,8 +110,8 @@ const columns: TableColumn[] = [
   { key: 'name', label: 'Nombre', width: '180px' },
   { key: 'delivery_type_name', label: 'Tipo entrega', width: '120px' },
   { key: 'base_price', label: 'Precio base', width: '110px' },
-  { key: 'price_per_kg', label: '$/kg', width: '90px' },
-  { key: 'price_per_volume', label: '$/m³', width: '90px' },
+  { key: 'price_per_kg', label: '$/lb', width: '90px' },
+  { key: 'price_per_volume', label: '$/vol', width: '90px' },
   { key: 'percentage_of_value', label: '% Valor', width: '90px' },
   { key: 'min_price', label: 'Mínimo', width: '90px' },
   { key: 'is_active', label: 'Estado', width: '80px' },
@@ -210,8 +210,8 @@ onMounted(async () => {
           <p v-if="r.delivery_type_name" class="text-sm text-[#69dca4]">{{ r.delivery_type_name }}</p>
           <p class="text-sm text-[#94a3b8]">Base: {{ formatCurrency(r.base_price) }}</p>
           <p class="text-xs text-[#64748b]">
-            {{ formatCurrency(r.price_per_kg) }}/kg ·
-            {{ formatCurrency(r.price_per_volume) }}/m³ ·
+            {{ formatCurrency(r.price_per_kg) }}/lb ·
+            {{ formatCurrency(r.price_per_volume) }}/vol ·
             {{ formatCurrency(r.percentage_of_value) }}% valor
             <template v-if="r.min_price"> · Mín: {{ formatCurrency(r.min_price) }}</template>
           </p>
@@ -366,7 +366,7 @@ onMounted(async () => {
               placeholder="166"
               :disabled="saving"
               :min="1"
-              helper="166 = aéreo, 5000 = marítimo. Peso volumétrico = (largo × ancho × alto) ÷ divisor"
+              helper="166 = aéreo (in³/lb), 5000 = marítimo (cm³/kg). Peso volumétrico = (largo × ancho × alto) ÷ divisor"
               :error="fieldErrors.volumetric_divisor"
               @blur="validateField('volumetric_divisor')"
               @input="clearError('volumetric_divisor')"
@@ -386,13 +386,13 @@ onMounted(async () => {
             <AppFormField
               :model-value="fv('price_per_kg')"
               @update:model-value="(v: string | number | null) => form.price_per_kg = v"
-              label="$ por kg"
+              label="$/lb"
               type="number"
               placeholder="0.00"
               :disabled="saving"
               :min="0"
               :step="0.01"
-              helper="Costo por kilogramo"
+              helper="Costo por libra"
               :error="fieldErrors.price_per_kg"
               @blur="validateField('price_per_kg')"
               @input="clearError('price_per_kg')"
@@ -400,13 +400,13 @@ onMounted(async () => {
             <AppFormField
               :model-value="fv('price_per_volume')"
               @update:model-value="(v: string | number | null) => form.price_per_volume = v"
-              label="$ por m³"
+              label="$/vol"
               type="number"
               placeholder="0.00"
               :disabled="saving"
               :min="0"
               :step="0.01"
-              helper="Costo por metro cúbico"
+              helper="Costo por volumen"
               :error="fieldErrors.price_per_volume"
               @blur="validateField('price_per_volume')"
               @input="clearError('price_per_volume')"
