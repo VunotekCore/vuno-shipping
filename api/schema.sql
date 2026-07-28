@@ -1,6 +1,8 @@
 -- vuno_db_shipping
 -- Shipping Agency — Backend Schema
 
+-- === RBAC Tables ===
+
 CREATE TABLE IF NOT EXISTS permission (
     id INT AUTO_INCREMENT PRIMARY KEY,
     module VARCHAR(50) NOT NULL,
@@ -74,7 +76,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     INDEX idx_refresh_tokens_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- === Business Tables ===
+-- === Config Tables ===
 
 CREATE TABLE IF NOT EXISTS company (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -132,4 +134,206 @@ CREATE TABLE IF NOT EXISTS empleado (
     FOREIGN KEY (user_id) REFERENCES `user`(id) ON DELETE SET NULL,
     INDEX idx_empleado_puesto (puesto_id),
     INDEX idx_empleado_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- === Phase 3: Shipping Tables ===
+
+CREATE TABLE IF NOT EXISTS client (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NULL,
+    phone VARCHAR(50) NULL,
+    address TEXT NULL,
+    department VARCHAR(100) NULL,
+    notes TEXT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS zone (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT NULL,
+    lat DECIMAL(10,8) NULL,
+    lng DECIMAL(11,8) NULL,
+    surcharge DECIMAL(10,2) DEFAULT 0.00,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS subzone (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    zone_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    lat_offset DECIMAL(8,6) DEFAULT 0.000000,
+    lng_offset DECIMAL(8,6) DEFAULT 0.000000,
+    UNIQUE KEY unique_zone_subzone (zone_id, name),
+    FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS delivery_type (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS pricing_rule_type (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS pricing_rule (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type_id INT NULL,
+    delivery_type_id INT NULL,
+    base_price DECIMAL(10,2) DEFAULT 0.00,
+    min_weight DECIMAL(10,2) NULL,
+    max_weight DECIMAL(10,2) NULL,
+    price_per_kg DECIMAL(10,2) NULL,
+    price_per_volume DECIMAL(10,2) NULL,
+    price_per_km DECIMAL(10,2) NULL,
+    price_per_zone DECIMAL(10,2) NULL,
+    percentage_of_value DECIMAL(5,2) DEFAULT 0.00,
+    min_price DECIMAL(10,2) NULL,
+    volumetric_divisor INT DEFAULT 166,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (type_id) REFERENCES pricing_rule_type(id) ON DELETE SET NULL,
+    FOREIGN KEY (delivery_type_id) REFERENCES delivery_type(id) ON DELETE SET NULL,
+    INDEX idx_pricing_type (type_id),
+    INDEX idx_pricing_delivery_type (delivery_type_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS pricing_rule_zone (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pricing_rule_id INT NOT NULL,
+    zone_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_pricing_rule_zone (pricing_rule_id, zone_id),
+    FOREIGN KEY (pricing_rule_id) REFERENCES pricing_rule(id) ON DELETE CASCADE,
+    FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS package_status (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS package (
+    id INT AUTO_INCREMENT,
+    tracking_number VARCHAR(50) NOT NULL,
+    tracking_token VARCHAR(64) NULL,
+    client_id INT NULL,
+    sender_name VARCHAR(255) NOT NULL,
+    sender_phone VARCHAR(50) NULL,
+    recipient_name VARCHAR(255) NOT NULL,
+    recipient_phone VARCHAR(50) NOT NULL,
+    recipient_address TEXT NOT NULL,
+    recipient_city VARCHAR(100) NULL,
+    recipient_department VARCHAR(100) NULL,
+    zone_id INT NULL,
+    description TEXT NULL,
+    weight DECIMAL(10,2) NULL,
+    length DECIMAL(10,2) NULL,
+    width DECIMAL(10,2) NULL,
+    height DECIMAL(10,2) NULL,
+    volumetric_weight DECIMAL(10,2) DEFAULT NULL,
+    chargeable_weight DECIMAL(10,2) DEFAULT NULL,
+    declared_value DECIMAL(10,2) NULL,
+    flete_cost DECIMAL(10,2) DEFAULT 0.00,
+    delivery_cost DECIMAL(10,2) DEFAULT 0.00,
+    shipping_cost DECIMAL(10,2) NULL,
+    pricing_rule_id INT NULL,
+    delivery_type_id INT NULL,
+    pricing_type VARCHAR(20) DEFAULT 'weight',
+    status_id INT NULL,
+    assigned_to INT NULL,
+    route_id INT NULL,
+    notes TEXT NULL,
+    received_at TIMESTAMP NULL,
+    delivered_at TIMESTAMP NULL,
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY tracking_number (tracking_number),
+    UNIQUE KEY uk_packages_tracking_token (tracking_token),
+    FOREIGN KEY (client_id) REFERENCES client(id) ON DELETE SET NULL,
+    FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE SET NULL,
+    FOREIGN KEY (pricing_rule_id) REFERENCES pricing_rule(id) ON DELETE SET NULL,
+    FOREIGN KEY (delivery_type_id) REFERENCES delivery_type(id) ON DELETE SET NULL,
+    FOREIGN KEY (status_id) REFERENCES package_status(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES `user`(id) ON DELETE SET NULL,
+    INDEX idx_package_status (status_id),
+    INDEX idx_package_client (client_id),
+    INDEX idx_package_zone (zone_id),
+    INDEX idx_package_delivery_type (delivery_type_id),
+    INDEX idx_package_assigned (assigned_to)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS tracking_event (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    package_id INT NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    description TEXT NULL,
+    latitude DECIMAL(10,8) NULL,
+    longitude DECIMAL(11,8) NULL,
+    location_name VARCHAR(255) NULL,
+    photo_url VARCHAR(500) NULL,
+    recorded_at DATETIME NOT NULL,
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (package_id) REFERENCES package(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES `user`(id) ON DELETE SET NULL,
+    INDEX idx_tracking_package (package_id),
+    INDEX idx_tracking_recorded (recorded_at),
+    INDEX idx_tracking_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS package_status_transition (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    from_status VARCHAR(50) NOT NULL,
+    to_status VARCHAR(50) NOT NULL,
+    UNIQUE KEY unique_transition (from_status, to_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS vehicle_status (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS vehicle (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    plate VARCHAR(20) NOT NULL,
+    brand VARCHAR(100) NULL,
+    model VARCHAR(100) NULL,
+    year INT NULL,
+    color VARCHAR(50) NULL,
+    fuel_type VARCHAR(20) NULL,
+    capacity_kg DECIMAL(10,2) NULL,
+    capacity_m3 DECIMAL(10,2) NULL,
+    current_driver_id INT NULL,
+    status_id INT NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_vehicles_plate (plate),
+    FOREIGN KEY (current_driver_id) REFERENCES `user`(id) ON DELETE SET NULL,
+    FOREIGN KEY (status_id) REFERENCES vehicle_status(id) ON DELETE SET NULL,
+    INDEX idx_vehicle_status (status_id),
+    INDEX idx_vehicle_driver (current_driver_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

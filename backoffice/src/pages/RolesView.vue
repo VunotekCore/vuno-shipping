@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, reactive } from 'vue'
 import { roleService, type Role } from '../services/roleService'
 import { permissionService, type Permission } from '../services/permissionService'
 import { useCrudView } from '../composables/useCrudView'
@@ -7,6 +7,7 @@ import { useToast } from '../composables/useToast'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
+import AppFormField from '../components/ui/AppFormField.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
@@ -35,6 +36,36 @@ const {
   getEntityId: (r) => r.id,
 })
 
+const fieldErrors = reactive<Record<string, string>>({ name: '', slug: '' })
+
+function clearError(key: string) { fieldErrors[key] = '' }
+
+function validateField(key: string) {
+  const v = String(form.value[key] ?? '')
+  switch (key) {
+    case 'name':
+      if (!v.trim()) { fieldErrors.name = 'El nombre es requerido'; return }
+      if (v.length > 50) { fieldErrors.name = 'Máximo 50 caracteres'; return }
+      fieldErrors.name = ''
+      break
+  }
+}
+
+const hasErrors = computed(() => Object.values(fieldErrors).some(Boolean))
+
+function fv(key: string): string | number | null {
+  const v = form.value[key]
+  if (v == null) return null
+  if (typeof v === 'string' || typeof v === 'number') return v
+  return null
+}
+
+function handleSave() {
+  for (const key of Object.keys(fieldErrors)) validateField(key)
+  if (hasErrors.value) return
+  save()
+}
+
 const columns: TableColumn[] = [
   { key: 'name', label: 'Nombre', width: '180px' },
   { key: 'slug', label: 'Slug', width: '150px' },
@@ -55,7 +86,7 @@ const groupedPerms = computed(() => {
 async function load() {
   const [, permsRes] = await Promise.all([
     loadCrud(),
-    permissionService.list().catch(() => ({ data: { data: { permissions: [] as Permission[] } } })),
+    permissionService.listAll().catch(() => ({ data: { data: { permissions: [] as Permission[] } } })),
   ])
   allPermissions.value = permsRes.data.data?.permissions ?? []
 }
@@ -149,12 +180,7 @@ onMounted(() => load())
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(r)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button
-                  class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]"
-                  @click="openDelete(r)"
-                  title="Eliminar"
-                  :disabled="r.user_count > 0"
-                >
+                <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(r)" title="Eliminar" :disabled="r.user_count > 0">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -169,18 +195,9 @@ onMounted(() => load())
     <div class="lg:hidden space-y-3">
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
-          </div>
+          <div class="flex items-center justify-between"><div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" /><div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" /></div>
           <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
-            <div class="flex gap-2">
-              <div class="h-7 w-20 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-            </div>
-          </div>
+          <div class="border-t border-[#1e293b] pt-3"><div class="flex gap-2"><div class="h-7 w-20 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /></div></div>
         </div>
       </template>
       <template v-else-if="roles.length > 0">
@@ -208,9 +225,7 @@ onMounted(() => load())
       </template>
       <div v-else class="admin-card">
         <div class="admin-empty-state py-12">
-          <svg class="admin-empty-state-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
+          <svg class="admin-empty-state-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
           <p class="admin-empty-state-title">Sin roles</p>
           <p class="admin-empty-state-desc">Creá el primer rol del sistema.</p>
         </div>
@@ -220,20 +235,42 @@ onMounted(() => load())
 
     <!-- Create / Edit Modal -->
     <AppModal :visible="showModal" :title="editing ? 'Editar rol' : 'Crear rol'" @close="showModal = false">
-      <form class="space-y-4" @submit.prevent="save">
+      <form class="space-y-5" @submit.prevent="handleSave" novalidate>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Nombre</label>
-          <input v-model="form.name" class="admin-input" placeholder="ej: Administrador" required :disabled="saving" />
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Slug (opcional)</label>
-          <input v-model="form.slug" class="admin-input" placeholder="Se genera del nombre si se deja vacío" :disabled="saving" />
+          <div class="admin-form-section">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Identificación
+          </div>
+          <div class="mt-3 space-y-4">
+            <AppFormField
+              :model-value="fv('name')"
+              @update:model-value="(v: string | number | null) => form.name = v"
+              label="Nombre"
+              icon="shield"
+              placeholder="ej: Administrador"
+              :required="true"
+              :disabled="saving"
+              :maxlength="50"
+              :error="fieldErrors.name"
+              @blur="validateField('name')"
+              @input="clearError('name')"
+            />
+            <AppFormField
+              :model-value="fv('slug')"
+              @update:model-value="(v: string | number | null) => form.slug = v"
+              label="Slug (opcional)"
+              icon="hash"
+              placeholder="Se genera del nombre si se deja vacío"
+              :disabled="saving"
+              helper="Identificador único — se auto-genera si está vacío"
+            />
+          </div>
         </div>
       </form>
       <template #footer>
         <div class="flex justify-end gap-3">
           <button class="admin-btn admin-btn-ghost" @click="showModal = false" :disabled="saving">Cancelar</button>
-          <button class="admin-btn admin-btn-primary" @click="save" :disabled="saving || !form.name">
+          <button class="admin-btn admin-btn-primary" :disabled="saving || !form.name || hasErrors" @click="handleSave">
             {{ saving ? 'Guardando...' : (editing ? 'Actualizar' : 'Crear') }}
           </button>
         </div>
@@ -249,17 +286,8 @@ onMounted(() => load())
             <span class="text-sm font-semibold text-[#dae2fd] uppercase tracking-wide">{{ module }}</span>
           </div>
           <div class="grid grid-cols-2 gap-2 pl-8 sm:grid-cols-3 md:grid-cols-4">
-            <label
-              v-for="p in perms"
-              :key="p.id"
-              class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#94a3b8] transition-colors hover:bg-white/[0.04]"
-            >
-              <input
-                type="checkbox"
-                :checked="selectedPerms.has(p.id)"
-                @change="togglePerm(p.id)"
-                class="h-4 w-4 rounded border-[#404944] bg-[#1e293b] text-[#69dca4] focus:ring-[#69dca4]/50"
-              />
+            <label v-for="p in perms" :key="p.id" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#94a3b8] transition-colors hover:bg-white/[0.04]">
+              <input type="checkbox" :checked="selectedPerms.has(p.id)" @change="togglePerm(p.id)" class="h-4 w-4 rounded border-[#404944] bg-[#1e293b] text-[#69dca4] focus:ring-[#69dca4]/50" />
               {{ p.action }}
             </label>
           </div>
@@ -275,7 +303,6 @@ onMounted(() => load())
       </template>
     </AppModal>
 
-    <!-- Delete Confirmation -->
     <AppConfirmDialog
       :visible="showDelete"
       title="Eliminar rol"

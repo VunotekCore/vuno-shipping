@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, reactive, computed } from 'vue'
 import { areaService, type Area } from '../services/areaService'
 import { useCrudView } from '../composables/useCrudView'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
+import AppFormField from '../components/ui/AppFormField.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 
@@ -25,6 +26,36 @@ const {
   },
   getEntityId: (a) => a.id,
 })
+
+const fieldErrors = reactive<Record<string, string>>({ name: '', description: '' })
+
+function clearError(key: string) { fieldErrors[key] = '' }
+
+function validateField(key: string) {
+  const v = String(form.value[key] ?? '')
+  switch (key) {
+    case 'name':
+      if (!v.trim()) { fieldErrors.name = 'El nombre es requerido'; return }
+      if (v.length > 100) { fieldErrors.name = 'Máximo 100 caracteres'; return }
+      fieldErrors.name = ''
+      break
+  }
+}
+
+const hasErrors = computed(() => Object.values(fieldErrors).some(Boolean))
+
+function fv(key: string): string | number | null {
+  const v = form.value[key]
+  if (v == null) return null
+  if (typeof v === 'string' || typeof v === 'number') return v
+  return null
+}
+
+function handleSave() {
+  for (const key of Object.keys(fieldErrors)) validateField(key)
+  if (hasErrors.value) return
+  save()
+}
 
 const columns: TableColumn[] = [
   { key: 'name', label: 'Nombre', width: '200px' },
@@ -79,12 +110,7 @@ onMounted(() => load())
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
           <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
-            <div class="flex gap-2">
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-            </div>
-          </div>
+          <div class="border-t border-[#1e293b] pt-3"><div class="flex gap-2"><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /></div></div>
         </div>
       </template>
       <template v-else-if="areas.length > 0">
@@ -105,9 +131,7 @@ onMounted(() => load())
       </template>
       <div v-else class="admin-card">
         <div class="admin-empty-state py-12">
-          <svg class="admin-empty-state-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
+          <svg class="admin-empty-state-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
           <p class="admin-empty-state-title">Sin áreas</p>
           <p class="admin-empty-state-desc">Creá el primer área de la empresa.</p>
         </div>
@@ -115,21 +139,45 @@ onMounted(() => load())
       <AppPagination :page="page" :pages="pages" :total="total" :limit="limit" @update:page="goToPage" @update:limit="setLimit" />
     </div>
 
+    <!-- Create / Edit Modal -->
     <AppModal :visible="showModal" :title="editing ? 'Editar área' : 'Crear área'" @close="showModal = false">
-      <form class="space-y-4" @submit.prevent="save">
+      <form class="space-y-5" @submit.prevent="handleSave" novalidate>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Nombre *</label>
-          <input v-model="form.name" class="admin-input" placeholder="Nombre del área" required :disabled="saving" maxlength="100" />
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Descripción</label>
-          <textarea :value="String(form.description || '')" @input="form.description = ($event.target as HTMLTextAreaElement).value" class="admin-input" rows="3" placeholder="Descripción del área" :disabled="saving"></textarea>
+          <div class="admin-form-section">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Identificación
+          </div>
+          <div class="mt-3 space-y-4">
+            <AppFormField
+              :model-value="fv('name')"
+              @update:model-value="(v: string | number | null) => form.name = v"
+              label="Nombre"
+              icon="layers"
+              placeholder="Nombre del área"
+              :required="true"
+              :disabled="saving"
+              :maxlength="100"
+              :error="fieldErrors.name"
+              @blur="validateField('name')"
+              @input="clearError('name')"
+            />
+            <AppFormField
+              :model-value="fv('description')"
+              @update:model-value="(v: string | number | null) => form.description = v"
+              label="Descripción"
+              type="textarea"
+              icon="file-text"
+              placeholder="Descripción del área"
+              :disabled="saving"
+              :rows="3"
+            />
+          </div>
         </div>
       </form>
       <template #footer>
         <div class="flex justify-end gap-3">
           <button class="admin-btn admin-btn-ghost" @click="showModal = false" :disabled="saving">Cancelar</button>
-          <button class="admin-btn admin-btn-primary" @click="save" :disabled="saving || !form.name">
+          <button class="admin-btn admin-btn-primary" :disabled="saving || !form.name || hasErrors" @click="handleSave">
             {{ saving ? 'Guardando...' : (editing ? 'Actualizar' : 'Crear') }}
           </button>
         </div>

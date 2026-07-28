@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, reactive } from 'vue'
 import { userService, type User } from '../services/userService'
 import { roleService, type Role } from '../services/roleService'
 import { permissionService, type Permission } from '../services/permissionService'
@@ -8,6 +8,8 @@ import { useToast } from '../composables/useToast'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
+import AppFormField from '../components/ui/AppFormField.vue'
+import AppDropdown from '../components/ui/AppDropdown.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
@@ -45,6 +47,56 @@ const {
     return data
   },
 })
+
+const fieldErrors = reactive<Record<string, string>>({
+  name: '', email: '', password: '', role_id: '',
+})
+
+function clearError(key: string) { fieldErrors[key] = '' }
+
+function validateField(key: string) {
+  const v = form.value[key]
+  switch (key) {
+    case 'name':
+      if (!String(v ?? '').trim()) { fieldErrors.name = 'El nombre es requerido'; return }
+      if (String(v).length > 100) { fieldErrors.name = 'Máximo 100 caracteres'; return }
+      fieldErrors.name = ''
+      break
+    case 'email':
+      if (!String(v ?? '').trim()) { fieldErrors.email = 'El email es requerido'; return }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v))) { fieldErrors.email = 'Email inválido'; return }
+      fieldErrors.email = ''
+      break
+    case 'password':
+      if (!editing.value && !String(v ?? '')) { fieldErrors.password = 'La contraseña es requerida'; return }
+      if (String(v ?? '') && String(v).length < 8) { fieldErrors.password = 'Mínimo 8 caracteres'; return }
+      fieldErrors.password = ''
+      break
+    case 'role_id':
+      if (!v || v === 0) { fieldErrors.role_id = 'Seleccioná un rol'; return }
+      fieldErrors.role_id = ''
+      break
+  }
+}
+
+const hasErrors = computed(() => Object.values(fieldErrors).some(Boolean))
+
+function fv(key: string): string | number | null {
+  const v = form.value[key]
+  if (v == null) return null
+  if (typeof v === 'string' || typeof v === 'number') return v
+  return null
+}
+
+function handleSave() {
+  for (const key of Object.keys(fieldErrors)) validateField(key)
+  if (hasErrors.value) return
+  save()
+}
+
+const roleOptions = computed(() =>
+  roles.value.map((r) => ({ value: r.id, label: r.name }))
+)
 
 const columns: TableColumn[] = [
   { key: 'name', label: 'Nombre', width: '180px' },
@@ -91,21 +143,13 @@ async function loadUserPermissions(user: User) {
       roleService.getPermissions(user.role_id),
       userService.getPermissions(user.id),
     ])
-
     const rps = rolePermsRes.data.data?.permissions ?? []
     rolePermIds.value = new Set(rps.map((p) => p.id))
-
     const basePerms = new Set(rps.map((p) => p.id))
     const ups = userPermsRes.data.data?.permissions ?? []
-
     for (const up of ups) {
-      if (up.granted) {
-        basePerms.add(up.id)
-      } else {
-        basePerms.delete(up.id)
-      }
+      if (up.granted) { basePerms.add(up.id) } else { basePerms.delete(up.id) }
     }
-
     selectedPerms.value = basePerms
   } catch {
     useToast().error('Error al cargar permisos del usuario')
@@ -113,21 +157,13 @@ async function loadUserPermissions(user: User) {
 }
 
 function togglePerm(permId: number) {
-  if (selectedPerms.value.has(permId)) {
-    selectedPerms.value.delete(permId)
-  } else {
-    selectedPerms.value.add(permId)
-  }
+  if (selectedPerms.value.has(permId)) { selectedPerms.value.delete(permId) } else { selectedPerms.value.add(permId) }
 }
 
 function toggleModule(_module: string, perms: Permission[]) {
   const allSelected = perms.every((p) => selectedPerms.value.has(p.id))
   for (const p of perms) {
-    if (allSelected) {
-      selectedPerms.value.delete(p.id)
-    } else {
-      selectedPerms.value.add(p.id)
-    }
+    if (allSelected) { selectedPerms.value.delete(p.id) } else { selectedPerms.value.add(p.id) }
   }
 }
 
@@ -141,15 +177,12 @@ async function savePerms() {
   try {
     const grantedIds: number[] = []
     const revokedIds: number[] = []
-
     for (const p of allPermissions.value) {
       const inRole = rolePermIds.value.has(p.id)
       const inSelected = selectedPerms.value.has(p.id)
-
       if (inSelected && !inRole) grantedIds.push(p.id)
       if (!inSelected && inRole) revokedIds.push(p.id)
     }
-
     await userService.setPermissions(permUser.value.id, grantedIds, revokedIds)
     useToast().success('Permisos actualizados')
     showPermsModal.value = false
@@ -185,9 +218,7 @@ onMounted(() => load())
           <tr v-for="u in users" :key="u.id">
             <td class="font-medium text-[#dae2fd]">{{ u.name }}</td>
             <td class="text-[#94a3b8]">{{ u.email }}</td>
-            <td>
-              <span class="admin-badge admin-badge-info">{{ u.role_name }}</span>
-            </td>
+            <td><span class="admin-badge admin-badge-info">{{ u.role_name }}</span></td>
             <td class="text-[#64748b]">{{ u.created_at ? formatDate(u.created_at) : '—' }}</td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
@@ -210,26 +241,13 @@ onMounted(() => load())
 
     <!-- Mobile/Tablet: Card view (< lg) -->
     <div class="lg:hidden space-y-3">
-      <!-- Loading skeletons -->
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
-          </div>
+          <div class="flex items-center justify-between"><div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" /><div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" /></div>
           <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="h-3 w-1/4 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
-            <div class="flex gap-2">
-              <div class="h-7 w-20 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-            </div>
-          </div>
+          <div class="border-t border-[#1e293b] pt-3"><div class="flex gap-2"><div class="h-7 w-20 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /></div></div>
         </div>
       </template>
-
-      <!-- Cards -->
       <template v-else-if="users.length > 0">
         <div v-for="u in users" :key="u.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
@@ -254,58 +272,84 @@ onMounted(() => load())
           </div>
         </div>
       </template>
-
-      <!-- Empty state -->
       <div v-else class="admin-card">
         <div class="admin-empty-state py-12">
-          <svg class="admin-empty-state-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
+          <svg class="admin-empty-state-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
           <p class="admin-empty-state-title">Sin usuarios</p>
           <p class="admin-empty-state-desc">Creá el primer usuario del sistema.</p>
         </div>
       </div>
-
       <AppPagination :page="page" :pages="pages" :total="total" :limit="limit" @update:page="goToPage" @update:limit="setLimit" />
     </div>
 
     <!-- Create / Edit Modal -->
     <AppModal :visible="showModal" :title="editing ? 'Editar usuario' : 'Crear usuario'" @close="showModal = false">
-      <form class="space-y-4" @submit.prevent="save">
+      <form class="space-y-5" @submit.prevent="handleSave" novalidate>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Nombre</label>
-          <input v-model="form.name" class="admin-input" placeholder="Nombre completo" required :disabled="saving" />
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Email</label>
-          <input v-model="form.email" type="email" class="admin-input" placeholder="correo@ejemplo.com" required :disabled="saving" />
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">
-            {{ editing ? 'Contraseña (dejar vacío para no cambiar)' : 'Contraseña' }}
-          </label>
-          <input
-            v-model="form.password"
-            type="password"
-            class="admin-input"
-            :placeholder="editing ? '••••••••' : 'Mínimo 8 caracteres'"
-            :required="!editing"
-            minlength="8"
-            :disabled="saving"
-          />
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Rol</label>
-          <select v-model="form.role_id" class="admin-select" required :disabled="saving">
-            <option :value="0" disabled>Seleccionar rol</option>
-            <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
-          </select>
+          <div class="admin-form-section">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Datos del usuario
+          </div>
+          <div class="mt-3 space-y-4">
+            <AppFormField
+              :model-value="fv('name')"
+              @update:model-value="(v: string | number | null) => form.name = v"
+              label="Nombre"
+              icon="user"
+              placeholder="Nombre completo"
+              :required="true"
+              :disabled="saving"
+              :maxlength="100"
+              :error="fieldErrors.name"
+              @blur="validateField('name')"
+              @input="clearError('name')"
+            />
+            <AppFormField
+              :model-value="fv('email')"
+              @update:model-value="(v: string | number | null) => form.email = v"
+              label="Email"
+              type="email"
+              icon="mail"
+              placeholder="correo@ejemplo.com"
+              :required="true"
+              :disabled="saving"
+              :error="fieldErrors.email"
+              @blur="validateField('email')"
+              @input="clearError('email')"
+            />
+            <AppFormField
+              :model-value="fv('password')"
+              @update:model-value="(v: string | number | null) => form.password = v"
+              :label="editing ? 'Contraseña (dejar vacío para no cambiar)' : 'Contraseña'"
+              type="password"
+              icon="lock"
+              :placeholder="editing ? '••••••••' : 'Mínimo 8 caracteres'"
+              :required="!editing"
+              :disabled="saving"
+              :minlength="8"
+              :error="fieldErrors.password"
+              @blur="validateField('password')"
+              @input="clearError('password')"
+            />
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Rol <span class="text-[#DC2626]">*</span></label>
+              <AppDropdown
+                :model-value="fv('role_id')"
+                @update:model-value="(v: string | number | null) => { form.role_id = v; clearError('role_id') }"
+                :options="roleOptions"
+                placeholder="Seleccionar rol"
+                :disabled="saving"
+                :error="fieldErrors.role_id"
+              />
+              <p v-if="fieldErrors.role_id" class="mt-1.5 text-xs text-[#DC2626]">{{ fieldErrors.role_id }}</p>
+            </div>
+          </div>
         </div>
       </form>
       <template #footer>
         <div class="flex justify-end gap-3">
           <button class="admin-btn admin-btn-ghost" @click="showModal = false" :disabled="saving">Cancelar</button>
-          <button class="admin-btn admin-btn-primary" @click="save" :disabled="saving || !form.name || !form.email || !form.role_id || (!editing && !form.password)">
+          <button class="admin-btn admin-btn-primary" :disabled="saving || !form.name || !form.email || !form.role_id || (!editing && !form.password) || hasErrors" @click="handleSave">
             {{ saving ? 'Guardando...' : (editing ? 'Actualizar' : 'Crear') }}
           </button>
         </div>
@@ -323,33 +367,14 @@ onMounted(() => load())
           <div class="mb-3 flex items-center gap-3">
             <AppSwitch :model-value="isModuleChecked(module, perms)" @update:model-value="toggleModule(module, perms)" />
             <span class="text-sm font-semibold text-[#dae2fd] uppercase tracking-wide">{{ module }}</span>
-            <span v-if="rolePermIds.size > 0" class="ml-auto text-xs text-[#64748b]">
-              {{ perms.filter(p => rolePermIds.has(p.id)).length }}/{{ perms.length }} del rol
-            </span>
+            <span v-if="rolePermIds.size > 0" class="ml-auto text-xs text-[#64748b]">{{ perms.filter(p => rolePermIds.has(p.id)).length }}/{{ perms.length }} del rol</span>
           </div>
           <div class="grid grid-cols-2 gap-2 pl-8 sm:grid-cols-3 md:grid-cols-4">
-            <label
-              v-for="p in perms"
-              :key="p.id"
-              class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/[0.04]"
-            >
-              <input
-                type="checkbox"
-                :checked="selectedPerms.has(p.id)"
-                @change="togglePerm(p.id)"
-                class="h-4 w-4 rounded border-[#404944] bg-[#1e293b] text-[#69dca4] focus:ring-[#69dca4]/50"
-              />
-              <span :class="rolePermIds.has(p.id) ? 'text-[#94a3b8]' : 'text-[#69dca4]'">
-                {{ p.action }}
-              </span>
-              <span
-                v-if="rolePermIds.has(p.id)"
-                class="ml-auto text-[10px] text-[#64748b]"
-              >rol</span>
-              <span
-                v-else-if="selectedPerms.has(p.id)"
-                class="ml-auto text-[10px] text-[#fd8b00]"
-              >+extra</span>
+            <label v-for="p in perms" :key="p.id" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/[0.04]">
+              <input type="checkbox" :checked="selectedPerms.has(p.id)" @change="togglePerm(p.id)" class="h-4 w-4 rounded border-[#404944] bg-[#1e293b] text-[#69dca4] focus:ring-[#69dca4]/50" />
+              <span :class="rolePermIds.has(p.id) ? 'text-[#94a3b8]' : 'text-[#69dca4]'">{{ p.action }}</span>
+              <span v-if="rolePermIds.has(p.id)" class="ml-auto text-[10px] text-[#64748b]">rol</span>
+              <span v-else-if="selectedPerms.has(p.id)" class="ml-auto text-[10px] text-[#fd8b00]">+extra</span>
             </label>
           </div>
         </div>
@@ -364,7 +389,6 @@ onMounted(() => load())
       </template>
     </AppModal>
 
-    <!-- Delete Confirmation -->
     <AppConfirmDialog
       :visible="showDelete"
       title="Eliminar usuario"

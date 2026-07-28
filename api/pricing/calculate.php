@@ -1,0 +1,71 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/../bootstrap.php';
+
+use App\Services\PricingService;
+use App\Models\PricingRuleModel;
+use App\Config\Database;
+
+requireMethod('POST');
+
+$payload = requireAuthMiddleware();
+hasPermission($payload, 'package', 'create');
+
+$data = getJsonInput();
+
+$weight = (float)($data['weight'] ?? 0);
+$length = (float)($data['length'] ?? 0);
+$width  = (float)($data['width'] ?? 0);
+$height = (float)($data['height'] ?? 0);
+$declaredValue = (float)($data['declared_value'] ?? 0);
+$deliveryTypeId = (int)($data['delivery_type_id'] ?? 0);
+$zoneId = isset($data['zone_id']) ? (int) $data['zone_id'] : null;
+$pricingRuleId = isset($data['pricing_rule_id']) ? (int) $data['pricing_rule_id'] : null;
+
+if ($length <= 0 || $width <= 0 || $height <= 0) {
+    jsonError('Las dimensiones deben ser mayores a cero', 422);
+}
+
+$db = Database::getConnection();
+$ruleModel = new PricingRuleModel($db);
+
+// Load a specific rule or find best match
+$rule = null;
+if ($pricingRuleId !== null) {
+    $rule = $ruleModel->findById($pricingRuleId);
+} else {
+    $dtStmt = $db->prepare('SELECT name FROM delivery_type WHERE id = :id LIMIT 1');
+    $dtStmt->execute(['id' => $deliveryTypeId]);
+    $dtRow = $dtStmt->fetch();
+    $deliveryType = $dtRow ? $dtRow['name'] : 'door';
+    $rule = $ruleModel->findBestMatch($zoneId, $deliveryType, null);
+}
+
+if ($rule === null) {
+    jsonError('No se encontró una regla de precios para los parámetros dados', 404);
+}
+
+// Load zone if specified
+$zone = null;
+if ($zoneId !== null) {
+    $stmt = $db->prepare('SELECT * FROM zone WHERE id = :id LIMIT 1');
+    $stmt->execute(['id' => $zoneId]);
+    $zoneRow = $stmt->fetch();
+    $zone = $zoneRow ?: null;
+}
+
+$pricingService = new PricingService();
+$result = $pricingService->calculatePackageTotal([
+    'weight' => $weight,
+    'length' => $length,
+    'width' => $width,
+    'height' => $height,
+    'declared_value' => $declaredValue,
+    'delivery_type_id' => $deliveryTypeId,
+], $rule, $zone);
+
+$result['rule_id'] = (int) $rule['id'];
+$result['rule_name'] = $rule['name'];
+
+jsonSuccess(['pricing' => $result]);

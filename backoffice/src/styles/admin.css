@@ -279,6 +279,31 @@ select.admin-input {
   max-width: 280px;
 }
 
+/* ── Form section headers ──────────────────────────────────────────────── */
+
+.admin-form-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #1e293b;
+  margin-bottom: 0;
+}
+.admin-form-section svg {
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+.admin-form-divider {
+  height: 1px;
+  background: #1e293b;
+  margin: 1rem 0;
+}
+
 /* ── Glass card (login) ───────────────────────────────────────────────── */
 
 .admin-glass-card {

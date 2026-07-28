@@ -13,33 +13,31 @@ import Input from '../atoms/Input.astro';
           <Icon name="package" size="md" class="fill-primary" />
           Rastreo de Paquetes
         </h2>
-        <p class="text-label-md text-outline">Ingresa tu número de rastreo proporcionado al momento del depósito.</p>
+        <p class="text-label-md text-outline">Ingresa tu número de rastreo y token de acceso.</p>
       </div>
     </div>
-    <form class="flex flex-col md:flex-row gap-base" id="tracking-form">
-      <div class="relative flex-grow">
-        <Icon name="search" size="sm" class="absolute left-4 top-1/2 -translate-y-1/2 fill-outline" />
-        <Input id="tracking-input" placeholder="ej. MG-8829-NI" class="pl-12 py-4" aria-label="Número de rastreo" />
+    <form class="flex flex-col gap-base" id="tracking-form">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-base">
+        <div class="relative md:col-span-2">
+          <Icon name="search" size="sm" class="absolute left-4 top-1/2 -translate-y-1/2 fill-outline" />
+          <Input id="tracking-input" placeholder="ej. EV-000001" class="pl-12 py-4" aria-label="Número de rastreo" />
+        </div>
+        <div class="relative">
+          <Icon name="lock" size="sm" class="absolute left-4 top-1/2 -translate-y-1/2 fill-outline" />
+          <Input id="tracking-token" placeholder="Token de acceso" class="pl-12 py-4" aria-label="Token de acceso" />
+        </div>
       </div>
-      <Button type="submit" variant="secondary" class="md:w-auto uppercase tracking-wider">
-        Consultar
-      </Button>
+      <div class="flex flex-col gap-2">
+        <div id="tracking-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2"></div>
+        <div class="flex justify-end">
+          <Button type="submit" variant="secondary" class="md:w-auto uppercase tracking-wider">
+            Consultar
+          </Button>
+        </div>
+      </div>
     </form>
 
     <div id="tracking-result" class="mt-sp-lg p-sp-md bg-surface-container-low rounded-xl border border-surface-variant hidden">
-      <div class="flex items-center gap-sp-md mb-base">
-        <div class="w-2 h-2 rounded-full bg-secondary-container"></div>
-        <span class="text-label-sm uppercase tracking-tighter text-outline">Actividad Reciente</span>
-      </div>
-      <div class="flex flex-col gap-sp-sm">
-        <div class="flex justify-between items-center">
-          <span class="text-body-md font-bold">Miami Warehouse</span>
-          <span class="text-label-sm">Procesando</span>
-        </div>
-        <div class="w-full h-1 bg-outline-variant rounded-full overflow-hidden">
-          <div class="w-1/3 h-full bg-secondary-container"></div>
-        </div>
-      </div>
     </div>
 
     <div id="tracking-placeholder" class="mt-sp-lg p-sp-md bg-surface-container-low rounded-xl border border-surface-variant">
@@ -61,16 +59,165 @@ import Input from '../atoms/Input.astro';
 </ScrollReveal>
 
 <script>
-  document.getElementById('tracking-form')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const input = document.getElementById('tracking-input') as HTMLInputElement;
+  const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
+
+  const statusLabels: Record<string, string> = {
+    pending: 'Pendiente',
+    received: 'Recibido',
+    in_transit: 'En Tránsito',
+    out_for_delivery: 'En Camino',
+    delivered: 'Entregado',
+    returned: 'Devuelto',
+    cancelled: 'Cancelado',
+  };
+
+  function escapeHtml(str: string): string {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  function formatDate(dateStr: string): string {
+    try {
+      return new Date(dateStr).toLocaleDateString('es-NI', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+    } catch {
+      return dateStr;
+    }
+  }
+
+  function showError(msg: string) {
+    const el = document.getElementById('tracking-error');
+    if (el) {
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+  }
+
+  function hideError() {
+    const el = document.getElementById('tracking-error');
+    if (el) {
+      el.textContent = '';
+      el.classList.add('hidden');
+    }
+  }
+
+  function renderResult(pkg: Record<string, unknown>, events: Record<string, unknown>[]) {
     const placeholder = document.getElementById('tracking-placeholder');
     const result = document.getElementById('tracking-result');
-    if (!input?.value.trim()) {
-      alert('Por favor ingresa un número de rastreo.');
+    if (!result) return;
+
+    placeholder?.classList.add('hidden');
+    result.classList.remove('hidden');
+
+    const status = (pkg.status_name as string) || 'unknown';
+    const progress: Record<string, number> = {
+      pending: 10, received: 25, in_transit: 50, out_for_delivery: 75, delivered: 100, returned: 100, cancelled: 100,
+    };
+    const pct = progress[status] || 0;
+
+    let eventsHtml = '';
+    if (events.length > 0) {
+      for (const ev of events) {
+        const evStatus = statusLabels[ev.status as string] || escapeHtml(ev.status as string);
+        const evDate = escapeHtml(formatDate(ev.recorded_at as string));
+        const evDesc = ev.description ? `<p class="text-body-sm text-on-surface-variant mt-0.5">${escapeHtml(ev.description as string)}</p>` : '';
+        const evLoc = ev.location_name ? `<p class="text-label-xs text-outline flex items-center gap-1 mt-0.5">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${escapeHtml(ev.location_name as string)}
+        </span>` : '';
+
+        eventsHtml += `
+          <div class="flex gap-3 items-start">
+            <div class="flex flex-col items-center pt-1">
+              <div class="w-2 h-2 rounded-full bg-secondary-container shrink-0"></div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <span class="text-body-sm font-bold text-on-surface">${evStatus}</span>
+                <span class="text-label-xs text-outline">${evDate}</span>
+              </div>
+              ${evDesc}
+              ${evLoc}
+            </div>
+          </div>`;
+      }
+    }
+
+    const safeTracking = escapeHtml(pkg.tracking_number as string);
+    const safeRecipient = escapeHtml((pkg.recipient_name as string) || '—');
+    const safeAddress = escapeHtml((pkg.recipient_address as string) || '—');
+    const safeCity = escapeHtml((pkg.recipient_city as string) || (pkg.recipient_department as string) || '—');
+    const safeStatusLabel = statusLabels[status] || escapeHtml(status);
+
+    result.innerHTML = `
+      <div class="mb-sp-md">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-label-sm uppercase tracking-tighter text-outline">Estado del envío</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/15 text-body-xs font-bold text-secondary-container">
+            ${safeStatusLabel}
+          </span>
+        </div>
+        <div class="w-full h-2 bg-outline-variant rounded-full overflow-hidden">
+          <div class="h-full bg-secondary-container rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+        </div>
+        <div class="flex justify-between mt-2 text-label-xs text-outline">
+          <span>Recibido</span>
+          <span>Entregado</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-sp-sm text-body-sm mb-sp-md">
+        <div><span class="text-outline">Tracking:</span> <span class="font-mono font-bold">${safeTracking}</span></div>
+        <div><span class="text-outline">Destinatario:</span> ${safeRecipient}</div>
+        <div><span class="text-outline">Dirección:</span> ${safeAddress}</div>
+        <div><span class="text-outline">Ciudad:</span> ${safeCity}</div>
+      </div>
+      <div class="flex items-center gap-sp-md mb-sp-sm mt-sp-md">
+        <div class="w-2 h-2 rounded-full bg-secondary-container"></div>
+        <span class="text-label-sm uppercase tracking-tighter text-outline">Historial de actividad</span>
+      </div>
+      <div class="flex flex-col gap-sp-sm">
+        ${eventsHtml || '<p class="text-body-sm text-outline italic">Sin eventos registrados</p>'}
+      </div>
+    `;
+  }
+
+  document.getElementById('tracking-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError();
+
+    const input = document.getElementById('tracking-input') as HTMLInputElement;
+    const tokenInput = document.getElementById('tracking-token') as HTMLInputElement;
+    const trackingNumber = input?.value.trim() || '';
+    const token = tokenInput?.value.trim() || '';
+
+    if (!trackingNumber) {
+      showError('Por favor ingresa un número de rastreo.');
       return;
     }
-    placeholder?.classList.add('hidden');
-    result?.classList.remove('hidden');
+    if (!token) {
+      showError('Por favor ingresa tu token de acceso.');
+      return;
+    }
+
+    const btn = document.querySelector('#tracking-form button[type="submit"]') as HTMLButtonElement;
+    if (btn) { btn.disabled = true; btn.textContent = 'Consultando...'; }
+
+    try {
+      const res = await fetch(`${API_BASE}/public/tracking.php?tracking_number=${encodeURIComponent(trackingNumber)}&token=${encodeURIComponent(token)}`);
+      const json = await res.json();
+      if (json.success && json.data?.package) {
+        renderResult(json.data.package, json.data.events || []);
+      } else {
+        showError(json.message || 'Paquete no encontrado.');
+        document.getElementById('tracking-placeholder')?.classList.remove('hidden');
+        document.getElementById('tracking-result')?.classList.add('hidden');
+      }
+    } catch {
+      showError('Error al conectar con el servidor. Intenta de nuevo.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Consultar'; }
+    }
   });
 </script>

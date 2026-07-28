@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, reactive, computed } from 'vue'
 import { documentSequenceService, type DocumentSequence } from '../services/documentSequenceService'
 import { useCrudView } from '../composables/useCrudView'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
+import AppFormField from '../components/ui/AppFormField.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 
@@ -30,6 +31,50 @@ const {
   },
   getEntityId: (s) => s.id,
 })
+
+const fieldErrors = reactive<Record<string, string>>({
+  document_code: '', description: '', prefix: '', current_number: '',
+})
+
+function clearError(key: string) { fieldErrors[key] = '' }
+
+function validateField(key: string) {
+  const v = form.value[key]
+  switch (key) {
+    case 'document_code':
+      if (!String(v ?? '').trim()) { fieldErrors.document_code = 'El código es requerido'; return }
+      if (String(v).length > 20) { fieldErrors.document_code = 'Máximo 20 caracteres'; return }
+      fieldErrors.document_code = ''
+      break
+    case 'description':
+      if (String(v ?? '').length > 100) { fieldErrors.description = 'Máximo 100 caracteres'; return }
+      fieldErrors.description = ''
+      break
+    case 'prefix':
+      if (String(v ?? '').length > 10) { fieldErrors.prefix = 'Máximo 10 caracteres'; return }
+      fieldErrors.prefix = ''
+      break
+    case 'current_number':
+      if (v !== null && v !== '' && Number(v) < 1) { fieldErrors.current_number = 'Mínimo 1'; return }
+      fieldErrors.current_number = ''
+      break
+  }
+}
+
+const hasErrors = computed(() => Object.values(fieldErrors).some(Boolean))
+
+function fv(key: string): string | number | null {
+  const v = form.value[key]
+  if (v == null) return null
+  if (typeof v === 'string' || typeof v === 'number') return v
+  return null
+}
+
+function handleSave() {
+  for (const key of Object.keys(fieldErrors)) validateField(key)
+  if (hasErrors.value) return
+  save()
+}
 
 const columns: TableColumn[] = [
   { key: 'document_code', label: 'Código', width: '140px' },
@@ -86,12 +131,7 @@ onMounted(() => load())
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="h-4 w-1/4 animate-pulse rounded bg-[#1e293b]" />
           <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
-            <div class="flex gap-2">
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-            </div>
-          </div>
+          <div class="border-t border-[#1e293b] pt-3"><div class="flex gap-2"><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /></div></div>
         </div>
       </template>
       <template v-else-if="sequences.length > 0">
@@ -112,9 +152,7 @@ onMounted(() => load())
       </template>
       <div v-else class="admin-card">
         <div class="admin-empty-state py-12">
-          <svg class="admin-empty-state-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />
-          </svg>
+          <svg class="admin-empty-state-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
           <p class="admin-empty-state-title">Sin secuencias</p>
           <p class="admin-empty-state-desc">Creá la primera secuencia de documentos.</p>
         </div>
@@ -122,32 +160,84 @@ onMounted(() => load())
       <AppPagination :page="page" :pages="pages" :total="total" :limit="limit" @update:page="goToPage" @update:limit="setLimit" />
     </div>
 
+    <!-- Create / Edit Modal -->
     <AppModal :visible="showModal" :title="editing ? 'Editar secuencia' : 'Crear secuencia'" @close="showModal = false">
-      <form class="space-y-4" @submit.prevent="save">
+      <form class="space-y-5" @submit.prevent="handleSave" novalidate>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Código del documento *</label>
-          <input v-model="form.document_code" class="admin-input uppercase" placeholder="FAC, NCR, NDB..." required :disabled="saving || !!editing" maxlength="20" />
-          <p class="mt-1 text-xs text-[#64748b]">Solo letras mayúsculas, números y guiones bajos</p>
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Descripción</label>
-          <input v-model="form.description" class="admin-input" placeholder="Factura, Nota de crédito..." :disabled="saving" maxlength="100" />
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Prefijo</label>
-            <input v-model="form.prefix" class="admin-input" placeholder="FAC" :disabled="saving" maxlength="10" />
+          <div class="admin-form-section">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Documento
           </div>
-          <div>
-            <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Próximo número</label>
-            <input v-model.number="form.current_number" type="number" min="1" class="admin-input" :disabled="saving" />
+          <div class="mt-3 space-y-4">
+            <AppFormField
+              :model-value="fv('document_code')"
+              @update:model-value="(v: string | number | null) => form.document_code = v"
+              label="Código del documento"
+              icon="hash"
+              placeholder="FAC, NCR, NDB..."
+              :required="true"
+              :disabled="saving || !!editing"
+              :maxlength="20"
+              helper="Solo letras mayúsculas, números y guiones bajos"
+              :error="fieldErrors.document_code"
+              @blur="validateField('document_code')"
+              @input="clearError('document_code')"
+            />
+            <AppFormField
+              :model-value="fv('description')"
+              @update:model-value="(v: string | number | null) => form.description = v"
+              label="Descripción"
+              icon="file-text"
+              placeholder="Factura, Nota de crédito..."
+              :disabled="saving"
+              :maxlength="100"
+              :error="fieldErrors.description"
+              @blur="validateField('description')"
+              @input="clearError('description')"
+            />
+          </div>
+        </div>
+
+        <div class="admin-form-divider" />
+
+        <div>
+          <div class="admin-form-section">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            Numeración
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-4">
+            <AppFormField
+              :model-value="fv('prefix')"
+              @update:model-value="(v: string | number | null) => form.prefix = v"
+              label="Prefijo"
+              icon="type"
+              placeholder="FAC"
+              :disabled="saving"
+              :maxlength="10"
+              :error="fieldErrors.prefix"
+              @blur="validateField('prefix')"
+              @input="clearError('prefix')"
+            />
+            <AppFormField
+              :model-value="fv('current_number')"
+              @update:model-value="(v: string | number | null) => form.current_number = v"
+              label="Próximo número"
+              type="number"
+              icon="hash"
+              placeholder="1"
+              :disabled="saving"
+              :min="1"
+              :error="fieldErrors.current_number"
+              @blur="validateField('current_number')"
+              @input="clearError('current_number')"
+            />
           </div>
         </div>
       </form>
       <template #footer>
         <div class="flex justify-end gap-3">
           <button class="admin-btn admin-btn-ghost" @click="showModal = false" :disabled="saving">Cancelar</button>
-          <button class="admin-btn admin-btn-primary" @click="save" :disabled="saving || !form.document_code">
+          <button class="admin-btn admin-btn-primary" :disabled="saving || !form.document_code || hasErrors" @click="handleSave">
             {{ saving ? 'Guardando...' : (editing ? 'Actualizar' : 'Crear') }}
           </button>
         </div>
