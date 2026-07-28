@@ -386,7 +386,7 @@ onMounted(async () => {
           <div>
             <div class="admin-form-section">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="6" cy="6" r="2.5" fill="none"/><circle cx="18" cy="18" r="2.5" fill="none"/></svg>
-              % del valor declarado
+              Del valor declarado
             </div>
             <div class="mt-3">
               <AppFormField
