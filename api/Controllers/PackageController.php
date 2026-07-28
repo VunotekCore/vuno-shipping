@@ -8,6 +8,8 @@ use App\Models\TrackingEventModel;
 use App\Models\DocumentSequenceModel;
 use App\Services\PricingService;
 use App\Config\Database;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 
 class PackageController
 {
@@ -178,7 +180,23 @@ class PackageController
 
             $ruleModel = new \App\Models\PricingRuleModel($db);
             $deliveryTypeName = $deliveryType;
-            $rule = $ruleModel->findBestMatch($zoneId, $deliveryTypeName, null);
+
+            // Use explicit rule if provided, otherwise auto-detect
+            $rule = null;
+            if (isset($data['pricing_rule_id'])) {
+                $rule = $ruleModel->findById((int) $data['pricing_rule_id']);
+            }
+            if ($rule === null) {
+                $rule = $ruleModel->findBestMatch($zoneId, $deliveryTypeName, null);
+            }
+
+            $pricing = [
+                'volumetric_weight' => 0,
+                'chargeable_weight' => 0,
+                'flete_cost' => 0,
+                'delivery_cost' => 0,
+                'total_amount' => 0,
+            ];
 
             if ($rule !== null) {
                 $pricing = $pricingService->calculatePackageTotal($insertData, $rule, $zone);
@@ -443,5 +461,155 @@ class PackageController
             apiLog('ERROR', 'Error updating package status: ' . $e->getMessage());
             jsonError('Error al actualizar el estado', 500);
         }
+    }
+
+    public function qrcode(): never
+    {
+        requireMethod('GET');
+        $payload = requireAuthMiddleware();
+
+        if (!hasPermission($payload, 'package', 'read')) {
+            jsonError('No tenés permiso para ver paquetes', 403);
+        }
+
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            jsonError('ID de paquete inválido', 422);
+        }
+
+        $package = $this->model->findById($id);
+        if ($package === null) {
+            jsonError('Paquete no encontrado', 404);
+        }
+
+        $baseUrl = config()['BASE_URL'] ?? 'https://' . ($_SERVER['HTTP_HOST'] ?? 'shipping.vunotek.com');
+        $trackingUrl = rtrim($baseUrl, '/') . '/rastreo?tracking=' . rawurlencode($package['tracking_number']);
+        if (!empty($package['tracking_token'])) {
+            $trackingUrl .= '&token=' . rawurlencode($package['tracking_token']);
+        }
+
+        $options = new QROptions([
+            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
+            'eccLevel' => QRCode::ECC_M,
+            'scale' => 10,
+            'imageBase64' => false,
+            'bgColor' => [255, 255, 255],
+            'imageTransparent' => false,
+        ]);
+
+        $qrcode = new QRCode($options);
+
+        header('Content-Type: image/png');
+        header('Cache-Control: public, max-age=86400');
+        header('X-Content-Type-Options: nosniff');
+
+        echo $qrcode->render($trackingUrl);
+        exit;
+    }
+
+    public function label(): never
+    {
+        requireMethod('GET');
+        $payload = requireAuthMiddleware();
+
+        if (!hasPermission($payload, 'package', 'read')) {
+            jsonError('No tenés permiso para ver paquetes', 403);
+        }
+
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            jsonError('ID de paquete inválido', 422);
+        }
+
+        $package = $this->model->findById($id);
+        if ($package === null) {
+            jsonError('Paquete no encontrado', 404);
+        }
+
+        $baseUrl = config()['BASE_URL'] ?? 'https://' . ($_SERVER['HTTP_HOST'] ?? 'shipping.vunotek.com');
+        $trackingUrl = rtrim($baseUrl, '/') . '/rastreo?tracking=' . rawurlencode($package['tracking_number']);
+        if (!empty($package['tracking_token'])) {
+            $trackingUrl .= '&token=' . rawurlencode($package['tracking_token']);
+        }
+
+        $options = new QROptions([
+            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
+            'eccLevel' => QRCode::ECC_M,
+            'scale' => 6,
+            'imageBase64' => true,
+            'bgColor' => [255, 255, 255],
+            'imageTransparent' => false,
+        ]);
+
+        $qrcode = new QRCode($options);
+        $qrDataUri = $qrcode->render($trackingUrl);
+
+        $weight = ($package['chargeable_weight'] ?? $package['weight']) 
+            ? number_format((float) ($package['chargeable_weight'] ?? $package['weight']), 2) . ' lb' 
+            : '—';
+
+        $senderName = htmlspecialchars($package['sender_name'] ?? '', ENT_QUOTES, 'UTF-8');
+        $recipientName = htmlspecialchars($package['recipient_name'] ?? '', ENT_QUOTES, 'UTF-8');
+        $trackingNumber = htmlspecialchars($package['tracking_number'] ?? '', ENT_QUOTES, 'UTF-8');
+        $description = htmlspecialchars($package['description'] ?? '', ENT_QUOTES, 'UTF-8');
+
+        header('Content-Type: text/html; charset=UTF-8');
+        echo <<<HTML
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Etiqueta - {$trackingNumber}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; font-family: Arial, Helvetica, sans-serif; }
+  .label { width: 360px; min-height: 540px; background: #fff; border: 1px solid #ccc; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; }
+  .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 8px; }
+  .header h1 { font-size: 16px; font-weight: bold; text-transform: uppercase; }
+  .tracking { text-align: center; margin: 8px 0; }
+  .tracking .number { font-size: 22px; font-weight: bold; letter-spacing: 2px; word-break: break-all; }
+  .qr { text-align: center; margin: 8px 0; }
+  .qr img { width: 120px; height: 120px; }
+  .info { border-top: 1px solid #ccc; padding-top: 8px; }
+  .info-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+  .info-row .label-tag { font-weight: bold; color: #555; }
+  .recipient { border-top: 1px solid #ccc; padding-top: 8px; margin-top: 8px; }
+  .recipient .name { font-size: 14px; font-weight: bold; }
+  .recipient .detail { font-size: 11px; color: #555; }
+  .footer { text-align: center; font-size: 9px; color: #999; border-top: 1px solid #ccc; padding-top: 8px; margin-top: 8px; }
+  @media print { body { background: #fff; } .label { border: none; } }
+</style>
+</head>
+<body>
+<div class="label">
+  <div>
+    <div class="header">
+      <h1>VUNO WEB SHIPPING</h1>
+    </div>
+    <div class="tracking">
+      <div class="number">{$trackingNumber}</div>
+    </div>
+    <div class="qr">
+      <img src="{$qrDataUri}" alt="QR" width="120" height="120">
+    </div>
+    <div class="info">
+      <div class="info-row"><span class="label-tag">Peso:</span><span>{$weight}</span></div>
+      <div class="info-row"><span class="label-tag">Contenido:</span><span>{$description}</span></div>
+    </div>
+  </div>
+  <div>
+    <div class="recipient">
+      <div class="name">{$recipientName}</div>
+    </div>
+    <div class="footer">
+      Rastreo: {$trackingUrl} | Vuno Web Shipping
+    </div>
+  </div>
+</div>
+<script>window.print()</script>
+</body>
+</html>
+HTML;
+        exit;
     }
 }

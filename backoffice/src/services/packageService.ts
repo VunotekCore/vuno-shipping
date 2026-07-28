@@ -11,6 +11,10 @@ export interface PackageListParams {
   driver_id?: number
 }
 
+function getApiBase(): string {
+  return import.meta.env.VITE_API_URL || '/api'
+}
+
 export const packageService = {
   list(params?: PackageListParams) {
     const sp = new URLSearchParams()
@@ -57,5 +61,13 @@ export const packageService = {
 
   getEvents(packageId: number) {
     return api.get<{ success: boolean; data: { events: TrackingEvent[] } }>('/tracking_event/list.php', { params: { package_id: packageId } })
+  },
+
+  getQrUrl(id: number): string {
+    return `${getApiBase()}/package/qrcode.php?id=${id}`
+  },
+
+  getLabelUrl(id: number): string {
+    return `${getApiBase()}/package/label.php?id=${id}`
   },
 }
