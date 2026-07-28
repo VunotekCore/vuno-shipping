@@ -8,6 +8,7 @@ interface DeliveryType {
   id: number
   name: string
   description: string | null
+  category?: string
 }
 
 interface PricingRuleType {

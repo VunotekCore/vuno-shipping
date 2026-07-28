@@ -176,6 +176,7 @@ CREATE TABLE IF NOT EXISTS delivery_type (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     description VARCHAR(255) NULL,
+    category VARCHAR(20) DEFAULT 'international',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -257,6 +258,7 @@ CREATE TABLE IF NOT EXISTS package (
     pricing_rule_id INT NULL,
     delivery_type_id INT NULL,
     delivery_option VARCHAR(20) DEFAULT 'sucursal',
+    local_delivery_type_id INT NULL,
     pricing_type VARCHAR(20) DEFAULT 'weight',
     status_id INT NULL,
     assigned_to INT NULL,
@@ -274,6 +276,7 @@ CREATE TABLE IF NOT EXISTS package (
     FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE SET NULL,
     FOREIGN KEY (pricing_rule_id) REFERENCES pricing_rule(id) ON DELETE SET NULL,
     FOREIGN KEY (delivery_type_id) REFERENCES delivery_type(id) ON DELETE SET NULL,
+    FOREIGN KEY (local_delivery_type_id) REFERENCES delivery_type(id) ON DELETE SET NULL,
     FOREIGN KEY (status_id) REFERENCES package_status(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES `user`(id) ON DELETE SET NULL,
     INDEX idx_package_status (status_id),

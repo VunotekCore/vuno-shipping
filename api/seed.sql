@@ -107,13 +107,13 @@ ON DUPLICATE KEY UPDATE email = email;
 
 -- === Delivery Types ===
 
-INSERT INTO delivery_type (name, description) VALUES
-('door', 'Entrega a domicilio'),
-('branch', 'Entrega en sucursal'),
-('aereo', 'Envío aéreo internacional'),
-('maritimo', 'Envío marítimo internacional'),
-('express', 'Entrega express el mismo día')
-ON DUPLICATE KEY UPDATE description = VALUES(description);
+INSERT INTO delivery_type (name, description, category) VALUES
+('door', 'Entrega a domicilio', 'local'),
+('branch', 'Retiro en sucursal', 'local'),
+('aereo', 'Envío aéreo internacional', 'international'),
+('maritimo', 'Envío marítimo internacional', 'international'),
+('express', 'Entrega express el mismo día', 'local')
+ON DUPLICATE KEY UPDATE description = VALUES(description), category = VALUES(category);
 
 -- === Pricing Rule Types ===
 

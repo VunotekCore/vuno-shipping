@@ -36,16 +36,15 @@ const qrDataUrl = ref<string | null>(null)
 const clients = ref<Client[]>([])
 const zones = ref<Zone[]>([])
 const pricingRules = ref<PricingRule[]>([])
-const deliveryTypes = ref<{ id: number; name: string; description: string | null }[]>([])
+const deliveryTypes = ref<{ id: number; name: string; description: string | null; category?: string }[]>([])
 
 const shippingMethods = computed(() =>
-  deliveryTypes.value.filter(dt => ['aereo', 'maritimo', 'express'].includes(dt.name))
+  deliveryTypes.value.filter(dt => dt.category === 'international')
 )
 
-const deliveryOptions = [
-  { value: 'sucursal', label: 'Retiro en sucursal' },
-  { value: 'domicilio', label: 'Entrega a domicilio' },
-]
+const localDeliveryTypes = computed(() =>
+  deliveryTypes.value.filter(dt => dt.category === 'local')
+)
 const loadingReferences = ref(true)
 const showClientCreate = ref(false)
 const clientSearch = ref('')
@@ -116,8 +115,9 @@ const selectedClient = computed(() => {
 const deliveryTypeLabel = computed(() => {
   const sm = deliveryTypes.value.find((d) => d.name === form.shipping_method)
   const smLabel = sm?.description || form.shipping_method
-  const doLabel = deliveryOptions.find(d => d.value === form.delivery_option)?.label || form.delivery_option
-  return `${smLabel} + ${doLabel}`
+  const ld = deliveryTypes.value.find((d) => d.name === form.delivery_option)
+  const ldLabel = ld?.description || form.delivery_option
+  return `${smLabel} + ${ldLabel}`
 })
 
 const visibleFields = computed(() => {
@@ -327,6 +327,7 @@ async function handleCreate() {
       recipient_address: form.recipient_address,
       delivery_type: form.shipping_method,
       delivery_option: form.delivery_option,
+      local_delivery_type: form.delivery_option,
     }
     if (form.client_id) payload.client_id = form.client_id
     if (form.recipient_city) payload.recipient_city = form.recipient_city
@@ -722,17 +723,17 @@ onMounted(() => loadReferenceData())
                 Opción de entrega</p>
               <div class="flex flex-wrap gap-2">
                 <button
-                  v-for="dopt in deliveryOptions"
-                  :key="dopt.value"
+                  v-for="ldt in localDeliveryTypes"
+                  :key="ldt.id"
                   :class="[
                     'rounded-lg border px-4 py-2 text-sm font-medium transition-all',
-                    form.delivery_option === dopt.value
+                    form.delivery_option === ldt.name
                       ? 'border-[#00A8FF] bg-[#00A8FF]/10 text-[#00A8FF]'
                       : 'border-[#1e293b] text-[#94a3b8] hover:border-[#404944] hover:text-[#dae2fd]'
                   ]"
-                  @click="form.delivery_option = dopt.value"
+                  @click="form.delivery_option = ldt.name"
                 >
-                  {{ dopt.label }}
+                  {{ ldt.description || ldt.name }}
                 </button>
               </div>
             </div>

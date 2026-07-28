@@ -81,6 +81,7 @@ class PackageModel
                    p.status_id, ps.name AS status_name,
                    p.delivery_type_id, dt.name AS delivery_type_name,
                    p.delivery_option,
+                   p.local_delivery_type_id, ldt.name AS local_delivery_type_name,
                    p.assigned_to, u.name AS assigned_to_name,
                    p.received_at, p.delivered_at, p.created_at
             FROM package p
@@ -88,6 +89,7 @@ class PackageModel
             LEFT JOIN zone z ON z.id = p.zone_id
             LEFT JOIN package_status ps ON ps.id = p.status_id
             LEFT JOIN delivery_type dt ON dt.id = p.delivery_type_id
+            LEFT JOIN delivery_type ldt ON ldt.id = p.local_delivery_type_id
             LEFT JOIN `user` u ON u.id = p.assigned_to
             {$whereClause}
             ORDER BY p.created_at DESC
@@ -107,12 +109,14 @@ class PackageModel
     {
         $stmt = $this->db->prepare("
             SELECT p.*, c.name AS client_name, ps.name AS status_name,
-                   dt.name AS delivery_type_name, u.name AS assigned_to_name,
+                   dt.name AS delivery_type_name, ldt.name AS local_delivery_type_name,
+                   u.name AS assigned_to_name,
                    pr.name AS pricing_rule_name, z.name AS zone_name
             FROM package p
             LEFT JOIN client c ON c.id = p.client_id
             LEFT JOIN package_status ps ON ps.id = p.status_id
             LEFT JOIN delivery_type dt ON dt.id = p.delivery_type_id
+            LEFT JOIN delivery_type ldt ON ldt.id = p.local_delivery_type_id
             LEFT JOIN zone z ON z.id = p.zone_id
             LEFT JOIN `user` u ON u.id = p.assigned_to
             LEFT JOIN pricing_rule pr ON pr.id = p.pricing_rule_id
@@ -127,11 +131,13 @@ class PackageModel
     {
         $stmt = $this->db->prepare("
             SELECT p.*, c.name AS client_name, ps.name AS status_name,
-                   dt.name AS delivery_type_name, z.name AS zone_name
+                   dt.name AS delivery_type_name, ldt.name AS local_delivery_type_name,
+                   z.name AS zone_name
             FROM package p
             LEFT JOIN client c ON c.id = p.client_id
             LEFT JOIN package_status ps ON ps.id = p.status_id
             LEFT JOIN delivery_type dt ON dt.id = p.delivery_type_id
+            LEFT JOIN delivery_type ldt ON ldt.id = p.local_delivery_type_id
             LEFT JOIN zone z ON z.id = p.zone_id
             WHERE p.tracking_number = :tracking_number LIMIT 1
         ");
@@ -147,12 +153,12 @@ class PackageModel
              recipient_name, recipient_phone, recipient_address, recipient_city, recipient_department,
              zone_id, description, weight, length, width, height,
              volumetric_weight, chargeable_weight, declared_value, flete_cost, delivery_cost, shipping_cost,
-             pricing_rule_id, delivery_type_id, delivery_option, pricing_type, status_id, assigned_to, notes, created_by)
+             pricing_rule_id, delivery_type_id, delivery_option, local_delivery_type_id, pricing_type, status_id, assigned_to, notes, created_by)
              VALUES (:tracking_number, :tracking_token, :client_id, :sender_name, :sender_phone,
              :recipient_name, :recipient_phone, :recipient_address, :recipient_city, :recipient_department,
              :zone_id, :description, :weight, :length, :width, :height,
              :volumetric_weight, :chargeable_weight, :declared_value, :flete_cost, :delivery_cost, :shipping_cost,
-             :pricing_rule_id, :delivery_type_id, :delivery_option, :pricing_type, :status_id, :assigned_to, :notes, :created_by)'
+             :pricing_rule_id, :delivery_type_id, :delivery_option, :local_delivery_type_id, :pricing_type, :status_id, :assigned_to, :notes, :created_by)'
         );
         $stmt->execute([
             'tracking_number' => $data['tracking_number'],
@@ -180,6 +186,7 @@ class PackageModel
             'pricing_rule_id' => $data['pricing_rule_id'] ?? null,
             'delivery_type_id' => $data['delivery_type_id'] ?? null,
             'delivery_option' => $data['delivery_option'] ?? 'sucursal',
+            'local_delivery_type_id' => $data['local_delivery_type_id'] ?? null,
             'pricing_type' => $data['pricing_type'] ?? 'weight',
             'status_id' => $data['status_id'] ?? null,
             'assigned_to' => $data['assigned_to'] ?? null,
@@ -200,7 +207,7 @@ class PackageModel
                   'weight', 'length', 'width', 'height',
                   'volumetric_weight', 'chargeable_weight', 'declared_value',
                   'flete_cost', 'delivery_cost', 'shipping_cost',
-                  'pricing_rule_id', 'delivery_type_id', 'delivery_option', 'pricing_type', 'status_id', 'assigned_to',
+                  'pricing_rule_id', 'delivery_type_id', 'delivery_option', 'local_delivery_type_id', 'pricing_type', 'status_id', 'assigned_to',
                   'notes', 'received_at', 'delivered_at'] as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = :$field";

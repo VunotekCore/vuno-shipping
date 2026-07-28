@@ -195,6 +195,8 @@ export interface Package {
   delivery_type_id: number | null
   delivery_type_name: string | null
   delivery_option: string | null
+  local_delivery_type_id: number | null
+  local_delivery_type_name: string | null
   status_id: number | null
   status_name: string | null
   assigned_to: number | null

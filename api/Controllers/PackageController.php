@@ -163,6 +163,12 @@ class PackageController
             }
 
             $insertData['delivery_option'] = $data['delivery_option'] ?? 'sucursal';
+            if (isset($data['local_delivery_type'])) {
+                $localDtId = $this->model->getDeliveryTypeId($data['local_delivery_type']);
+                if ($localDtId !== null) {
+                    $insertData['local_delivery_type_id'] = $localDtId;
+                }
+            }
 
             $statusId = $this->model->getStatusId('pending');
             if ($statusId !== null) {
@@ -319,6 +325,12 @@ class PackageController
         }
         if (isset($data['delivery_option'])) {
             $updateData['delivery_option'] = $data['delivery_option'];
+        }
+        if (isset($data['local_delivery_type'])) {
+            $localDtId = $this->model->getDeliveryTypeId($data['local_delivery_type']);
+            if ($localDtId !== null) {
+                $updateData['local_delivery_type_id'] = $localDtId;
+            }
         }
 
         if (empty($updateData)) {

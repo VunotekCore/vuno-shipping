@@ -157,7 +157,7 @@ onMounted(() => loadPackage())
               </div>
               <div>
                 <p class="text-xs text-[#64748b] mb-1">Opción de entrega</p>
-                <p class="text-sm text-[#94a3b8]">{{ pkg.delivery_option === 'domicilio' ? 'Entrega a domicilio' : 'Retiro en sucursal' }}</p>
+                <p class="text-sm text-[#94a3b8]">{{ pkg.local_delivery_type_name || pkg.delivery_option || '—' }}</p>
               </div>
 
               <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
