@@ -35,13 +35,16 @@ class PricingRuleModel
     public function listAll(): array
     {
         $stmt = $this->db->query("
-            SELECT pr.id, pr.name, pr.base_price, prt.name AS type_name,
+            SELECT pr.id, pr.name, pr.type_id, pr.delivery_type_id,
+                   pr.base_price, pr.price_per_kg, pr.price_per_volume,
+                   pr.percentage_of_value, pr.min_price, pr.volumetric_divisor,
+                   prt.name AS type_name,
                    dt.name AS delivery_type_name, pr.is_active
             FROM pricing_rule pr
             LEFT JOIN pricing_rule_type prt ON prt.id = pr.type_id
             LEFT JOIN delivery_type dt ON dt.id = pr.delivery_type_id
             WHERE pr.is_active = 1
-            ORDER BY pr.name ASC
+            ORDER BY pr.id ASC
         ");
         return $stmt->fetchAll();
     }
@@ -109,7 +112,7 @@ class PricingRuleModel
                 LEFT JOIN pricing_rule_type prt ON prt.id = pr.type_id
                 LEFT JOIN delivery_type dt ON dt.id = pr.delivery_type_id
                 WHERE {$whereClause}
-                ORDER BY pr.name ASC
+                ORDER BY pr.id ASC
                 LIMIT 1
             ");
             $stmt->execute($q['params']);
@@ -137,8 +140,8 @@ class PricingRuleModel
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO pricing_rule (name, type_id, delivery_type_id, base_price, min_weight, max_weight, price_per_kg, price_per_volume, price_per_km, price_per_zone, percentage_of_value, min_price, is_active)
-             VALUES (:name, :type_id, :delivery_type_id, :base_price, :min_weight, :max_weight, :price_per_kg, :price_per_volume, :price_per_km, :price_per_zone, :percentage_of_value, :min_price, :is_active)'
+            'INSERT INTO pricing_rule (name, type_id, delivery_type_id, base_price, min_weight, max_weight, price_per_kg, price_per_volume, price_per_km, price_per_zone, percentage_of_value, min_price, volumetric_divisor, is_active)
+             VALUES (:name, :type_id, :delivery_type_id, :base_price, :min_weight, :max_weight, :price_per_kg, :price_per_volume, :price_per_km, :price_per_zone, :percentage_of_value, :min_price, :volumetric_divisor, :is_active)'
         );
         $stmt->execute([
             'name' => $data['name'],
@@ -153,6 +156,7 @@ class PricingRuleModel
             'price_per_zone' => $data['price_per_zone'] ?? null,
             'percentage_of_value' => $data['percentage_of_value'] ?? 0,
             'min_price' => $data['min_price'] ?? null,
+            'volumetric_divisor' => $data['volumetric_divisor'] ?? 166,
             'is_active' => $data['is_active'] ?? 1,
         ]);
         return (int) $this->db->lastInsertId();
@@ -163,7 +167,7 @@ class PricingRuleModel
         $fields = [];
         $params = ['id' => $id];
 
-        foreach (['name', 'type_id', 'delivery_type_id', 'base_price', 'min_weight', 'max_weight', 'price_per_kg', 'price_per_volume', 'price_per_km', 'price_per_zone', 'percentage_of_value', 'min_price', 'is_active'] as $field) {
+        foreach (['name', 'type_id', 'delivery_type_id', 'base_price', 'min_weight', 'max_weight', 'price_per_kg', 'price_per_volume', 'price_per_km', 'price_per_zone', 'percentage_of_value', 'min_price', 'volumetric_divisor', 'is_active'] as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = :$field";
                 $params[$field] = $data[$field];

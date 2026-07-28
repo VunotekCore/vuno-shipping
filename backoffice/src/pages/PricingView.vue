@@ -28,14 +28,14 @@ const {
   getDefaultForm: () => ({
     name: '', base_price: 0, price_per_kg: null, price_per_volume: null,
     percentage_of_value: 0, min_weight: null, max_weight: null,
-    type_id: null, delivery_type_id: null, min_price: null, is_active: true,
+    type_id: null, delivery_type_id: null, min_price: null, volumetric_divisor: 166, is_active: true,
   }),
   populateForm: (r) => ({
     name: r.name, base_price: r.base_price, price_per_kg: r.price_per_kg,
     price_per_volume: r.price_per_volume, percentage_of_value: r.percentage_of_value,
     min_weight: r.min_weight, max_weight: r.max_weight,
     type_id: r.type_id, delivery_type_id: r.delivery_type_id,
-    min_price: r.min_price, is_active: r.is_active,
+    min_price: r.min_price, volumetric_divisor: r.volumetric_divisor, is_active: r.is_active,
   }),
   validateForm: (f) => {
     if (!f.name) return 'El nombre es requerido'
@@ -47,7 +47,7 @@ const {
 const fieldErrors = reactive<Record<string, string>>({
   name: '', base_price: '', percentage_of_value: '',
   price_per_kg: '', price_per_volume: '',
-  min_weight: '', max_weight: '', min_price: '',
+  min_weight: '', max_weight: '', min_price: '', volumetric_divisor: '',
 })
 
 function clearError(key: string) {
@@ -67,6 +67,10 @@ function validateField(key: string) {
     case 'min_price':
       if (v !== null && v !== '' && Number(v) < 0) { fieldErrors[key] = 'No puede ser negativo'; return }
       fieldErrors[key] = ''
+      break
+    case 'volumetric_divisor':
+      if (v !== null && v !== '' && Number(v) < 1) { fieldErrors.volumetric_divisor = 'Debe ser mayor a 0'; return }
+      fieldErrors.volumetric_divisor = ''
       break
     case 'price_per_kg':
     case 'price_per_volume':
@@ -340,6 +344,32 @@ onMounted(async () => {
               :error="fieldErrors.min_price"
               @blur="validateField('min_price')"
               @input="clearError('min_price')"
+            />
+          </div>
+        </div>
+
+        <div class="admin-form-divider" />
+
+        <!-- Sección: Cálculo volumétrico -->
+        <div>
+          <div class="admin-form-section">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            Cálculo volumétrico
+          </div>
+          <div class="mt-3">
+            <AppFormField
+              :model-value="fv('volumetric_divisor')"
+              @update:model-value="(v: string | number | null) => form.volumetric_divisor = v"
+              label="Divisor volumétrico"
+              type="number"
+              icon="layers"
+              placeholder="166"
+              :disabled="saving"
+              :min="1"
+              helper="166 = aéreo, 5000 = marítimo. Peso volumétrico = (largo × ancho × alto) ÷ divisor"
+              :error="fieldErrors.volumetric_divisor"
+              @blur="validateField('volumetric_divisor')"
+              @input="clearError('volumetric_divisor')"
             />
           </div>
         </div>

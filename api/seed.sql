@@ -78,6 +78,28 @@ INSERT INTO role_permission (role_id, permission_id)
 SELECT 3, id FROM permission WHERE action = 'read'
 ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
 
+-- === Roles Operativos ===
+
+INSERT INTO role (name, slug) VALUES
+('Operador', 'operador'),
+('Operador Escáner', 'operador_escaner')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- Operador: package (create/read/edit), client (create/read), zone (read), pricing_rule (read)
+INSERT INTO role_permission (role_id, permission_id)
+SELECT 4, id FROM permission WHERE
+  (module = 'package' AND action IN ('create', 'read', 'edit')) OR
+  (module = 'client' AND action IN ('create', 'read')) OR
+  (module = 'zone' AND action IN ('read')) OR
+  (module = 'pricing_rule' AND action IN ('read'))
+ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
+
+-- Operador Escáner: package (read/edit only)
+INSERT INTO role_permission (role_id, permission_id)
+SELECT 5, id FROM permission WHERE
+  (module = 'package' AND action IN ('read', 'edit'))
+ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
+
 -- Admin user default
 INSERT INTO `user` (email, password, name, role_id, must_change_password) VALUES
 ('admin@vunotek.com', '$2y$12$SqgYTSRfcfOHNwS/hGnFTOq25Jlr5vF/W0n5IGFN9lJOARydo2M.C', 'Admin', 1, 1)

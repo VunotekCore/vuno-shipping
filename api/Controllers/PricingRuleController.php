@@ -116,6 +116,11 @@ class PricingRuleController
         if (isset($data['min_price'])) {
             $insertData['min_price'] = (float) $data['min_price'];
         }
+        if (isset($data['volumetric_divisor'])) {
+            $vd = (int) $data['volumetric_divisor'];
+            if ($vd <= 0) jsonError('El divisor volumétrico debe ser mayor a 0', 422);
+            $insertData['volumetric_divisor'] = $vd;
+        }
         if (isset($data['is_active'])) {
             $insertData['is_active'] = (int) $data['is_active'];
         }
@@ -218,6 +223,11 @@ class PricingRuleController
         }
         if (array_key_exists('min_price', $data)) {
             $updateData['min_price'] = $data['min_price'] !== null ? (float) $data['min_price'] : null;
+        }
+        if (array_key_exists('volumetric_divisor', $data)) {
+            $vd = (int) $data['volumetric_divisor'];
+            if ($vd <= 0) jsonError('El divisor volumétrico debe ser mayor a 0', 422);
+            $updateData['volumetric_divisor'] = $vd;
         }
         if (array_key_exists('is_active', $data)) {
             $updateData['is_active'] = (int) $data['is_active'];

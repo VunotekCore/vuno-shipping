@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 const props = withDefaults(defineProps<{
   modelValue: string | number | null
@@ -22,8 +22,14 @@ const inputRef = ref<HTMLInputElement | null>(null)
 const COUNTRY_PREFIX = '+505'
 const DIGIT_COUNT = 8
 
+let applying = false
+
 function extractDigits(val: string | number | null): string {
   return String(val ?? '').replace(/\D/g, '')
+}
+
+function extractUserDigits(val: string | number | null): string {
+  return extractDigits(val).slice(-DIGIT_COUNT)
 }
 
 function formatPhone(digits: string): string {
@@ -33,55 +39,94 @@ function formatPhone(digits: string): string {
   return `${COUNTRY_PREFIX} ${clean.slice(0, 4)}-${clean.slice(4)}`
 }
 
-const displayValue = ref('')
-
-function syncDisplay() {
-  const digits = extractDigits(props.modelValue)
-  displayValue.value = formatPhone(digits)
-}
-
-watch(() => props.modelValue, syncDisplay, { immediate: true })
-
-function onInput(e: Event) {
-  const raw = (e.target as HTMLInputElement).value
-  const digits = extractDigits(raw)
-  const formatted = formatPhone(digits)
-  displayValue.value = formatted
-  if (digits.length > 0) {
-    emit('update:modelValue', formatted)
-  } else {
-    emit('update:modelValue', '')
+function setCursorAfterDigits(input: HTMLInputElement, target: number) {
+  let count = 0
+  for (let i = 0; i < input.value.length; i++) {
+    if (/\d/.test(input.value[i])) count++
+    if (count === target) {
+      input.setSelectionRange(i + 1, i + 1)
+      return
+    }
   }
+  input.setSelectionRange(input.value.length, input.value.length)
 }
 
-function onPaste(e: ClipboardEvent) {
+function flushFormat(input: HTMLInputElement, rawNew: string, cursorStart: number) {
+  const digits = extractDigits(rawNew).slice(0, DIGIT_COUNT)
+  const display = digits.length > 0 ? formatPhone(digits).replace(COUNTRY_PREFIX + ' ', '') : ''
+  const cursorTarget = extractDigits(rawNew.slice(0, cursorStart)).length
+
+  input.value = display
+  setCursorAfterDigits(input, Math.min(cursorTarget, digits.length))
+  emit('update:modelValue', digits.length > 0 ? formatPhone(digits) : '')
+}
+
+function onBeforeInput(e: InputEvent) {
+  if (applying || props.disabled) return
+
+  const input = e.target as HTMLInputElement
+  const oldVal = input.value
+  const start = input.selectionStart ?? oldVal.length
+  const end = input.selectionEnd ?? start
+
+  let rawNew: string
+  if (e.inputType === 'deleteContentBackward') {
+    rawNew = oldVal.slice(0, Math.max(0, start - 1)) + oldVal.slice(end)
+  } else if (e.inputType === 'deleteContentForward') {
+    rawNew = oldVal.slice(0, start) + oldVal.slice(Math.min(end + 1, oldVal.length))
+  } else if ((e.inputType === 'insertText' || e.inputType === 'insertFromPaste') && e.data) {
+    rawNew = oldVal.slice(0, start) + e.data + oldVal.slice(end)
+  } else {
+    return
+  }
+
+  e.preventDefault()
+  applying = true
+  flushFormat(input, rawNew, start)
+  applying = false
+}
+
+function onInputFallback(e: Event) {
+  if (applying || props.disabled) return
+  const input = e.target as HTMLInputElement
+  const digits = extractDigits(input.value).slice(0, DIGIT_COUNT)
+  const display = digits.length > 0 ? formatPhone(digits).replace(COUNTRY_PREFIX + ' ', '') : ''
+  input.value = display
+  emit('update:modelValue', digits.length > 0 ? formatPhone(digits) : '')
+}
+
+function onPasteFallback(e: ClipboardEvent) {
+  if (applying || props.disabled) return
   e.preventDefault()
   const pasted = e.clipboardData?.getData('text') ?? ''
-  const digits = extractDigits(pasted).slice(0, DIGIT_COUNT)
-  const formatted = formatPhone(digits)
-  displayValue.value = formatted
-  if (digits.length > 0) {
-    emit('update:modelValue', formatted)
+  if (!pasted) return
+  const input = e.target as HTMLInputElement
+  const oldVal = input.value
+  const start = input.selectionStart ?? oldVal.length
+  const end = input.selectionEnd ?? start
+  const pastedDigits = extractDigits(pasted).slice(0, DIGIT_COUNT)
+  const rawNew = oldVal.slice(0, start) + pastedDigits + oldVal.slice(end)
+  applying = true
+  flushFormat(input, rawNew, start)
+  applying = false
+}
+
+function syncFromModel() {
+  if (!inputRef.value) return
+  const digits = extractUserDigits(props.modelValue)
+  const display = digits.length > 0 ? formatPhone(digits).replace(COUNTRY_PREFIX + ' ', '') : ''
+  if (inputRef.value.value !== display) {
+    applying = true
+    inputRef.value.value = display
+    applying = false
   }
 }
 
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Backspace') {
-    const digits = extractDigits(displayValue.value)
-    if (digits.length === 0) return
-    const newDigits = digits.slice(0, -1)
-    const formatted = formatPhone(newDigits)
-    displayValue.value = formatted
-    if (newDigits.length > 0) {
-      emit('update:modelValue', formatted)
-    } else {
-      emit('update:modelValue', '')
-    }
-    e.preventDefault()
-  }
-}
+watch(() => props.modelValue, syncFromModel)
 
-const digitCount = computed(() => extractDigits(displayValue.value).length)
+onMounted(syncFromModel)
+
+const digitCount = computed(() => extractUserDigits(props.modelValue).length)
 const hasError = computed(() => !!props.error)
 </script>
 
@@ -99,16 +144,15 @@ const hasError = computed(() => !!props.error)
       <span class="app-phone-input__prefix">{{ COUNTRY_PREFIX }}</span>
       <input
         ref="inputRef"
-        :value="displayValue.replace(COUNTRY_PREFIX + ' ', '')"
         :placeholder="placeholder"
         :disabled="disabled"
         :required="required"
         class="app-phone-input__input"
         inputmode="numeric"
         autocomplete="tel-national"
-        @input="onInput"
-        @paste="onPaste"
-        @keydown="onKeydown"
+        @beforeinput="onBeforeInput"
+        @input="onInputFallback"
+        @paste="onPasteFallback"
       />
     </div>
 

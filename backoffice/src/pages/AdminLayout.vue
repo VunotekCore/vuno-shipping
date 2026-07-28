@@ -32,7 +32,7 @@ function closeSidebar() {
     <!-- Content -->
     <div class="flex flex-1 flex-col pl-60 transition-all duration-300 max-lg:pl-0">
       <AdminHeader @toggle-sidebar="toggleSidebar" />
-      <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <main class="flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
         <RouterView />
       </main>
     </div>

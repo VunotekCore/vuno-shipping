@@ -23,8 +23,9 @@ $deliveryTypeId = (int)($data['delivery_type_id'] ?? 0);
 $zoneId = isset($data['zone_id']) ? (int) $data['zone_id'] : null;
 $pricingRuleId = isset($data['pricing_rule_id']) ? (int) $data['pricing_rule_id'] : null;
 
-if ($length <= 0 || $width <= 0 || $height <= 0) {
-    jsonError('Las dimensiones deben ser mayores a cero', 422);
+// Validate weight or dimensions are provided
+if ($weight <= 0 && ($length <= 0 || $width <= 0 || $height <= 0)) {
+    jsonError('Debe proporcionar peso o dimensiones para cotizar', 422);
 }
 
 $db = Database::getConnection();

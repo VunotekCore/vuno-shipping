@@ -12,7 +12,6 @@
   border: 1px solid #1e293b;
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
 }
 .admin-card-sm {
   background: #111d2e;
