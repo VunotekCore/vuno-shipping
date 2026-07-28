@@ -362,7 +362,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <template v-if="typeName === 'percentage_value'">
+        <div>
           <div class="admin-form-divider" />
           <!-- Sección: % del valor -->
           <div>
@@ -388,7 +388,7 @@ onMounted(async () => {
               />
             </div>
           </div>
-        </template>
+        </div>
 
         <!-- Sección: Cálculo volumétrico -->
         <div v-if="typeName === null || typeName === 'weight' || typeName === 'volume'">
