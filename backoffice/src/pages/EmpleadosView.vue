@@ -246,17 +246,14 @@ onMounted(() => load())
                 @blur="validateField('cedula')"
                 @input="clearError('cedula')"
               />
-              <AppFormField
+              <AppPhoneInput
                 :model-value="fv('phone')"
-                @update:model-value="(v: string | number | null) => form.phone = v"
+                @update:model-value="(v: string) => { form.phone = v; clearError('phone') }"
                 label="Teléfono"
-                icon="phone"
-                placeholder="+505 8888-8888"
+                placeholder="1234-5678"
                 :disabled="saving"
-                :maxlength="30"
                 :error="fieldErrors.phone"
                 @blur="validateField('phone')"
-                @input="clearError('phone')"
               />
             </div>
             <div class="grid grid-cols-2 gap-4">

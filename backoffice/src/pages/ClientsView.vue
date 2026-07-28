@@ -6,6 +6,7 @@ import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppFormField from '../components/ui/AppFormField.vue'
+import AppPhoneInput from '../components/ui/AppPhoneInput.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 
@@ -49,7 +50,7 @@ function validateField(key: string) {
       fieldErrors.email = ''
       break
     case 'phone':
-      if (v.length > 50) { fieldErrors.phone = 'Máximo 50 caracteres'; return }
+      if (v && v.replace(/\D/g, '').length !== 8) { fieldErrors.phone = 'Debe tener 8 dígitos'; return }
       fieldErrors.phone = ''
       break
     case 'address':
@@ -224,18 +225,15 @@ onMounted(() => load())
             />
           </div>
           <div class="mt-4">
-            <AppFormField
+            <AppPhoneInput
               :model-value="fv('phone')"
-              @update:model-value="(v: string | number | null) => form.phone = v"
+              @update:model-value="(v: string) => { form.phone = v; clearError('phone') }"
               label="Teléfono"
-              icon="phone"
-              placeholder="+505 8888-8888"
+              placeholder="1234-5678"
               :disabled="saving"
-              :maxlength="50"
-              helper="Formato: +505 8888-8888"
               :error="fieldErrors.phone"
+              helper="Formato: +(505) 1234-5678"
               @blur="validateField('phone')"
-              @input="clearError('phone')"
             />
           </div>
         </div>

@@ -4,6 +4,7 @@ import { companyService, type Company } from '../services/companyService'
 import { useToast } from '../composables/useToast'
 import { getApiUrl } from '../services/api'
 import AppFormField from '../components/ui/AppFormField.vue'
+import AppPhoneInput from '../components/ui/AppPhoneInput.vue'
 
 const toast = useToast()
 
@@ -41,7 +42,7 @@ function validateField(key: string) {
       fieldErrors.ruc = ''
       break
     case 'phone':
-      if (v.length > 30) { fieldErrors.phone = 'Máximo 30 caracteres'; return }
+      if (v && v.replace(/\D/g, '').length !== 8) { fieldErrors.phone = 'Debe tener 8 dígitos'; return }
       fieldErrors.phone = ''
       break
     case 'email':
@@ -231,17 +232,14 @@ onMounted(() => load())
                 @blur="validateField('ruc')"
                 @input="clearError('ruc')"
               />
-              <AppFormField
+              <AppPhoneInput
                 :model-value="fv('phone')"
-                @update:model-value="(v: string | number | null) => form.phone = String(v ?? '')"
+                @update:model-value="(v: string) => { form.phone = v; clearError('phone') }"
                 label="Teléfono"
-                icon="phone"
-                placeholder="+505 8888-8888"
+                placeholder="1234-5678"
                 :disabled="saving"
-                :maxlength="30"
                 :error="fieldErrors.phone"
                 @blur="validateField('phone')"
-                @input="clearError('phone')"
               />
             </div>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
