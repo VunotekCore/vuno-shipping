@@ -290,6 +290,9 @@ onMounted(async () => {
     <!-- Create / Edit Modal -->
     <AppModal :visible="showModal" :title="editing ? 'Editar regla' : 'Crear regla'" @close="showModal = false" size="md">
       <form class="space-y-5" @submit.prevent="handleSave" novalidate>
+        <pre style="font-size:11px;color:#94a3b8;background:#0a1022;padding:8px;border-radius:6px;overflow-x:auto;white-space:pre-wrap">
+type_id={{ form.type_id }} visibleTypeName={{ visibleTypeName }} ruleTypes={{ JSON.stringify(ruleTypes) }}
+        </pre>
         <!-- Sección: Identificación -->
         <div>
           <div class="admin-form-section">
