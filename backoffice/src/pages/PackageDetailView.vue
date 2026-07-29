@@ -9,6 +9,7 @@ import AppModal from '../components/ui/AppModal.vue'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const origin = window.location.origin
 
 const pkg = ref<Package | null>(null)
 const events = ref<TrackingEvent[]>([])
@@ -324,8 +325,8 @@ onMounted(() => loadPackage())
           </div>
         </div>
 
-        <!-- Right: Tracking timeline -->
-        <div class="lg:col-span-1">
+        <!-- Right: Tracking timeline + QR -->
+        <div class="lg:col-span-1 space-y-6">
           <div class="admin-card p-6">
             <h2 class="text-sm font-semibold text-[#dae2fd] mb-4">Historial de seguimiento</h2>
 
@@ -374,6 +375,30 @@ onMounted(() => loadPackage())
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- QR Code card -->
+          <div class="admin-card p-6 text-center">
+            <h2 class="text-sm font-semibold text-[#dae2fd] mb-4">Código QR</h2>
+            <img
+              :src="packageService.getQrUrl(pkg.id)"
+              alt="QR del paquete"
+              width="240"
+              height="240"
+              class="mx-auto rounded-lg border border-[#1e293b]"
+              loading="lazy"
+            />
+            <p class="mt-3 text-xs text-[#64748b] break-all">{{ origin }}/rastreo?tracking={{ pkg.tracking_number }}</p>
+            <a
+              :href="packageService.getQrUrl(pkg.id)"
+              :download="`qr-${pkg.tracking_number}.png`"
+              class="admin-btn admin-btn-ghost admin-btn-sm mt-3 inline-flex items-center gap-1.5"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Descargar QR
+            </a>
           </div>
         </div>
       </div>

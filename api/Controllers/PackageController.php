@@ -10,6 +10,8 @@ use App\Services\PricingService;
 use App\Config\Database;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
+use chillerlan\QRCode\Common\EccLevel;
+use chillerlan\QRCode\Output\QRGdImagePNG;
 
 class PackageController
 {
@@ -532,10 +534,10 @@ class PackageController
         }
 
         $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
-            'eccLevel' => QRCode::ECC_M,
+            'outputInterface' => QRGdImagePNG::class,
+            'eccLevel' => EccLevel::M,
             'scale' => 10,
-            'imageBase64' => false,
+            'outputBase64' => false,
             'bgColor' => [255, 255, 255],
             'imageTransparent' => false,
         ]);
@@ -576,10 +578,10 @@ class PackageController
         }
 
         $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
-            'eccLevel' => QRCode::ECC_M,
+            'outputInterface' => QRGdImagePNG::class,
+            'eccLevel' => EccLevel::M,
             'scale' => 6,
-            'imageBase64' => true,
+            'outputBase64' => true,
             'bgColor' => [255, 255, 255],
             'imageTransparent' => false,
         ]);

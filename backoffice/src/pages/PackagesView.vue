@@ -5,14 +5,19 @@ import { packageService, type Package } from '../services/packageService'
 import { formatCurrency, statusColor } from '../utils/format'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
+import AppModal from '../components/ui/AppModal.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 
 const router = useRouter()
+const origin = window.location.origin
 const packages = ref<Package[]>([])
 const loading = ref(false)
 const showDelete = ref(false)
 const deleting = ref<Package | null>(null)
+const showQrModal = ref(false)
+const qrPackage = ref<Package | null>(null)
+const qrError = ref(false)
 const statusFilter = ref('')
 const page = ref(1)
 const limit = ref(20)
@@ -51,6 +56,12 @@ function filterByStatus(status: string) {
 
 function viewDetail(pkg: Package) {
   router.push(`/packages/${pkg.id}`)
+}
+
+function openQr(pkg: Package) {
+  qrPackage.value = pkg
+  qrError.value = false
+  showQrModal.value = true
 }
 
 function openDelete(pkg: Package) {
@@ -134,6 +145,14 @@ onMounted(() => load())
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="viewDetail(p)" title="Ver detalle">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openQr(p)" title="Ver QR">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                  </svg>
+                </button>
                 <button
                   class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]"
                   @click="openDelete(p)"
@@ -185,6 +204,15 @@ onMounted(() => load())
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               Ver
             </button>
+            <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openQr(p)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" />
+              </svg>
+              QR
+            </button>
             <button
               class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]"
               @click="openDelete(p)"
@@ -218,5 +246,39 @@ onMounted(() => load())
       @confirm="confirmDelete"
       @cancel="showDelete = false"
     />
+    <!-- QR Modal -->
+    <AppModal :visible="showQrModal" :title="`QR — ${qrPackage?.tracking_number ?? ''}`" @close="showQrModal = false" size="sm">
+      <div class="flex flex-col items-center py-4">
+        <img
+          v-if="qrPackage"
+          :src="packageService.getQrUrl(qrPackage.id)"
+          alt="QR del paquete"
+          width="240"
+          height="240"
+          class="rounded-lg border border-[#1e293b]"
+          @error="qrError = true"
+        />
+        <p v-if="qrError" class="text-sm text-[#DC2626] mt-4">Error al cargar el código QR</p>
+        <p class="mt-4 text-xs text-[#64748b] text-center break-all">
+          {{ origin }}/rastreo?tracking={{ qrPackage?.tracking_number ?? '' }}
+        </p>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button class="admin-btn admin-btn-ghost" @click="showQrModal = false">Cerrar</button>
+          <a
+            v-if="qrPackage"
+            :href="packageService.getQrUrl(qrPackage.id)"
+            download
+            class="admin-btn admin-btn-primary inline-flex items-center gap-1.5"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Descargar
+          </a>
+        </div>
+      </template>
+    </AppModal>
   </div>
 </template>
