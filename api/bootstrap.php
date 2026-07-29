@@ -40,10 +40,20 @@ config([
         'allowed_origins' => array_map('trim', explode(',', $_ENV['CORS_ALLOWED_ORIGINS'] ?? '')),
         'debug'           => ($_ENV['APP_DEBUG'] ?? 'false') === 'true',
         'timezone'        => $_ENV['APP_TIMEZONE'] ?? 'America/Managua',
+        'base_url'        => $_ENV['APP_URL'] ?? 'http://localhost:4321',
     ],
     'imagekit' => [
         'private_key'  => $_ENV['IMAGEKIT_PRIVATE_KEY'] ?? '',
         'url_endpoint' => $_ENV['IMAGEKIT_URL_ENDPOINT'] ?? '',
+    ],
+    'mail' => [
+        'host'       => $_ENV['MAIL_HOST'] ?? '',
+        'port'       => $_ENV['MAIL_PORT'] ?? '587',
+        'username'   => $_ENV['MAIL_USER'] ?? '',
+        'password'   => $_ENV['MAIL_PASS'] ?? '',
+        'encryption' => $_ENV['MAIL_ENCRYPTION'] ?? 'tls',
+        'from'       => $_ENV['MAIL_FROM'] ?? '',
+        'from_name'  => $_ENV['MAIL_FROM_NAME'] ?? 'Vuno Web Shipping',
     ],
     'trusted_proxies' => array_map('trim', explode(',', $_ENV['TRUSTED_PROXIES'] ?? '')),
 ]);

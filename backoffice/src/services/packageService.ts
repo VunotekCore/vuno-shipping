@@ -33,6 +33,10 @@ export const packageService = {
     return api.get<{ success: boolean; data: { package: Package; events: TrackingEvent[] } }>('/package/get.php', { params: { id } })
   },
 
+  getByTracking(tracking: string) {
+    return api.get<{ success: boolean; data: { package: Package; events: TrackingEvent[] } }>('/package/get.php', { params: { tracking } })
+  },
+
   create(data: {
     client_id?: number; sender_name: string; sender_phone?: string;
     recipient_name: string; recipient_phone: string; recipient_address: string;

@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     name VARCHAR(100) NOT NULL,
     role_id INT NOT NULL,
     must_change_password TINYINT(1) DEFAULT 0,
+    last_read_notification_id INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES role(id) ON DELETE RESTRICT,
@@ -346,6 +347,19 @@ CREATE TABLE IF NOT EXISTS package_status_transition (
     from_status VARCHAR(50) NOT NULL,
     to_status VARCHAR(50) NOT NULL,
     UNIQUE KEY unique_transition (from_status, to_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- === Notifications ===
+
+CREATE TABLE IF NOT EXISTS notification (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    package_id INT NULL,
+    type VARCHAR(50) NOT NULL DEFAULT 'status_change',
+    title VARCHAR(255) NOT NULL,
+    message TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (package_id) REFERENCES package(id) ON DELETE SET NULL,
+    INDEX idx_notification_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS vehicle_status (

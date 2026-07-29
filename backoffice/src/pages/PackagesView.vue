@@ -10,7 +10,7 @@ import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 
 const router = useRouter()
-const origin = window.location.origin
+const backofficeUrl = window.location.origin
 const packages = ref<Package[]>([])
 const loading = ref(false)
 const showDelete = ref(false)
@@ -20,6 +20,9 @@ const qrPackage = ref<Package | null>(null)
 const qrError = ref(false)
 const statusFilter = ref('')
 const page = ref(1)
+function pushScan(pkg: Package) {
+  router.push(`/scan?tracking=${pkg.tracking_number}`)
+}
 const limit = ref(20)
 const total = ref(0)
 const pages = ref(0)
@@ -260,8 +263,16 @@ onMounted(() => load())
         />
         <p v-if="qrError" class="text-sm text-[#DC2626] mt-4">Error al cargar el código QR</p>
         <p class="mt-4 text-xs text-[#64748b] text-center break-all">
-          {{ origin }}/rastreo?tracking={{ qrPackage?.tracking_number ?? '' }}
+          {{ backofficeUrl }}/scan?tracking={{ qrPackage?.tracking_number ?? '' }}
         </p>
+        <button
+          v-if="qrPackage"
+          @click="pushScan(qrPackage)"
+          class="admin-btn admin-btn-ghost admin-btn-sm mt-3 inline-flex items-center gap-1.5"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+          Abrir en scan
+        </button>
       </div>
       <template #footer>
         <div class="flex justify-end gap-3">

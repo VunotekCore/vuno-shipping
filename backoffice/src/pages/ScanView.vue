@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { packageService, type Package, type TrackingEvent } from '../services/packageService'
 import { useToast } from '../composables/useToast'
 import { statusColor, formatCurrency } from '../utils/format'
 
 const toast = useToast()
+const route = useRoute()
 
 const scanInput = ref('')
 const scanInputRef = ref<HTMLInputElement | null>(null)
@@ -59,7 +61,6 @@ async function lookupPackage() {
   const input = scanInput.value.trim()
   if (!input) return
 
-  // Try as tracking number first, then as ID
   const isNumeric = /^\d+$/.test(input)
 
   loading.value = true
@@ -68,18 +69,9 @@ async function lookupPackage() {
   historyMode.value = false
 
   try {
-    let res
-    if (isNumeric) {
-      res = await packageService.get(parseInt(input))
-    } else {
-      res = await packageService.get(0) // No, this won't work for tracking number
-      // Actually, we need to search by tracking number. Let's use the list with status filter and check.
-      // Better approach: get all packages and match by tracking number
-      // But that's not efficient. Let me use a different approach.
-      // The get endpoint uses id, not tracking_number. We need to search.
-      // For now, let's try to treat numeric as ID, otherwise show error.
-      throw new Error('Usá el código numérico del paquete o escaneá el QR')
-    }
+    const res = isNumeric
+      ? await packageService.get(parseInt(input))
+      : await packageService.getByTracking(input)
 
     const pkg = res.data.data?.package
     if (pkg) {
@@ -89,25 +81,8 @@ async function lookupPackage() {
     } else {
       toast.error('Paquete no encontrado')
     }
-  } catch (e: any) {
-    // Try searching by tracking number via list
-    try {
-      const listRes = await packageService.list({ limit: 50 })
-      const packages = listRes.data.data?.packages || []
-      const found = packages.find((p: Package) =>
-        p.tracking_number.toLowerCase() === input.toLowerCase()
-      )
-      if (found) {
-        const detailRes = await packageService.get(found.id)
-        packageData.value = detailRes.data.data?.package || null
-        events.value = detailRes.data.data?.events || []
-        scanInput.value = ''
-      } else {
-        toast.error('Paquete no encontrado')
-      }
-    } catch {
-      toast.error('Error al buscar el paquete')
-    }
+  } catch {
+    toast.error('Paquete no encontrado')
   } finally {
     loading.value = false
     nextTick(() => scanInputRef.value?.focus())
@@ -149,7 +124,13 @@ function viewHistory() {
 }
 
 onMounted(() => {
-  nextTick(() => scanInputRef.value?.focus())
+  const trackingParam = route.query.tracking as string | undefined
+  if (trackingParam) {
+    scanInput.value = trackingParam
+    lookupPackage()
+  } else {
+    nextTick(() => scanInputRef.value?.focus())
+  }
 })
 </script>
 
@@ -210,7 +191,7 @@ onMounted(() => {
           </div>
           <div>
             <p class="text-xs text-[#64748b]">Peso cobrable</p>
-            <p class="text-[#94a3b8]">{{ packageData.chargeable_weight ? packageData.chargeable_weight.toFixed(2) + ' lb' : '—' }}</p>
+            <p class="text-[#94a3b8]">{{ packageData.chargeable_weight ? Number(packageData.chargeable_weight).toFixed(2) + ' lb' : '—' }}</p>
           </div>
           <div>
             <p class="text-xs text-[#64748b]">Total</p>

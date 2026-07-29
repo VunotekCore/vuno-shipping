@@ -7,6 +7,8 @@ use App\Models\PackageModel;
 use App\Models\TrackingEventModel;
 use App\Models\DocumentSequenceModel;
 use App\Services\PricingService;
+use App\Services\NotificationService;
+use App\Services\MailService;
 use App\Config\Database;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
@@ -62,17 +64,23 @@ class PackageController
         }
 
         $id = (int) ($_GET['id'] ?? 0);
-        if ($id <= 0) {
-            jsonError('ID de paquete inválido', 422);
+        $trackingNumber = $_GET['tracking'] ?? '';
+
+        if ($id > 0) {
+            $package = $this->model->findById($id);
+        } elseif ($trackingNumber !== '') {
+            $package = $this->model->findByTrackingNumber($trackingNumber);
+        } else {
+            jsonError('ID o tracking number requerido', 422);
         }
 
-        $package = $this->model->findById($id);
         if ($package === null) {
             jsonError('Paquete no encontrado', 404);
         }
 
+        $pkgId = (int) $package['id'];
         $trackingModel = new TrackingEventModel(Database::getConnection());
-        $events = $trackingModel->listByPackage($id);
+        $events = $trackingModel->listByPackage($pkgId);
 
         jsonSuccess(['package' => $package, 'events' => $events]);
     }
@@ -103,7 +111,17 @@ class PackageController
 
         try {
             $seqModel = new DocumentSequenceModel($db);
-            $trackingNumber = $seqModel->nextNumber('tracking');
+            $seq = $seqModel->findByCode('tracking');
+            if ($seq === null) {
+                $db->rollBack();
+                jsonError('Secuencia de tracking no configurada', 500);
+            }
+            $prefix = $seq['prefix'] ?? 'EV';
+
+            do {
+                $trackingNumber = self::generateRandomTrackingCode($prefix);
+            } while ($this->model->findByTrackingNumber($trackingNumber) !== null);
+
             $trackingToken = bin2hex(random_bytes(32));
 
             $insertData = [
@@ -500,6 +518,53 @@ class PackageController
             $db->commit();
 
             $updated = $this->model->findById($id);
+
+            try {
+                $statusLabels = [
+                    'pending' => 'Pendiente',
+                    'received' => 'Recibido en bodega',
+                    'in_transit' => 'En tránsito',
+                    'out_for_delivery' => 'En ruta de entrega',
+                    'delivered' => 'Entregado',
+                    'returned' => 'Devuelto',
+                    'cancelled' => 'Cancelado',
+                    'disputed' => 'En disputa',
+                ];
+                $oldLabel = $statusLabels[$currentStatusName] ?? $currentStatusName;
+                $newLabel = $statusLabels[$newStatus] ?? $newStatus;
+                $msg = "{$oldLabel} → {$newLabel}";
+
+                $notifSvc = new NotificationService($db);
+                $notifSvc->create(
+                    $id,
+                    'status_change',
+                    "Paquete {$updated['tracking_number']}: {$newLabel}",
+                    $msg
+                );
+
+                $clientEmail = $updated['client_email'] ?? null;
+                if ($clientEmail) {
+                    $baseUrl = (config()['app']['base_url'] ?? 'http://localhost:4321');
+                    $trackingUrl = rtrim($baseUrl, '/') . '/rastreo?tracking=' . rawurlencode($updated['tracking_number']);
+                    if (!empty($updated['tracking_token'])) {
+                        $trackingUrl .= '&token=' . rawurlencode($updated['tracking_token']);
+                    }
+
+                    $mailSvc = new MailService();
+                    $mailSvc->sendStatusChange(
+                        $clientEmail,
+                        $updated['client_name'] ?? 'Cliente',
+                        $updated['tracking_number'],
+                        $trackingUrl,
+                        $currentStatusName,
+                        $newStatus,
+                        $data['description'] ?? null
+                    );
+                }
+            } catch (\Throwable $e) {
+                apiLog('ERROR', 'Post-status notification failed: ' . $e->getMessage());
+            }
+
             jsonSuccess(['package' => $updated], 'Estado actualizado');
         } catch (\Throwable $e) {
             $db->rollBack();
@@ -527,7 +592,7 @@ class PackageController
             jsonError('Paquete no encontrado', 404);
         }
 
-        $baseUrl = config()['BASE_URL'] ?? 'https://' . ($_SERVER['HTTP_HOST'] ?? 'shipping.vunotek.com');
+        $baseUrl = (config()['app']['base_url'] ?? 'http://localhost:4321');
         $trackingUrl = rtrim($baseUrl, '/') . '/rastreo?tracking=' . rawurlencode($package['tracking_number']);
         if (!empty($package['tracking_token'])) {
             $trackingUrl .= '&token=' . rawurlencode($package['tracking_token']);
@@ -571,7 +636,7 @@ class PackageController
             jsonError('Paquete no encontrado', 404);
         }
 
-        $baseUrl = config()['BASE_URL'] ?? 'https://' . ($_SERVER['HTTP_HOST'] ?? 'shipping.vunotek.com');
+        $baseUrl = (config()['app']['base_url'] ?? 'http://localhost:4321');
         $trackingUrl = rtrim($baseUrl, '/') . '/rastreo?tracking=' . rawurlencode($package['tracking_number']);
         if (!empty($package['tracking_token'])) {
             $trackingUrl .= '&token=' . rawurlencode($package['tracking_token']);
@@ -656,5 +721,15 @@ class PackageController
 </html>
 HTML;
         exit;
+    }
+
+    private static function generateRandomTrackingCode(string $prefix, int $length = 8): string
+    {
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $code = '';
+        for ($i = 0; $i < $length; $i++) {
+            $code .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        return "{$prefix}-{$code}";
     }
 }

@@ -112,7 +112,7 @@ class PackageModel
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare("
-            SELECT p.*, c.name AS client_name, ps.name AS status_name,
+            SELECT p.*, c.name AS client_name, c.email AS client_email, c.phone AS client_phone, ps.name AS status_name,
                    dt.name AS delivery_type_name, ldt.name AS local_delivery_type_name,
                    ss.name AS shipping_service_name, dopt.name AS delivery_option_name,
                    u.name AS assigned_to_name,

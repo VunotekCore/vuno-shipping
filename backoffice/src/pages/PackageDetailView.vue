@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { packageService, type Package, type TrackingEvent } from '../services/packageService'
 import { useToast } from '../composables/useToast'
@@ -9,7 +9,14 @@ import AppModal from '../components/ui/AppModal.vue'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
-const origin = window.location.origin
+const backofficeUrl = window.location.origin
+const trackingUrl = computed(() => pkg.value
+  ? `${backofficeUrl}/scan?tracking=${pkg.value.tracking_number}`
+  : '')
+function goToScan() {
+  if (!pkg.value) return
+  router.push(`/scan?tracking=${pkg.value.tracking_number}`)
+}
 
 const pkg = ref<Package | null>(null)
 const events = ref<TrackingEvent[]>([])
@@ -388,17 +395,24 @@ onMounted(() => loadPackage())
               class="mx-auto rounded-lg border border-[#1e293b]"
               loading="lazy"
             />
-            <p class="mt-3 text-xs text-[#64748b] break-all">{{ origin }}/rastreo?tracking={{ pkg.tracking_number }}</p>
-            <a
-              :href="packageService.getQrUrl(pkg.id)"
-              :download="`qr-${pkg.tracking_number}.png`"
-              class="admin-btn admin-btn-ghost admin-btn-sm mt-3 inline-flex items-center gap-1.5"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              Descargar QR
-            </a>
+            <p class="mt-3 text-xs text-[#64748b] break-all">{{ trackingUrl }}</p>
+            <div class="mt-3 flex items-center justify-center gap-2">
+              <button
+                @click="goToScan"
+                class="admin-btn admin-btn-ghost admin-btn-sm inline-flex items-center gap-1.5"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                Abrir en scan
+              </button>
+              <a
+                :href="packageService.getQrUrl(pkg.id)"
+                :download="`qr-${pkg.tracking_number}.png`"
+                class="admin-btn admin-btn-ghost admin-btn-sm inline-flex items-center gap-1.5"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Descargar QR
+              </a>
+            </div>
           </div>
         </div>
       </div>

@@ -61,6 +61,17 @@ import Input from '../atoms/Input.astro';
 <script>
   const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
 
+  const urlParams = new URLSearchParams(window.location.search)
+  const urlTracking = urlParams.get('tracking')
+  const urlToken = urlParams.get('token')
+  if (urlTracking) {
+    ;(document.getElementById('tracking-input') as HTMLInputElement).value = urlTracking
+    if (urlToken) {
+      ;(document.getElementById('tracking-token') as HTMLInputElement).value = urlToken
+    }
+    setTimeout(() => document.getElementById('tracking-form')?.dispatchEvent(new Event('submit')), 100)
+  }
+
   const statusLabels: Record<string, string> = {
     pending: 'Pendiente',
     received: 'Recibido',
@@ -146,10 +157,24 @@ import Input from '../atoms/Input.astro';
     }
 
     const safeTracking = escapeHtml(pkg.tracking_number as string);
-    const safeRecipient = escapeHtml((pkg.recipient_name as string) || '—');
-    const safeAddress = escapeHtml((pkg.recipient_address as string) || '—');
-    const safeCity = escapeHtml((pkg.recipient_city as string) || (pkg.recipient_department as string) || '—');
+    const hasToken = pkg.recipient_name != null;
+    const safeRecipient = hasToken ? escapeHtml(pkg.recipient_name as string) : '';
+    const safeAddress = hasToken ? escapeHtml(pkg.recipient_address as string) : '';
+    const safeCity = hasToken ? escapeHtml((pkg.recipient_city as string) || (pkg.recipient_department as string) || '') : '';
     const safeStatusLabel = statusLabels[status] || escapeHtml(status);
+
+    const detailsHtml = hasToken ? `
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-sp-sm text-body-sm mb-sp-md">
+        <div><span class="text-outline">Tracking:</span> <span class="font-mono font-bold">${safeTracking}</span></div>
+        <div><span class="text-outline">Destinatario:</span> ${safeRecipient}</div>
+        <div><span class="text-outline">Dirección:</span> ${safeAddress}</div>
+        <div><span class="text-outline">Ciudad:</span> ${safeCity}</div>
+      </div>
+    ` : `
+      <div class="text-body-sm text-outline mb-sp-md">
+        <span class="font-mono font-bold">${safeTracking}</span>
+      </div>
+    `;
 
     result.innerHTML = `
       <div class="mb-sp-md">
@@ -167,12 +192,7 @@ import Input from '../atoms/Input.astro';
           <span>Entregado</span>
         </div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-sp-sm text-body-sm mb-sp-md">
-        <div><span class="text-outline">Tracking:</span> <span class="font-mono font-bold">${safeTracking}</span></div>
-        <div><span class="text-outline">Destinatario:</span> ${safeRecipient}</div>
-        <div><span class="text-outline">Dirección:</span> ${safeAddress}</div>
-        <div><span class="text-outline">Ciudad:</span> ${safeCity}</div>
-      </div>
+      ${detailsHtml}
       <div class="flex items-center gap-sp-md mb-sp-sm mt-sp-md">
         <div class="w-2 h-2 rounded-full bg-secondary-container"></div>
         <span class="text-label-sm uppercase tracking-tighter text-outline">Historial de actividad</span>
@@ -194,10 +214,6 @@ import Input from '../atoms/Input.astro';
 
     if (!trackingNumber) {
       showError('Por favor ingresa un número de rastreo.');
-      return;
-    }
-    if (!token) {
-      showError('Por favor ingresa tu token de acceso.');
       return;
     }
 

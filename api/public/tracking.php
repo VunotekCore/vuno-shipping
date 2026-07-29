@@ -12,10 +12,6 @@ if ($trackingNumber === '') {
     jsonError('Número de tracking requerido', 422);
 }
 
-if ($token === '') {
-    jsonError('Token de acceso requerido', 403);
-}
-
 rateLimit('public_tracking', 30, 900);
 
 $db = \App\Config\Database::getConnection();
@@ -45,12 +41,25 @@ if ($package === null) {
     jsonError('Paquete no encontrado', 404);
 }
 
-if (!hash_equals($package['tracking_token'] ?? '', $token)) {
-    jsonError('Token inválido', 403);
+$packageId = (int) $package['id'];
+
+// Token optional: if provided, verify it; if missing, return basic data only
+$hasValidToken = false;
+if ($token !== '') {
+    if (hash_equals($package['tracking_token'] ?? '', $token)) {
+        $hasValidToken = true;
+    } else {
+        jsonError('Token inválido', 403);
+    }
 }
 
-$packageId = (int) $package['id'];
 unset($package['id'], $package['tracking_token']);
+
+if (!$hasValidToken) {
+    // Basic data: remove personal info
+    unset($package['recipient_name'], $package['recipient_city'],
+          $package['recipient_department'], $package['recipient_address']);
+}
 
 $eventsStmt = $db->prepare("
     SELECT te.status, te.description, te.location_name, te.latitude, te.longitude,

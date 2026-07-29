@@ -250,6 +250,17 @@ export interface TrackingEvent {
   created_at: string
 }
 
+export interface Notification {
+  id: number
+  package_id: number | null
+  type: string
+  title: string
+  message: string | null
+  tracking_number: string | null
+  is_read: number
+  created_at: string
+}
+
 export interface DashboardStats {
   total_packages: number
   active_packages: number
