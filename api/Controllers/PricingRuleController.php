@@ -340,4 +340,51 @@ class PricingRuleController
         $stmt = $db->query('SELECT id, name, description FROM pricing_rule_type ORDER BY name ASC');
         jsonSuccess(['pricing_rule_types' => $stmt->fetchAll()]);
     }
+
+    public function resolveFromRule(): never
+    {
+        requireMethod('GET');
+        $payload = requireAuthMiddleware();
+
+        if (!hasPermission($payload, 'pricing_rule', 'read')) {
+            jsonError('No tenés permiso', 403);
+        }
+
+        $ruleId = isset($_GET['pricing_rule_id']) ? (int) $_GET['pricing_rule_id'] : null;
+        if (!$ruleId) {
+            jsonError('pricing_rule_id es requerido', 422);
+        }
+
+        $rule = $this->model->findById($ruleId);
+        if (!$rule) {
+            jsonError('Regla de precio no encontrada', 404);
+        }
+
+        $shippingService = null;
+        $deliveryOptions = [];
+
+        if ($rule['delivery_type_id']) {
+            $db = Database::getConnection();
+            $ssStmt = $db->prepare('SELECT id, name, description FROM shipping_service WHERE delivery_type_id = :dt_id AND is_active = 1 LIMIT 1');
+            $ssStmt->execute(['dt_id' => $rule['delivery_type_id']]);
+            $shippingService = $ssStmt->fetch();
+
+            if ($shippingService) {
+                $optStmt = $db->prepare("
+                    SELECT do.id, do.name, do.description, sdo.is_default
+                    FROM service_delivery_option sdo
+                    JOIN delivery_option do ON do.id = sdo.delivery_option_id
+                    WHERE sdo.shipping_service_id = :ss_id AND do.is_active = 1
+                    ORDER BY do.name ASC
+                ");
+                $optStmt->execute(['ss_id' => $shippingService['id']]);
+                $deliveryOptions = $optStmt->fetchAll();
+            }
+        }
+
+        jsonSuccess([
+            'shipping_service' => $shippingService,
+            'delivery_options' => $deliveryOptions,
+        ]);
+    }
 }

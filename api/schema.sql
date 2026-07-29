@@ -223,6 +223,37 @@ CREATE TABLE IF NOT EXISTS pricing_rule_zone (
     FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS shipping_service (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(255) NULL,
+    delivery_type_id INT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY name (name),
+    FOREIGN KEY (delivery_type_id) REFERENCES delivery_type(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS delivery_option (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(255) NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS service_delivery_option (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shipping_service_id INT NOT NULL,
+    delivery_option_id INT NOT NULL,
+    is_default TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_service_delivery_option (shipping_service_id, delivery_option_id),
+    FOREIGN KEY (shipping_service_id) REFERENCES shipping_service(id) ON DELETE CASCADE,
+    FOREIGN KEY (delivery_option_id) REFERENCES delivery_option(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS package_status (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
@@ -257,8 +288,10 @@ CREATE TABLE IF NOT EXISTS package (
     shipping_cost DECIMAL(10,2) NULL,
     pricing_rule_id INT NULL,
     delivery_type_id INT NULL,
+    shipping_service_id INT NULL,
     delivery_option VARCHAR(20) DEFAULT 'sucursal',
     local_delivery_type_id INT NULL,
+    delivery_option_id INT NULL,
     pricing_type VARCHAR(20) DEFAULT 'weight',
     status_id INT NULL,
     assigned_to INT NULL,
@@ -276,13 +309,16 @@ CREATE TABLE IF NOT EXISTS package (
     FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE SET NULL,
     FOREIGN KEY (pricing_rule_id) REFERENCES pricing_rule(id) ON DELETE SET NULL,
     FOREIGN KEY (delivery_type_id) REFERENCES delivery_type(id) ON DELETE SET NULL,
+    FOREIGN KEY (shipping_service_id) REFERENCES shipping_service(id) ON DELETE SET NULL,
     FOREIGN KEY (local_delivery_type_id) REFERENCES delivery_type(id) ON DELETE SET NULL,
+    FOREIGN KEY (delivery_option_id) REFERENCES delivery_option(id) ON DELETE SET NULL,
     FOREIGN KEY (status_id) REFERENCES package_status(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES `user`(id) ON DELETE SET NULL,
     INDEX idx_package_status (status_id),
     INDEX idx_package_client (client_id),
     INDEX idx_package_zone (zone_id),
     INDEX idx_package_delivery_type (delivery_type_id),
+    INDEX idx_package_shipping_service (shipping_service_id),
     INDEX idx_package_assigned (assigned_to)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

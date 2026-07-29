@@ -1,8 +1,8 @@
 import api from './api'
-import type { PricingRule } from '../types'
+import type { PricingRule, ShippingService, DeliveryOption } from '../types'
 import { buildPageParams } from './pagination'
 
-export type { PricingRule }
+export type { PricingRule, ShippingService, DeliveryOption }
 
 interface DeliveryType {
   id: number
@@ -48,7 +48,11 @@ export const pricingRuleService = {
     return api.delete('/pricing_rule/delete.php', { data: { id } })
   },
 
-  calculate(data: { packages: Array<{ weight: number; length: number; width: number; height: number; quantity?: number }>; zone_id?: number; delivery_type?: string; declared_value?: number; type?: string }) {
+  calculate(data: { packages: Array<{ weight: number; length: number; width: number; height: number; quantity?: number }>; zone_id?: number; delivery_type?: string; shipping_service_id?: number; delivery_option?: string; declared_value?: number; type?: string }) {
     return api.post('/pricing_rule/calculate.php', data)
+  },
+
+  resolveFromRule(pricingRuleId: number) {
+    return api.get<{ success: boolean; data: { shipping_service: ShippingService | null; delivery_options: DeliveryOption[] } }>(`/pricing_rule/resolve.php?pricing_rule_id=${pricingRuleId}`)
   },
 }

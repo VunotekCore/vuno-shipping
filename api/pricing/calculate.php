@@ -20,7 +20,8 @@ $width  = (float)($data['width'] ?? 0);
 $height = (float)($data['height'] ?? 0);
 $declaredValue = (float)($data['declared_value'] ?? 0);
 $deliveryTypeId = (int)($data['delivery_type_id'] ?? 0);
-$deliveryOption = $data['delivery_option'] ?? 'sucursal';
+$shippingServiceId = isset($data['shipping_service_id']) ? (int) $data['shipping_service_id'] : null;
+$deliveryOption = $data['delivery_option'] ?? 'branch';
 $zoneId = isset($data['zone_id']) ? (int) $data['zone_id'] : null;
 $pricingRuleId = isset($data['pricing_rule_id']) ? (int) $data['pricing_rule_id'] : null;
 
@@ -30,11 +31,17 @@ $ruleModel = new PricingRuleModel($db);
 $rule = null;
 if ($pricingRuleId !== null) {
     $rule = $ruleModel->findById($pricingRuleId);
-} else {
+} elseif ($deliveryTypeId > 0) {
     $dtStmt = $db->prepare('SELECT name FROM delivery_type WHERE id = :id LIMIT 1');
     $dtStmt->execute(['id' => $deliveryTypeId]);
     $dtRow = $dtStmt->fetch();
     $deliveryType = $dtRow ? $dtRow['name'] : 'door';
+    $rule = $ruleModel->findBestMatch($zoneId, $deliveryType, null);
+} elseif ($shippingServiceId !== null && $shippingServiceId > 0) {
+    $ssStmt = $db->prepare('SELECT name FROM shipping_service WHERE id = :id LIMIT 1');
+    $ssStmt->execute(['id' => $shippingServiceId]);
+    $ssRow = $ssStmt->fetch();
+    $deliveryType = $ssRow ? $ssRow['name'] : 'aereo';
     $rule = $ruleModel->findBestMatch($zoneId, $deliveryType, null);
 }
 

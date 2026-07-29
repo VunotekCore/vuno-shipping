@@ -162,11 +162,25 @@ class PackageController
                 $insertData['delivery_type_id'] = $deliveryTypeId;
             }
 
-            $insertData['delivery_option'] = $data['delivery_option'] ?? 'sucursal';
+            $insertData['delivery_option'] = $data['delivery_option'] ?? 'branch';
             if (isset($data['local_delivery_type'])) {
                 $localDtId = $this->model->getDeliveryTypeId($data['local_delivery_type']);
                 if ($localDtId !== null) {
                     $insertData['local_delivery_type_id'] = $localDtId;
+                }
+            }
+
+            if (isset($data['shipping_service'])) {
+                $ssId = $this->model->getShippingServiceId($data['shipping_service']);
+                if ($ssId !== null) {
+                    $insertData['shipping_service_id'] = $ssId;
+                }
+            }
+
+            if (isset($data['delivery_option'])) {
+                $doptId = $this->model->getDeliveryOptionId($data['delivery_option']);
+                if ($doptId !== null) {
+                    $insertData['delivery_option_id'] = $doptId;
                 }
             }
 
@@ -330,6 +344,18 @@ class PackageController
             $localDtId = $this->model->getDeliveryTypeId($data['local_delivery_type']);
             if ($localDtId !== null) {
                 $updateData['local_delivery_type_id'] = $localDtId;
+            }
+        }
+        if (isset($data['shipping_service'])) {
+            $ssId = $this->model->getShippingServiceId($data['shipping_service']);
+            if ($ssId !== null) {
+                $updateData['shipping_service_id'] = $ssId;
+            }
+        }
+        if (isset($data['delivery_option'])) {
+            $doptId = $this->model->getDeliveryOptionId($data['delivery_option']);
+            if ($doptId !== null) {
+                $updateData['delivery_option_id'] = $doptId;
             }
         }
 

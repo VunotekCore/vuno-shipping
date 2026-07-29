@@ -415,7 +415,7 @@ function rateLimit(string $key, int $maxAttempts, int $windowSeconds): void
 
     $file = $dir . '/' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', "{$key}_{$ip}") . '.json';
 
-    $fp = fopen($file, 'c');
+    $fp = fopen($file, 'c+');
     if ($fp === false) {
         return;
     }

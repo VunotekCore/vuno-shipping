@@ -27,11 +27,15 @@ $stmt = $db->prepare("
            dt.name AS delivery_type_name,
            p.delivery_option,
            ldt.name AS local_delivery_type_name,
+           ss.name AS shipping_service_name,
+           dopt.name AS delivery_option_name,
            p.received_at, p.delivered_at, p.created_at
     FROM package p
     LEFT JOIN package_status ps ON ps.id = p.status_id
     LEFT JOIN delivery_type dt ON dt.id = p.delivery_type_id
     LEFT JOIN delivery_type ldt ON ldt.id = p.local_delivery_type_id
+    LEFT JOIN shipping_service ss ON ss.id = p.shipping_service_id
+    LEFT JOIN delivery_option dopt ON dopt.id = p.delivery_option_id
     WHERE p.tracking_number = :tn LIMIT 1
 ");
 $stmt->execute(['tn' => $trackingNumber]);

@@ -74,7 +74,8 @@ const columns: TableColumn[] = [
   { key: 'flete_cost', label: 'Flete', width: '80px' },
   { key: 'delivery_cost', label: 'Delivery', width: '80px' },
   { key: 'shipping_cost', label: 'Total', width: '80px' },
-  { key: 'delivery_type_name', label: 'Tipo', width: '80px' },
+  { key: 'shipping_service_name', label: 'Servicio', width: '80px' },
+  { key: 'delivery_option_name', label: 'Entrega', width: '80px' },
   { key: 'actions', label: '', width: '130px', align: 'right' },
 ]
 
@@ -126,7 +127,8 @@ onMounted(() => load())
             <td class="text-[#94a3b8] text-xs" :title="'Costo del envío internacional Miami → Nicaragua'">{{ formatCurrency(p.flete_cost) }}</td>
             <td class="text-[#94a3b8] text-xs" :title="'Costo de entrega a domicilio en Nicaragua (última milla)'">{{ formatCurrency(p.delivery_cost) }}</td>
             <td class="text-[#94a3b8] font-medium" :title="'Total = flete + delivery. Monto final que paga el cliente'">{{ formatCurrency(p.shipping_cost) }}</td>
-            <td class="text-[#94a3b8]">{{ p.delivery_type_name ?? '—' }}{{ p.local_delivery_type_name ? ' + ' + p.local_delivery_type_name : '' }}</td>
+            <td class="text-[#94a3b8]">{{ p.shipping_service_name ?? '—' }}</td>
+            <td class="text-[#94a3b8]">{{ p.delivery_option_name ?? '—' }}</td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="viewDetail(p)" title="Ver detalle">
@@ -176,7 +178,7 @@ onMounted(() => load())
           <p class="text-sm text-[#94a3b8] truncate">{{ p.recipient_name }}{{ p.recipient_department ? ' · ' + p.recipient_department : '' }}</p>
           <p class="text-xs text-[#64748b]" title="Flete (envío internacional) + Delivery (última milla)">
             Flete: {{ formatCurrency(p.flete_cost) }} | Delivery: {{ formatCurrency(p.delivery_cost) }} | Total: {{ formatCurrency(p.shipping_cost) }}
-            {{ p.delivery_type_name ? ' · ' + p.delivery_type_name : '' }}{{ p.local_delivery_type_name ? ' + ' + p.local_delivery_type_name : '' }}
+            · {{ p.shipping_service_name ?? '—' }} · {{ p.delivery_option_name ?? '—' }}
           </p>
           <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="viewDetail(p)">

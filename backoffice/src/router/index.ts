@@ -118,6 +118,12 @@ const router = createRouter({
           component: () => import('../pages/PricingView.vue'),
           meta: { permission: 'pricing_rule', action: 'read' },
         },
+        {
+          path: 'settings/shipping',
+          name: 'shipping-settings',
+          component: () => import('../pages/ShippingSettingsView.vue'),
+          meta: { permission: 'shipping_service', action: 'read' },
+        },
       ],
     },
   ],

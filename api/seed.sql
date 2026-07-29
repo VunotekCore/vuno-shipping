@@ -115,6 +115,33 @@ INSERT INTO delivery_type (name, description, category) VALUES
 ('express', 'Entrega express el mismo día', 'local')
 ON DUPLICATE KEY UPDATE description = VALUES(description), category = VALUES(category);
 
+-- === Shipping Services ===
+
+INSERT INTO shipping_service (name, description, delivery_type_id) VALUES
+('Aéreo', 'Envío aéreo internacional desde Miami', 3),
+('Marítimo', 'Envío marítimo internacional desde Miami', 4)
+ON DUPLICATE KEY UPDATE description = VALUES(description), delivery_type_id = VALUES(delivery_type_id);
+
+-- === Delivery Options ===
+
+INSERT INTO delivery_option (name, description) VALUES
+('door', 'Entrega a domicilio'),
+('branch', 'Retiro en sucursal'),
+('express', 'Entrega express el mismo día'),
+('third_party', 'Retiro por tercero')
+ON DUPLICATE KEY UPDATE description = VALUES(description);
+
+-- === Service → Delivery Option mapping ===
+
+INSERT INTO service_delivery_option (shipping_service_id, delivery_option_id, is_default) VALUES
+(1, 1, 1),
+(1, 2, 0),
+(1, 3, 0),
+(2, 1, 1),
+(2, 2, 0),
+(2, 3, 0)
+ON DUPLICATE KEY UPDATE is_default = VALUES(is_default);
+
 -- === Pricing Rule Types ===
 
 INSERT INTO pricing_rule_type (name, description) VALUES
@@ -135,9 +162,9 @@ INSERT INTO pricing_rule (id, name, type_id, delivery_type_id, base_price, price
 (4, 'Delivery a Domicilio',  4, NULL, 0.00,  0.00, NULL, 0.00,  0.00, 166, 1),
 (5, 'Retiro en Sucursal',    5, NULL, 0.00,  0.00, NULL, 0.00,  0.00, 166, 1)
 ON DUPLICATE KEY UPDATE name = VALUES(name), type_id = VALUES(type_id), delivery_type_id = VALUES(delivery_type_id),
-  base_price = VALUES(base_price), price_per_kg = VALUES(price_per_kg), price_per_volume = VALUES(price_per_volume),
-  percentage_of_value = VALUES(percentage_of_value), min_price = VALUES(min_price),
-  volumetric_divisor = VALUES(volumetric_divisor);
+  base_price = VALUES(base_price), price_per_kg = VALUES(price_per_kg),
+  price_per_volume = VALUES(price_per_volume), percentage_of_value = VALUES(percentage_of_value),
+  min_price = VALUES(min_price), volumetric_divisor = VALUES(volumetric_divisor);
 
 -- === Package Statuses ===
 

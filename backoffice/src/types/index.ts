@@ -141,6 +141,26 @@ export interface Vehicle {
   updated_at: string
 }
 
+export interface ShippingService {
+  id: number
+  name: string
+  description: string | null
+}
+
+export interface DeliveryOption {
+  id: number
+  name: string
+  description: string | null
+  is_default?: boolean
+}
+
+export interface DeliveryType {
+  id: number
+  name: string
+  description: string | null
+  category: string
+}
+
 export interface PricingRule {
   id: number
   name: string
@@ -148,6 +168,8 @@ export interface PricingRule {
   type_name: string | null
   delivery_type_id: number | null
   delivery_type_name: string | null
+  shipping_service_id: number | null
+  shipping_service_name: string | null
   base_price: number
   min_weight: number | null
   max_weight: number | null
@@ -194,9 +216,13 @@ export interface Package {
   pricing_rule_name: string | null
   delivery_type_id: number | null
   delivery_type_name: string | null
+  shipping_service_id: number | null
+  shipping_service_name: string | null
   delivery_option: string | null
   local_delivery_type_id: number | null
   local_delivery_type_name: string | null
+  delivery_option_id: number | null
+  delivery_option_name: string | null
   status_id: number | null
   status_name: string | null
   assigned_to: number | null

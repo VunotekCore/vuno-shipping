@@ -6,6 +6,7 @@ import { packageService, type Package } from '../services/packageService'
 import { clientService, type Client } from '../services/clientService'
 import { zoneService, type Zone } from '../services/zoneService'
 import { pricingRuleService, type PricingRule } from '../services/pricingRuleService'
+import type { DeliveryOption } from '../types'
 import { useToast } from '../composables/useToast'
 import { formatCurrency } from '../utils/format'
 import QRCode from 'qrcode'
@@ -36,15 +37,10 @@ const qrDataUrl = ref<string | null>(null)
 const clients = ref<Client[]>([])
 const zones = ref<Zone[]>([])
 const pricingRules = ref<PricingRule[]>([])
-const deliveryTypes = ref<{ id: number; name: string; description: string | null; category?: string }[]>([])
+const currentShippingService = ref<{ id: number; name: string; description: string | null } | null>(null)
 
-const shippingMethods = computed(() =>
-  deliveryTypes.value.filter(dt => dt.category === 'international')
-)
+const filteredDeliveryOptions = ref<DeliveryOption[]>([])
 
-const localDeliveryTypes = computed(() =>
-  deliveryTypes.value.filter(dt => dt.category === 'local')
-)
 const loadingReferences = ref(true)
 const showClientCreate = ref(false)
 const clientSearch = ref('')
@@ -84,8 +80,9 @@ const form = reactive({
   width: null as number | null,
   height: null as number | null,
   declared_value: null as number | null,
-  shipping_method: 'aereo',
-  delivery_option: 'sucursal',
+  shipping_service_id: null as number | null,
+  delivery_option: 'branch',
+  delivery_option_id: null as number | null,
   pricing_rule_id: null as number | null,
   notes: '',
 })
@@ -113,11 +110,10 @@ const selectedClient = computed(() => {
 })
 
 const deliveryTypeLabel = computed(() => {
-  const sm = deliveryTypes.value.find((d) => d.name === form.shipping_method)
-  const smLabel = sm?.description || form.shipping_method
-  const ld = deliveryTypes.value.find((d) => d.name === form.delivery_option)
-  const ldLabel = ld?.description || form.delivery_option
-  return `${smLabel} + ${ldLabel}`
+  const ssLabel = currentShippingService.value?.description || currentShippingService.value?.name || '—'
+  const dopt = filteredDeliveryOptions.value.find((d) => d.name === form.delivery_option)
+  const doptLabel = dopt?.description || form.delivery_option
+  return `${ssLabel} + ${doptLabel}`
 })
 
 const visibleFields = computed(() => {
@@ -151,16 +147,15 @@ async function loadReferenceData() {
       return []
     }
   }
-  const [clientsData, zonesData, rulesData, dtData] = await Promise.all([
+  const [clientsData, zonesData, rulesData] = await Promise.all([
     load(clientService.listAll, 'clients'),
     load(zoneService.listAll, 'zones'),
     load(pricingRuleService.listAll, 'pricing_rules'),
-    load(pricingRuleService.listDeliveryTypes, 'delivery_types'),
   ])
   clients.value = clientsData
   zones.value = zonesData
   pricingRules.value = rulesData.map(normalizePricingRule)
-  deliveryTypes.value = dtData
+  filteredDeliveryOptions.value = []
   loadingReferences.value = false
   await nextTick()
   if (clienteRef.value) {
@@ -225,11 +220,10 @@ async function calculatePricing() {
   const length = form.length ?? 0
   const width = form.width ?? 0
   const height = form.height ?? 0
-  const dt = deliveryTypes.value.find((d) => d.name === form.shipping_method)
 
   const type = selectedPricingRule.value?.type_name
   const needsWeightOrDims = !type || type === 'weight' || type === 'volume'
-  if (!dt || (needsWeightOrDims && weight <= 0 && length <= 0)) {
+  if (needsWeightOrDims && weight <= 0 && length <= 0) {
     return
   }
   if (!form.pricing_rule_id) {
@@ -245,7 +239,7 @@ async function calculatePricing() {
       width,
       height,
       declared_value: form.declared_value ?? 0,
-      delivery_type_id: dt.id,
+      shipping_service_id: form.shipping_service_id,
       delivery_option: form.delivery_option,
       zone_id: form.zone_id,
       pricing_rule_id: form.pricing_rule_id,
@@ -263,12 +257,29 @@ async function calculatePricing() {
   }
 }
 
-// Reset pricing rule when shipping method changes
-watch(() => form.shipping_method, () => {
-  form.pricing_rule_id = null
+// When pricing rule changes, resolve shipping_service + delivery_options via delivery_type_id
+watch(selectedPricingRule, async (rule) => {
+  if (!rule) {
+    form.shipping_service_id = null
+    currentShippingService.value = null
+    filteredDeliveryOptions.value = []
+    return
+  }
+  const res = await pricingRuleService.resolveFromRule(rule.id).catch(() => null)
+  if (res?.data?.data) {
+    const { shipping_service, delivery_options } = res.data.data
+    currentShippingService.value = shipping_service
+    form.shipping_service_id = shipping_service?.id ?? null
+    filteredDeliveryOptions.value = (delivery_options || []).map(d => ({ ...d, id: Number(d.id) }))
+    const defaultOpt = filteredDeliveryOptions.value.find(d => d.is_default) ?? filteredDeliveryOptions.value[0]
+    if (defaultOpt) {
+      form.delivery_option = defaultOpt.name
+      form.delivery_option_id = defaultOpt.id
+    }
+  }
 })
 
-// Reset zone when switching to branch (sucursal)
+// Reset zone when switching to branch
 watch(() => form.delivery_option, (val) => {
   if (val !== 'door') {
     form.zone_id = null
@@ -302,7 +313,7 @@ watch(selectedPricingRule, (rule) => {
 
 const pricingDebounce = ref<ReturnType<typeof setTimeout> | null>(null)
 watch(
-  () => [form.weight, form.length, form.width, form.height, form.shipping_method, form.delivery_option, form.zone_id, form.declared_value, form.pricing_rule_id],
+  () => [form.weight, form.length, form.width, form.height, form.shipping_service_id, form.delivery_option, form.zone_id, form.declared_value, form.pricing_rule_id],
   () => {
     if (pricingDebounce.value) clearTimeout(pricingDebounce.value)
     pricingDebounce.value = setTimeout(calculatePricing, 400)
@@ -325,9 +336,10 @@ async function handleCreate() {
       recipient_name: form.recipient_name,
       recipient_phone: form.recipient_phone,
       recipient_address: form.recipient_address,
-      delivery_type: form.shipping_method,
       delivery_option: form.delivery_option,
-      local_delivery_type: form.delivery_option,
+    }
+    if (form.shipping_service_id && currentShippingService.value) {
+      payload.shipping_service = currentShippingService.value.name
     }
     if (form.client_id) payload.client_id = form.client_id
     if (form.recipient_city) payload.recipient_city = form.recipient_city
@@ -385,8 +397,11 @@ function resetForm() {
   form.width = null
   form.height = null
   form.declared_value = null
-  form.shipping_method = 'aereo'
+  form.shipping_service_id = null
+  currentShippingService.value = null
   form.delivery_option = 'branch'
+  form.delivery_option_id = null
+  filteredDeliveryOptions.value = []
   form.pricing_rule_id = null
   form.notes = ''
   clientSearch.value = ''
@@ -695,46 +710,43 @@ onMounted(() => loadReferenceData())
             </div>
           </div>
 
-          <!-- Método de envío + Opción de entrega -->
+          <!-- Servicio de envío + Opción de entrega -->
           <div class="admin-card p-5 space-y-4">
             <div>
               <p class="admin-form-section mb-3">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                Método de envío</p>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="sm in shippingMethods"
-                  :key="sm.id"
-                  :class="[
-                    'rounded-lg border px-4 py-2 text-sm font-medium transition-all',
-                    form.shipping_method === sm.name
-                      ? 'border-[#69dca4] bg-[#69dca4]/10 text-[#69dca4]'
-                      : 'border-[#1e293b] text-[#94a3b8] hover:border-[#404944] hover:text-[#dae2fd]'
-                  ]"
-                  @click="form.shipping_method = sm.name"
-                >
-                  {{ sm.description || sm.name }}
-                </button>
+                Servicio de envío</p>
+              <div v-if="currentShippingService" class="rounded-lg border border-[#1e293b] bg-[#1e293b]/30 px-4 py-3">
+                <p class="text-sm font-medium text-[#69dca4]">
+                  {{ currentShippingService.description || currentShippingService.name }}
+                </p>
+                <p class="text-xs text-[#64748b] mt-0.5">Definido por la regla de precio seleccionada</p>
+              </div>
+              <div v-else class="rounded-lg border border-[#1e293b] bg-[#1e293b]/20 px-4 py-3">
+                <p class="text-sm text-[#64748b]">Seleccioná una regla de precio para definir el servicio</p>
               </div>
             </div>
             <div>
               <p class="admin-form-section mb-3">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 Opción de entrega</p>
-              <div class="flex flex-wrap gap-2">
+              <div v-if="filteredDeliveryOptions.length > 0" class="flex flex-wrap gap-2">
                 <button
-                  v-for="ldt in localDeliveryTypes"
-                  :key="ldt.id"
+                  v-for="dopt in filteredDeliveryOptions"
+                  :key="dopt.id"
                   :class="[
                     'rounded-lg border px-4 py-2 text-sm font-medium transition-all',
-                    form.delivery_option === ldt.name
+                    form.delivery_option === dopt.name
                       ? 'border-[#00A8FF] bg-[#00A8FF]/10 text-[#00A8FF]'
                       : 'border-[#1e293b] text-[#94a3b8] hover:border-[#404944] hover:text-[#dae2fd]'
                   ]"
-                  @click="form.delivery_option = ldt.name"
+                  @click="form.delivery_option = dopt.name; form.delivery_option_id = dopt.id"
                 >
-                  {{ ldt.description || ldt.name }}
+                  {{ dopt.description || dopt.name }}
                 </button>
+              </div>
+              <div v-else class="rounded-lg border border-[#1e293b] bg-[#1e293b]/20 px-4 py-3">
+                <p class="text-sm text-[#64748b]">Seleccioná una regla de precio para ver opciones de entrega</p>
               </div>
             </div>
           </div>
@@ -820,7 +832,7 @@ onMounted(() => loadReferenceData())
 
         <!-- Reference info -->
         <div class="admin-card p-4 text-xs text-[#64748b] space-y-1">
-          <p><span class="font-medium text-[#94a3b8]">Tipo de entrega:</span> {{ deliveryTypeLabel }}</p>
+          <p><span class="font-medium text-[#94a3b8]">Servicio + Entrega:</span> {{ deliveryTypeLabel }}</p>
           <p v-if="form.zone_id">
             <span class="font-medium text-[#94a3b8]">Zona:</span>
             {{ zones.find((z) => z.id === form.zone_id)?.name || '—' }}

@@ -55,7 +55,7 @@ class PricingService
         }
 
         $deliveryCost = 0.00;
-        if (($data['delivery_option'] ?? 'sucursal') === 'domicilio' && $zone !== null) {
+        if (($data['delivery_option'] ?? 'branch') === 'door' && $zone !== null) {
             $deliveryCost = (float)($zone['surcharge'] ?? 0);
         }
 

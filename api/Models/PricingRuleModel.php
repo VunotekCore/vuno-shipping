@@ -69,21 +69,18 @@ class PricingRuleModel
         $zoneSub = '(SELECT prz.pricing_rule_id FROM pricing_rule_zone prz WHERE prz.zone_id = :zone_id)';
 
         $queries = [
-            // 1. delivery_type + zone + type
             [
                 'conditions' => ['pr.is_active = 1', "pr.delivery_type_id = {$dtSub}", "pr.id IN {$zoneSub}", 'pr.type_id = :type_id'],
                 'params' => ['dt_name' => $deliveryType, 'zone_id' => $zoneId, 'type_id' => $typeId],
                 'requires_zone' => true,
                 'requires_type' => true,
             ],
-            // 2. delivery_type + zone (any type)
             [
                 'conditions' => ['pr.is_active = 1', "pr.delivery_type_id = {$dtSub}", "pr.id IN {$zoneSub}"],
                 'params' => ['dt_name' => $deliveryType, 'zone_id' => $zoneId],
                 'requires_zone' => true,
                 'requires_type' => false,
             ],
-            // 3. delivery_type + type (universal rules)
             [
                 'conditions' => ['pr.is_active = 1', "pr.delivery_type_id = {$dtSub}", 'pr.type_id = :type_id2',
                     '(pr.id NOT IN (SELECT prz.pricing_rule_id FROM pricing_rule_zone prz))'],
@@ -91,7 +88,6 @@ class PricingRuleModel
                 'requires_zone' => false,
                 'requires_type' => true,
             ],
-            // 4. delivery_type (any type, universal)
             [
                 'conditions' => ['pr.is_active = 1', "pr.delivery_type_id = {$dtSub}",
                     '(pr.id NOT IN (SELECT prz.pricing_rule_id FROM pricing_rule_zone prz))'],
@@ -106,7 +102,7 @@ class PricingRuleModel
             if ($q['requires_type'] && $typeId === null) continue;
 
             $whereClause = implode(' AND ', $q['conditions']);
-            $stmt = $this->db->prepare("
+                $stmt = $this->db->prepare("
                 SELECT pr.*, prt.name AS type_name, dt.name AS delivery_type_name
                 FROM pricing_rule pr
                 LEFT JOIN pricing_rule_type prt ON prt.id = pr.type_id

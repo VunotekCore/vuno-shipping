@@ -331,7 +331,7 @@ onMounted(async () => {
                   class="admin-input"
                   :disabled="saving"
                 >
-                  <option value="">Opcional</option>
+                  <option value="">Seleccione un valor</option>
                   <option v-for="dt in deliveryTypes" :key="dt.id" :value="dt.id">{{ dt.name }}</option>
                 </select>
               </div>
