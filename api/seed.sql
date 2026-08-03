@@ -52,7 +52,23 @@ INSERT INTO permission (module, action, label) VALUES
 ('vehicle', 'read', 'Ver vehículos'),
 ('vehicle', 'create', 'Crear vehículo'),
 ('vehicle', 'edit', 'Editar vehículos'),
-('vehicle', 'delete', 'Eliminar vehículos')
+('vehicle', 'delete', 'Eliminar vehículos'),
+('delivery_type', 'read', 'Ver tipos de entrega'),
+('delivery_type', 'create', 'Crear tipo de entrega'),
+('delivery_type', 'edit', 'Editar tipos de entrega'),
+('delivery_type', 'delete', 'Eliminar tipo de entrega'),
+('shipping_service', 'read', 'Ver servicios de envío'),
+('shipping_service', 'create', 'Crear servicio de envío'),
+('shipping_service', 'edit', 'Editar servicios de envío'),
+('shipping_service', 'delete', 'Eliminar servicio de envío'),
+('delivery_option', 'read', 'Ver opciones de entrega'),
+('delivery_option', 'create', 'Crear opción de entrega'),
+('delivery_option', 'edit', 'Editar opciones de entrega'),
+('delivery_option', 'delete', 'Eliminar opción de entrega'),
+('delivery_route', 'read', 'Ver rutas de despacho'),
+('delivery_route', 'create', 'Crear ruta de despacho'),
+('delivery_route', 'edit', 'Editar ruta de despacho'),
+('delivery_route', 'delete', 'Eliminar ruta de despacho')
 ON DUPLICATE KEY UPDATE label = VALUES(label);
 
 -- === Roles ===
@@ -85,18 +101,39 @@ INSERT INTO role (name, slug) VALUES
 ('Operador Escáner', 'operador_escaner')
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
--- Operador: package (create/read/edit), client (create/read), zone (read), pricing_rule (read)
+-- Operador: package (create/read/edit), client (create/read), zone (read), pricing_rule (read),
+-- delivery_type (read), shipping_service (read), delivery_option (read)
 INSERT INTO role_permission (role_id, permission_id)
 SELECT 4, id FROM permission WHERE
   (module = 'package' AND action IN ('create', 'read', 'edit')) OR
   (module = 'client' AND action IN ('create', 'read')) OR
   (module = 'zone' AND action IN ('read')) OR
-  (module = 'pricing_rule' AND action IN ('read'))
+  (module = 'pricing_rule' AND action IN ('read')) OR
+  (module = 'delivery_type' AND action IN ('read')) OR
+  (module = 'shipping_service' AND action IN ('read')) OR
+  (module = 'delivery_option' AND action IN ('read'))
 ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
 
--- Operador Escáner: package (read/edit only)
+-- Operador Escáner: package (read/edit), delivery_type (read), shipping_service (read), delivery_option (read)
 INSERT INTO role_permission (role_id, permission_id)
 SELECT 5, id FROM permission WHERE
+  (module = 'package' AND action IN ('read', 'edit')) OR
+  (module = 'delivery_type' AND action IN ('read')) OR
+  (module = 'shipping_service' AND action IN ('read')) OR
+  (module = 'delivery_option' AND action IN ('read'))
+ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
+
+-- === Rol Conductor ===
+
+INSERT INTO role (name, slug) VALUES
+('Conductor', 'conductor')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- Conductor: delivery_route (read/edit), vehicle (read), package (read/edit)
+INSERT INTO role_permission (role_id, permission_id)
+SELECT 6, id FROM permission WHERE
+  (module = 'delivery_route' AND action IN ('read', 'edit')) OR
+  (module = 'vehicle' AND action IN ('read')) OR
   (module = 'package' AND action IN ('read', 'edit'))
 ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
 

@@ -103,6 +103,19 @@ class UserModel
         return (int) $stmt->fetchColumn();
     }
 
+    public function listByRole(string $slug): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT u.id, u.email, u.name, u.role_id, r.name AS role_name, r.slug AS role_slug, u.created_at
+            FROM `user` u
+            JOIN role r ON r.id = u.role_id
+            WHERE r.slug = :slug
+            ORDER BY u.name ASC
+        ");
+        $stmt->execute(['slug' => $slug]);
+        return $stmt->fetchAll();
+    }
+
     public function listPaginated(int $limit, int $offset): array
     {
         $stmt = $this->db->prepare("

@@ -46,6 +46,22 @@ class UserController
         ]);
     }
 
+    public function listByRole(): never
+    {
+        requireMethod('GET');
+        $payload = requireAuthMiddleware();
+
+        if (!hasPermission($payload, 'user', 'read')) {
+            jsonError('No tenés permiso', 403);
+        }
+
+        $slug = $_GET['role'] ?? '';
+        if ($slug === '') jsonError('role es requerido', 422);
+
+        $users = $this->model->listByRole($slug);
+        jsonSuccess(['users' => $users]);
+    }
+
     public function create(): never
     {
         requireMethod('POST');
