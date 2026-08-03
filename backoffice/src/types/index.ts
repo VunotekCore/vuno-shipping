@@ -278,6 +278,7 @@ export interface DeliveryRoute {
   status_id: number | null
   status_name: string | null
   trajectory: string | null
+  optimized_geometry: string | null
   color: string
   start_latitude: number | null
   start_longitude: number | null

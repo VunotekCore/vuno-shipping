@@ -288,6 +288,7 @@ class RouteController
 
         try {
             $stops = $stopModel->generateFromPackages($routeId, $packageIds);
+            $this->model->update($routeId, ['optimized_geometry' => null]);
             $db->commit();
             jsonSuccess(['stops' => $stops], count($stops) . ' paradas generadas');
         } catch (\Throwable $e) {
@@ -321,19 +322,21 @@ class RouteController
             jsonError('No hay paradas pendientes para optimizar', 422);
         }
 
-        $coordinates = [];
-        foreach ($pendingStops as $stop) {
-            if (!empty($stop['latitude']) && !empty($stop['longitude'])) {
-                $coordinates[] = "{$stop['longitude']},{$stop['latitude']}";
-            }
-        }
+        $coordsStops = array_values(array_filter(
+            $pendingStops,
+            fn($s) => !empty($s['latitude']) && !empty($s['longitude'])
+        ));
 
-        if (count($coordinates) < 2) {
+        if (count($coordsStops) < 2) {
             jsonError('Se necesitan al menos 2 paradas con coordenadas', 422);
         }
 
+        $coordinates = array_map(
+            fn($stop) => "{$stop['longitude']},{$stop['latitude']}",
+            $coordsStops
+        );
         $coordStr = implode(';', $coordinates);
-        $osrmUrl = "https://router.project-osrm.org/route/v1/driving/{$coordStr}?overview=false&steps=false&alternatives=false";
+        $osrmUrl = "https://router.project-osrm.org/route/v1/driving/{$coordStr}?overview=full&geometries=geojson&steps=false&alternatives=false";
 
         try {
             $ch = curl_init();
@@ -349,12 +352,12 @@ class RouteController
 
             if ($httpCode !== 200 || $response === false) {
                 apiLog('WARN', "OSRM request failed for route {$routeId}: HTTP {$httpCode}");
-                jsonSuccess(['message' => 'No se pudo optimizar con OSRM, se usa orden original', 'stops' => $pendingStops]);
+                jsonSuccess(['message' => 'No se pudo optimizar con OSRM, se usa orden original', 'stops' => $pendingStops, 'optimized_route' => null]);
             }
 
             $osrmData = json_decode($response, true);
             if (!isset($osrmData['waypoints']) || !is_array($osrmData['waypoints'])) {
-                jsonSuccess(['message' => 'OSRM no retorno waypoints, se usa orden original', 'stops' => $pendingStops]);
+                jsonSuccess(['message' => 'OSRM no retorno waypoints, se usa orden original', 'stops' => $pendingStops, 'optimized_route' => null]);
             }
 
             $orderMap = [];
@@ -362,12 +365,29 @@ class RouteController
                 $orderMap[$wp['waypoint_index']] = $i;
             }
 
-            $sortedStops = [];
-            foreach ($pendingStops as $stop) {
-                $origIdx = array_search($stop['id'], array_column($pendingStops, 'id'));
-                $sortedStops[$orderMap[$origIdx] ?? $origIdx] = $stop;
+            $ordered = [];
+            foreach ($orderMap as $origIdx => $newPos) {
+                if (isset($coordsStops[$origIdx])) {
+                    $ordered[$newPos] = $coordsStops[$origIdx];
+                }
             }
-            ksort($sortedStops);
+            ksort($ordered);
+            $sortedStops = array_values($ordered);
+
+            foreach ($pendingStops as $stop) {
+                if (empty($stop['latitude']) || empty($stop['longitude'])) {
+                    $sortedStops[] = $stop;
+                }
+            }
+
+            $geometry = null;
+            if (isset($osrmData['routes'][0]['geometry']['coordinates'])
+                && is_array($osrmData['routes'][0]['geometry']['coordinates'])) {
+                $geometry = array_map(
+                    fn($c) => [(float) $c[1], (float) $c[0]],
+                    $osrmData['routes'][0]['geometry']['coordinates']
+                );
+            }
 
             $db = Database::getConnection();
             $stopModel = new RouteStopModel($db);
@@ -379,6 +399,9 @@ class RouteController
                     $stopModel->update((int) $stop['id'], ['stop_order' => $order]);
                     $order++;
                 }
+                $this->model->update($routeId, [
+                    'optimized_geometry' => $geometry !== null ? json_encode($geometry) : null,
+                ]);
                 $db->commit();
             } catch (\Throwable $e) {
                 $db->rollBack();
@@ -386,7 +409,7 @@ class RouteController
             }
 
             $finalStops = $stopModel->listByRoute($routeId);
-            jsonSuccess(['stops' => $finalStops], 'Ruta optimizada');
+            jsonSuccess(['stops' => $finalStops, 'optimized_route' => $geometry], 'Ruta optimizada');
         } catch (\Throwable $e) {
             apiLog('ERROR', 'Error optimizing route: ' . $e->getMessage());
             jsonError('Error al optimizar la ruta', 500);

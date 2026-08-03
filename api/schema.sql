@@ -418,6 +418,7 @@ CREATE TABLE IF NOT EXISTS delivery_route (
     end_time TIME NULL,
     status_id INT NULL,
     trajectory JSON NULL,
+    optimized_geometry LONGTEXT NULL,
     color VARCHAR(7) DEFAULT '#22c55e',
     start_latitude DECIMAL(10,8) NULL,
     start_longitude DECIMAL(11,8) NULL,

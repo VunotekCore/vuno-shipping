@@ -135,7 +135,7 @@ class RouteModel
         $params = ['id' => $id];
 
         foreach (['name', 'description', 'assigned_to', 'vehicle_id', 'scheduled_date',
-                    'start_time', 'end_time', 'status_id', 'trajectory', 'color',
+                    'start_time', 'end_time', 'status_id', 'trajectory', 'optimized_geometry', 'color',
                     'start_latitude', 'start_longitude', 'end_latitude', 'end_longitude'] as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = :$field";

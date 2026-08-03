@@ -65,6 +65,17 @@ function formatDate(d: string | null | undefined): string {
   return new Date(d).toLocaleDateString('es-NI', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+function parseCoords(raw: string | null | undefined): [number, number][] {
+  if (!raw) return []
+  try {
+    const coords = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (!Array.isArray(coords)) return []
+    return coords.map((c: any): [number, number] => [Number(c[0] ?? c.lat), Number(c[1] ?? c.lng)]).filter((ll) => !Number.isNaN(ll[0]) && !Number.isNaN(ll[1]))
+  } catch {
+    return []
+  }
+}
+
 async function load() {
   loading.value = true
   error.value = ''
@@ -113,6 +124,13 @@ function initMap() {
         latlngs.forEach((ll) => bounds.push(ll))
       }
     } catch {}
+  }
+
+  // OSRM optimal route (blue dashed line)
+  const optimized = parseCoords(rd.optimized_geometry)
+  if (optimized.length >= 2) {
+    L.polyline(optimized, { color: '#00A8FF', weight: 3, dashArray: '8 8', opacity: 0.9 }).addTo(map!)
+    optimized.forEach((ll) => bounds.push(ll))
   }
 
   // Stops markers (yellow)
@@ -196,6 +214,7 @@ async function generateStops() {
     const res = await routeService.generateStops(routeId.value, selectedPackageIds.value)
     const newStops = res.data.data.stops ?? []
     stops.value = newStops
+    if (routeData.value) routeData.value.optimized_geometry = null
     showAssignModal.value = false
     toast.success(res.data.message || 'Paradas generadas')
     await nextTick()
@@ -212,7 +231,11 @@ async function optimizeStops() {
   try {
     const res = await routeService.optimize(routeId.value)
     stops.value = res.data.data.stops ?? stops.value
-    toast.success('Ruta optimizada')
+    const optimized = (res.data.data as any).optimized_route as [number, number][] | null
+    if (routeData.value) {
+      routeData.value.optimized_geometry = optimized && optimized.length > 0 ? JSON.stringify(optimized) : null
+    }
+    toast.success(res.data.message || 'Ruta optimizada')
     await nextTick()
     initMap()
   } catch (e: any) {
@@ -303,7 +326,17 @@ onMounted(() => load())
       </div>
 
       <!-- Map -->
-      <div ref="mapContainer" class="h-[400px] w-full rounded-xl border border-[#1e293b] overflow-hidden" />
+      <div>
+        <div class="mb-2 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-[#94a3b8]">
+          <span class="inline-flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#22c55e" /> Trayectoria</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-0 w-5 border-t-2 border-dashed" style="border-color:#00A8FF" /> Ruta óptima OSRM</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#eab308" /> Pendiente</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#22c55e" /> Visitada</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#64748b" /> Omitida/Fallada</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#ef4444" /> Fin</span>
+        </div>
+        <div ref="mapContainer" class="h-[400px] w-full rounded-xl border border-[#1e293b] overflow-hidden" />
+      </div>
 
       <!-- Actions -->
       <div class="flex flex-wrap gap-3">
