@@ -222,6 +222,10 @@ class RouteController
             jsonError('No tenes permiso para cambiar estado', 403);
         }
 
+        if (($payload['role_slug'] ?? '') !== 'admin') {
+            jsonError('Solo el administrador puede cambiar el estado de la ruta', 403);
+        }
+
         $data = getJsonInput();
         $id   = (int) ($data['id'] ?? 0);
         $newStatus = sanitizeString($data['status'] ?? '', 50);
@@ -243,6 +247,10 @@ class RouteController
 
         if (!in_array($newStatus, $allowedNext, true)) {
             jsonError("No se puede cambiar de '{$currentStatus}' a '{$newStatus}'", 409);
+        }
+
+        if ($newStatus === 'completed' && (int) ($existing['pending_stops'] ?? 0) > 0) {
+            jsonError('No se puede completar la ruta con paradas pendientes', 409);
         }
 
         $statusId = $this->model->getStatusId($newStatus);

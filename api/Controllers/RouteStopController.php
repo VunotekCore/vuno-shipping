@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\RouteStopModel;
+use App\Models\RouteModel;
 use App\Services\PackageDeliveryService;
 use App\Config\Database;
 
@@ -57,6 +58,8 @@ class RouteStopController
 
         $existing = $this->model->findById($id);
         if ($existing === null) jsonError('Parada no encontrada', 404);
+
+        $this->assertStopOwnership($existing, $payload);
 
         $statusId = $this->model->getStatusId($newStatus);
         if ($statusId === null) jsonError('Estado invalido', 422);
@@ -120,6 +123,22 @@ class RouteStopController
 
             $this->model->update($id, $updateData);
 
+            $routeId = (int) ($existing['route_id'] ?? 0);
+            $routeCompleted = false;
+            if ($routeId > 0) {
+                $routeModel = new RouteModel($db);
+                $route = $routeModel->findById($routeId);
+                if ($route !== null
+                    && ($route['status_name'] ?? '') === 'active'
+                    && (int) ($route['pending_stops'] ?? 1) === 0) {
+                    $completedId = $routeModel->getStatusId('completed');
+                    if ($completedId !== null) {
+                        $routeModel->update($routeId, ['status_id' => $completedId]);
+                        $routeCompleted = true;
+                    }
+                }
+            }
+
             $delivery = null;
             if (!empty($existing['package_id'])) {
                 $svc = new PackageDeliveryService($db);
@@ -142,7 +161,7 @@ class RouteStopController
             }
 
             $stop = $this->model->findById($id);
-            jsonSuccess(['stop' => $stop], 'Entrega registrada');
+            jsonSuccess(['stop' => $stop, 'route_completed' => $routeCompleted], $routeCompleted ? 'Entrega registrada — ruta completada' : 'Entrega registrada');
         } catch (\Throwable $e) {
             $db->rollBack();
             apiLog('ERROR', 'Error delivering stop: ' . $e->getMessage());
