@@ -9,7 +9,7 @@ class RouteModel
 {
     public function __construct(private PDO $db) {}
 
-    public function count(?string $status = null, ?int $driverId = null, ?string $date = null): int
+    public function count(?string $status = null, ?int $driverId = null): int
     {
         $where = [];
         $params = [];
@@ -21,10 +21,6 @@ class RouteModel
         if ($driverId !== null) {
             $where[] = 'dr.assigned_to = :driver_id';
             $params['driver_id'] = $driverId;
-        }
-        if ($date !== null) {
-            $where[] = 'dr.scheduled_date = :sched_date';
-            $params['sched_date'] = $date;
         }
 
         $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -33,7 +29,7 @@ class RouteModel
         return (int) $stmt->fetchColumn();
     }
 
-    public function listPaginated(int $limit, int $offset, ?string $status = null, ?int $driverId = null, ?string $date = null): array
+    public function listPaginated(int $limit, int $offset, ?string $status = null, ?int $driverId = null): array
     {
         $where = [];
         $params = [];
@@ -46,17 +42,13 @@ class RouteModel
             $where[] = 'dr.assigned_to = :driver_id';
             $params['driver_id'] = $driverId;
         }
-        if ($date !== null) {
-            $where[] = 'dr.scheduled_date = :sched_date';
-            $params['sched_date'] = $date;
-        }
 
         $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
         $stmt = $this->db->prepare("
             SELECT dr.id, dr.name, dr.description, dr.assigned_to, u.name AS driver_name,
                    dr.vehicle_id, v.plate AS vehicle_plate, v.brand AS vehicle_brand,
-                   dr.scheduled_date, dr.start_time, dr.end_time,
+                   dr.start_time, dr.end_time,
                    dr.status_id, rs.name AS status_name,
                    dr.color, dr.start_latitude, dr.start_longitude,
                    dr.end_latitude, dr.end_longitude,
@@ -103,10 +95,10 @@ class RouteModel
     public function create(array $data): int
     {
         $stmt = $this->db->prepare("
-            INSERT INTO delivery_route (name, description, assigned_to, vehicle_id, scheduled_date,
+            INSERT INTO delivery_route (name, description, assigned_to, vehicle_id,
              start_time, end_time, status_id, trajectory, color,
              start_latitude, start_longitude, end_latitude, end_longitude)
-            VALUES (:name, :description, :assigned_to, :vehicle_id, :scheduled_date,
+            VALUES (:name, :description, :assigned_to, :vehicle_id,
              :start_time, :end_time, :status_id, :trajectory, :color,
              :start_latitude, :start_longitude, :end_latitude, :end_longitude)
         ");
@@ -115,7 +107,6 @@ class RouteModel
             'description' => $data['description'] ?? null,
             'assigned_to' => $data['assigned_to'] ?? null,
             'vehicle_id' => $data['vehicle_id'] ?? null,
-            'scheduled_date' => $data['scheduled_date'] ?? null,
             'start_time' => $data['start_time'] ?? null,
             'end_time' => $data['end_time'] ?? null,
             'status_id' => $data['status_id'] ?? null,
@@ -134,7 +125,7 @@ class RouteModel
         $fields = [];
         $params = ['id' => $id];
 
-        foreach (['name', 'description', 'assigned_to', 'vehicle_id', 'scheduled_date',
+        foreach (['name', 'description', 'assigned_to', 'vehicle_id',
                     'start_time', 'end_time', 'status_id', 'trajectory', 'optimized_geometry', 'color',
                     'start_latitude', 'start_longitude', 'end_latitude', 'end_longitude'] as $field) {
             if (array_key_exists($field, $data)) {
@@ -167,9 +158,11 @@ class RouteModel
     public function getZones(int $routeId): array
     {
         $stmt = $this->db->prepare("
-            SELECT z.id, z.name FROM route_zone rz
+            SELECT z.id, z.name, z.lat, z.lng
+            FROM route_zone rz
             JOIN zone z ON z.id = rz.zone_id
             WHERE rz.route_id = :route_id
+            ORDER BY rz.position ASC, rz.id ASC
         ");
         $stmt->execute(['route_id' => $routeId]);
         return $stmt->fetchAll();
@@ -181,9 +174,13 @@ class RouteModel
             ->execute(['route_id' => $routeId]);
 
         if (!empty($zoneIds)) {
-            $stmt = $this->db->prepare('INSERT INTO route_zone (route_id, zone_id) VALUES (:route_id, :zone_id)');
-            foreach ($zoneIds as $zoneId) {
-                $stmt->execute(['route_id' => $routeId, 'zone_id' => (int) $zoneId]);
+            $stmt = $this->db->prepare('INSERT INTO route_zone (route_id, zone_id, position) VALUES (:route_id, :zone_id, :position)');
+            foreach ($zoneIds as $position => $zoneId) {
+                $stmt->execute([
+                    'route_id' => $routeId,
+                    'zone_id' => (int) $zoneId,
+                    'position' => (int) $position,
+                ]);
             }
         }
     }
@@ -193,6 +190,7 @@ class RouteModel
         $stmt = $this->db->prepare("
             SELECT p.id, p.tracking_number, p.recipient_name, p.recipient_address,
                    p.recipient_phone, p.recipient_city, p.recipient_department,
+                   p.latitude, p.longitude,
                    p.zone_id, z.name AS zone_name, p.description, p.weight,
                    p.status_id, ps.name AS status_name,
                    p.assigned_to, u.name AS assigned_to_name
@@ -216,7 +214,7 @@ class RouteModel
             FROM delivery_route dr
             LEFT JOIN route_status rs ON rs.id = dr.status_id
             WHERE dr.assigned_to = :user_id
-            ORDER BY dr.scheduled_date DESC, dr.created_at DESC
+            ORDER BY dr.created_at DESC
         ");
         $stmt->execute(['user_id' => $userId]);
         return $stmt->fetchAll();
@@ -235,6 +233,30 @@ class RouteModel
             LIMIT 1
         ");
         $stmt->execute(['user_id' => $userId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function hasOpenAssignment(string $field, int $value, ?int $excludeRouteId = null): ?array
+    {
+        if (!in_array($field, ['assigned_to', 'vehicle_id'], true)) {
+            return null;
+        }
+
+        $sql = "SELECT dr.id, dr.name
+                FROM delivery_route dr
+                JOIN route_status rs ON rs.id = dr.status_id
+                WHERE dr.{$field} = :value
+                  AND rs.name IN ('draft', 'active')
+                  AND (:exclude IS NULL OR dr.id != :exclude_id)
+                LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'value'      => $value,
+            'exclude'    => $excludeRouteId,
+            'exclude_id' => $excludeRouteId,
+        ]);
         $row = $stmt->fetch();
         return $row ?: null;
     }

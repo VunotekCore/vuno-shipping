@@ -8,7 +8,6 @@ export interface RouteListParams {
   limit?: number
   status?: string
   driver_id?: number
-  date?: string
 }
 
 export const routeService = {
@@ -18,7 +17,6 @@ export const routeService = {
     if (params?.limit) sp.set('limit', String(params.limit))
     if (params?.status) sp.set('status', params.status)
     if (params?.driver_id) sp.set('driver_id', String(params.driver_id))
-    if (params?.date) sp.set('date', params.date)
     const qs = sp.toString()
     return api.get<{ success: boolean; data: { routes: DeliveryRoute[]; pagination: import('./pagination').Pagination } }>(
       `/route/list.php${qs ? '?' + qs : ''}`
@@ -31,7 +29,7 @@ export const routeService = {
 
   create(data: {
     name: string; description?: string; assigned_to?: number; vehicle_id?: number;
-    scheduled_date?: string; start_time?: string; end_time?: string;
+    start_time?: string; end_time?: string;
     trajectory?: unknown; color?: string;
     start_latitude?: number; start_longitude?: number;
     end_latitude?: number; end_longitude?: number;
@@ -43,7 +41,7 @@ export const routeService = {
   update(data: {
     id: number; name?: string; description?: string | null;
     assigned_to?: number | null; vehicle_id?: number | null;
-    scheduled_date?: string | null; start_time?: string | null; end_time?: string | null;
+    start_time?: string | null; end_time?: string | null;
     trajectory?: unknown; color?: string;
     start_latitude?: number | null; start_longitude?: number | null;
     end_latitude?: number | null; end_longitude?: number | null;

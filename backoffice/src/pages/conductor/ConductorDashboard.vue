@@ -44,9 +44,12 @@ function goToRoute() {
   router.push('/conductor/ruta')
 }
 
-function formatDate(d: string | null | undefined): string {
-  if (!d) return '—'
-  return new Date(d).toLocaleDateString('es-NI', { day: '2-digit', month: 'short', year: 'numeric' })
+function formatSchedule(): string {
+  const start = routeData.value?.start_time
+  const end = routeData.value?.end_time
+  if (!start && !end) return 'Sin horario'
+  if (start && end) return `${start}–${end}`
+  return start || end || 'Sin horario'
 }
 
 onMounted(() => load())
@@ -96,7 +99,7 @@ onMounted(() => load())
               <span class="rounded-full bg-[#69dca4]/15 px-2.5 py-0.5 text-[11px] font-medium text-[#69dca4]">{{ routeData.status_name }}</span>
             </div>
             <p class="mt-1.5 text-sm text-[#64748b]">{{ routeData.description || 'Sin descripción' }}</p>
-            <p class="mt-1 text-xs text-[#64748b]">{{ formatDate(routeData.scheduled_date) }} · {{ routeData.driver_name }}</p>
+            <p class="mt-1 text-xs text-[#64748b]">{{ formatSchedule() }} · {{ routeData.driver_name }}</p>
           </div>
         </div>
 

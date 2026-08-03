@@ -7,9 +7,11 @@ const props = withDefaults(defineProps<{
   modelValue: Array<[number, number]>
   color?: string
   disabled?: boolean
+  zoneMarkers?: Array<{ id: number; name: string; lat: number; lng: number }>
 }>(), {
   color: '#22c55e',
   disabled: false,
+  zoneMarkers: () => [],
 })
 
 const emit = defineEmits<{
@@ -21,6 +23,7 @@ let map: L.Map | null = null
 let polyline: L.Polyline | null = null
 let startMarker: L.CircleMarker | null = null
 let endMarker: L.CircleMarker | null = null
+const zoneMarkerLayer = ref<L.LayerGroup | null>(null)
 
 const points = computed(() => props.modelValue)
 
@@ -48,6 +51,29 @@ function initMap() {
   })
 
   setTimeout(() => map?.invalidateSize(), 300)
+}
+
+function redrawZoneMarkers() {
+  if (!map) return
+  if (zoneMarkerLayer.value) {
+    zoneMarkerLayer.value.remove()
+    zoneMarkerLayer.value = null
+  }
+  if (props.zoneMarkers.length === 0) return
+
+  const layer = L.layerGroup().addTo(map)
+  props.zoneMarkers.forEach((z, idx) => {
+    const color = idx === 0 ? '#22c55e' : idx === props.zoneMarkers.length - 1 ? '#ef4444' : '#3b82f6'
+    const marker = L.circleMarker([z.lat, z.lng], {
+      radius: 8,
+      fillColor: color,
+      color: '#fff',
+      weight: 2,
+      fillOpacity: 1,
+    }).addTo(layer)
+    marker.bindPopup(`<b>${idx + 1}. ${z.name}</b><br/>${idx === 0 ? 'Inicio' : idx === props.zoneMarkers.length - 1 ? 'Fin' : 'Parada'}`)
+  })
+  zoneMarkerLayer.value = layer
 }
 
 function redraw(fitBounds = false) {
@@ -87,9 +113,13 @@ function redraw(fitBounds = false) {
       fillOpacity: 1,
     }).addTo(map).bindPopup('Fin')
   }
+
+  redrawZoneMarkers()
 }
 
 watch(() => props.modelValue, () => redraw(false), { deep: true })
+
+watch(() => props.zoneMarkers, () => redraw(false), { deep: true })
 
 watch(() => props.color, () => {
   if (polyline) polyline.setStyle({ color: props.color })
@@ -141,6 +171,7 @@ onBeforeUnmount(() => {
     <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#94a3b8]">
       <span class="inline-flex items-center gap-1.5"><span class="h-1 w-5 rounded" :style="{ background: color }" /> Trayectoria</span>
       <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#22c55e" /> Inicio</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#3b82f6" /> Zona (parada)</span>
       <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#ef4444" /> Fin</span>
     </div>
   </div>

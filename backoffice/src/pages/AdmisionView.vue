@@ -10,9 +10,12 @@ import type { DeliveryOption } from '../types'
 import { useToast } from '../composables/useToast'
 import { formatCurrency } from '../utils/format'
 import QRCode from 'qrcode'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import AppFormField from '../components/ui/AppFormField.vue'
 import AppPhoneInput from '../components/ui/AppPhoneInput.vue'
 import AppDropdown from '../components/ui/AppDropdown.vue'
+import AppModal from '../components/ui/AppModal.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -73,6 +76,8 @@ const form = reactive({
   recipient_address: '',
   recipient_city: '',
   recipient_department: '',
+  latitude: null as number | null,
+  longitude: null as number | null,
   zone_id: null as number | null,
   description: '',
   weight: null as number | null,
@@ -108,6 +113,118 @@ const selectedClient = computed(() => {
   if (!form.client_id) return null
   return clients.value.find((c) => c.id === form.client_id) || null
 })
+
+// Geo modal: ubicar el punto de entrega en el mapa
+const showGeoModal = ref(false)
+const geoMapContainer = ref<HTMLElement | null>(null)
+const geoSearch = ref('')
+const geoSearching = ref(false)
+const geoResults = ref<Array<{ display_name: string; lat: number; lon: number }>>([])
+const geoError = ref('')
+const geoPoint = ref<{ lat: number; lng: number } | null>(null)
+
+let geoMap: L.Map | null = null
+let geoMarker: L.CircleMarker | null = null
+
+const geoQuery = computed(() => {
+  return [form.recipient_address, form.recipient_city, form.recipient_department || 'Nicaragua']
+    .filter(Boolean)
+    .join(', ')
+})
+
+const hasGeoPoint = computed(() => form.latitude != null && form.longitude != null)
+
+function openGeoModal() {
+  showGeoModal.value = true
+  geoError.value = ''
+  geoResults.value = []
+  geoSearch.value = geoQuery.value
+  geoPoint.value = hasGeoPoint.value
+    ? { lat: Number(form.latitude), lng: Number(form.longitude) }
+    : null
+  nextTick(() => {
+    if (!geoMapContainer.value) return
+    geoMap = L.map(geoMapContainer.value, { zoomControl: true, attributionControl: false })
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(geoMap)
+    if (geoPoint.value) {
+      geoMap.setView([geoPoint.value.lat, geoPoint.value.lng], 16)
+      setGeoMarker(geoPoint.value)
+    } else {
+      geoMap.setView([12.1364, -86.2514], 12)
+    }
+    geoMap.on('click', (e: L.LeafletMouseEvent) => {
+      geoPoint.value = { lat: e.latlng.lat, lng: e.latlng.lng }
+      setGeoMarker(geoPoint.value)
+    })
+    setTimeout(() => geoMap?.invalidateSize(), 60)
+  })
+}
+
+function closeGeoModal() {
+  showGeoModal.value = false
+  geoResults.value = []
+  if (geoMap) {
+    geoMap.remove()
+    geoMap = null
+  }
+  geoMarker = null
+}
+
+function setGeoMarker(p: { lat: number; lng: number }) {
+  if (!geoMap) return
+  if (geoMarker) geoMarker.remove()
+  geoMarker = L.circleMarker([p.lat, p.lng], {
+    radius: 9,
+    fillColor: '#00A8FF',
+    color: '#fff',
+    weight: 2,
+    fillOpacity: 1,
+  }).addTo(geoMap)
+}
+
+async function geoSearchSubmit() {
+  const q = geoSearch.value.trim()
+  if (!q) return
+  geoSearching.value = true
+  geoError.value = ''
+  geoResults.value = []
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(q)}`
+    const res = await fetch(url, { headers: { Accept: 'application/json' } })
+    if (!res.ok) throw new Error('bad status')
+    const data = await res.json()
+    geoResults.value = (Array.isArray(data) ? data : [])
+      .map((r: any) => ({ display_name: r.display_name ?? '', lat: parseFloat(r.lat), lon: parseFloat(r.lon) }))
+      .filter((r: any) => !Number.isNaN(r.lat) && !Number.isNaN(r.lon))
+    if (geoResults.value.length === 0) {
+      geoError.value = 'Sin resultados. Probá con otra búsqueda.'
+    }
+  } catch {
+    geoError.value = 'No se pudo consultar el buscador. Intentá de nuevo.'
+  } finally {
+    geoSearching.value = false
+  }
+}
+
+function pickGeoResult(r: { display_name: string; lat: number; lon: number }) {
+  geoPoint.value = { lat: r.lat, lng: r.lon }
+  if (geoMap) {
+    geoMap.setView([r.lat, r.lon], 16)
+    setGeoMarker(geoPoint.value)
+  }
+  geoResults.value = []
+}
+
+function confirmGeoPoint() {
+  if (!geoPoint.value) {
+    toast.error('Marcá el punto en el mapa')
+    return
+  }
+  form.latitude = Number(geoPoint.value.lat.toFixed(8))
+  form.longitude = Number(geoPoint.value.lng.toFixed(8))
+  closeGeoModal()
+  toast.success('Punto de entrega guardado')
+}
 
 const deliveryTypeLabel = computed(() => {
   const ssLabel = currentShippingService.value?.description || currentShippingService.value?.name || '—'
@@ -344,6 +461,10 @@ async function handleCreate() {
     if (form.client_id) payload.client_id = form.client_id
     if (form.recipient_city) payload.recipient_city = form.recipient_city
     if (form.recipient_department) payload.recipient_department = form.recipient_department
+    if (form.latitude != null && form.longitude != null) {
+      payload.latitude = form.latitude
+      payload.longitude = form.longitude
+    }
     if (form.zone_id) payload.zone_id = form.zone_id
     if (form.description) payload.description = form.description
     if (form.weight) payload.weight = form.weight
@@ -390,6 +511,8 @@ function resetForm() {
   form.recipient_address = ''
   form.recipient_city = ''
   form.recipient_department = ''
+  form.latitude = null
+  form.longitude = null
   form.zone_id = null
   form.description = ''
   form.weight = null
@@ -593,6 +716,20 @@ onMounted(() => loadReferenceData())
                 :disabled="creating"
                 :rows="2"
               />
+              <div class="flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 text-sm text-[#00A8FF] hover:underline transition-colors"
+                  :disabled="creating"
+                  @click="openGeoModal"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {{ hasGeoPoint ? 'Cambiar ubicación en mapa' : 'Ubicar en mapa' }}
+                </button>
+                <span v-if="hasGeoPoint" class="text-xs text-[#64748b]">
+                  {{ Number(form.latitude).toFixed(4) }}, {{ Number(form.longitude).toFixed(4) }}
+                </span>
+              </div>
               <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <AppFormField
                   :model-value="form.recipient_city"
@@ -869,5 +1006,56 @@ onMounted(() => loadReferenceData())
         </div>
       </div>
     </template>
+
+    <!-- Geo modal: ubicar punto de entrega -->
+    <AppModal :visible="showGeoModal" title="Ubicar punto de entrega" size="lg" @close="closeGeoModal">
+      <div class="space-y-3">
+        <form class="flex gap-2" @submit.prevent="geoSearchSubmit">
+          <input
+            v-model="geoSearch"
+            class="admin-input w-full"
+            placeholder="Dirección, ciudad, referencia..."
+            autocomplete="off"
+            :disabled="geoSearching"
+          />
+          <button type="submit" class="admin-btn admin-btn-primary shrink-0" :disabled="geoSearching || !geoSearch.trim()">
+            {{ geoSearching ? 'Buscando...' : 'Buscar' }}
+          </button>
+        </form>
+
+        <div v-if="geoError" class="rounded-lg border border-[#7f1d1d] bg-[#7f1d1d]/20 px-3 py-2 text-sm text-[#fca5a5]">
+          {{ geoError }}
+        </div>
+
+        <div v-if="geoResults.length > 0" class="max-h-40 overflow-y-auto rounded-lg border border-[#1e293b] divide-y divide-[#1e293b]">
+          <button
+            v-for="(r, idx) in geoResults"
+            :key="idx"
+            type="button"
+            class="flex w-full items-start gap-2 px-3 py-2 text-left text-sm text-[#dae2fd] transition-colors hover:bg-white/[0.04]"
+            @click="pickGeoResult(r)"
+          >
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-[#00A8FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>{{ r.display_name }}</span>
+          </button>
+        </div>
+
+        <div ref="geoMapContainer" class="h-72 w-full rounded-lg border border-[#1e293b] z-0" />
+
+        <p class="text-xs text-[#64748b]">Hacé clic en el mapa para ajustar el punto exacto.</p>
+      </div>
+      <template #footer>
+        <div class="flex items-center justify-between gap-3">
+          <span v-if="geoPoint" class="text-xs text-[#94a3b8] font-mono">
+            {{ geoPoint.lat.toFixed(6) }}, {{ geoPoint.lng.toFixed(6) }}
+          </span>
+          <span v-else />
+          <div class="flex gap-2">
+            <button class="admin-btn admin-btn-ghost" @click="closeGeoModal">Cancelar</button>
+            <button class="admin-btn admin-btn-primary" @click="confirmGeoPoint">Guardar punto</button>
+          </div>
+        </div>
+      </template>
+    </AppModal>
   </div>
 </template>

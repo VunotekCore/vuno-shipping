@@ -30,10 +30,9 @@ class RouteController
         $offset   = ($page - 1) * $limit;
         $status   = $_GET['status'] ?? null;
         $driverId = isset($_GET['driver_id']) ? (int) $_GET['driver_id'] : null;
-        $date     = $_GET['date'] ?? null;
 
-        $total  = $this->model->count($status, $driverId, $date);
-        $routes = $this->model->listPaginated($limit, $offset, $status, $driverId, $date);
+        $total  = $this->model->count($status, $driverId);
+        $routes = $this->model->listPaginated($limit, $offset, $status, $driverId);
 
         jsonSuccess([
             'routes' => $routes,
@@ -95,7 +94,6 @@ class RouteController
             'description' => isset($data['description']) ? sanitizeString($data['description'], 1000) : null,
             'assigned_to' => isset($data['assigned_to']) ? (int) $data['assigned_to'] : null,
             'vehicle_id' => isset($data['vehicle_id']) ? (int) $data['vehicle_id'] : null,
-            'scheduled_date' => $data['scheduled_date'] ?? null,
             'start_time' => $data['start_time'] ?? null,
             'end_time' => $data['end_time'] ?? null,
             'status_id' => $statusId,
@@ -107,14 +105,18 @@ class RouteController
             'end_longitude' => isset($data['end_longitude']) ? (float) $data['end_longitude'] : null,
         ];
 
+        $this->validateAssignments($insertData['assigned_to'], $insertData['vehicle_id']);
+
+        $zoneIds = isset($data['zone_ids']) ? $this->validateZoneIds($data['zone_ids']) : null;
+
         $db = Database::getConnection();
         $db->beginTransaction();
 
         try {
             $routeId = $this->model->create($insertData);
 
-            if (isset($data['zone_ids']) && is_array($data['zone_ids'])) {
-                $this->model->setZones($routeId, $data['zone_ids']);
+            if ($zoneIds !== null) {
+                $this->model->setZones($routeId, $zoneIds);
             }
 
             $db->commit();
@@ -150,7 +152,6 @@ class RouteController
         if (array_key_exists('description', $data)) $updateData['description'] = $data['description'] !== null ? sanitizeString($data['description'], 1000) : null;
         if (array_key_exists('assigned_to', $data)) $updateData['assigned_to'] = $data['assigned_to'] !== null ? (int) $data['assigned_to'] : null;
         if (array_key_exists('vehicle_id', $data)) $updateData['vehicle_id'] = $data['vehicle_id'] !== null ? (int) $data['vehicle_id'] : null;
-        if (array_key_exists('scheduled_date', $data)) $updateData['scheduled_date'] = $data['scheduled_date'];
         if (array_key_exists('start_time', $data)) $updateData['start_time'] = $data['start_time'];
         if (array_key_exists('end_time', $data)) $updateData['end_time'] = $data['end_time'];
         if (array_key_exists('color', $data)) $updateData['color'] = $data['color'];
@@ -160,6 +161,14 @@ class RouteController
         if (array_key_exists('end_latitude', $data)) $updateData['end_latitude'] = $data['end_latitude'] !== null ? (float) $data['end_latitude'] : null;
         if (array_key_exists('end_longitude', $data)) $updateData['end_longitude'] = $data['end_longitude'] !== null ? (float) $data['end_longitude'] : null;
 
+        $this->validateAssignments(
+            $updateData['assigned_to'] ?? $existing['assigned_to'],
+            $updateData['vehicle_id'] ?? $existing['vehicle_id'],
+            $id
+        );
+
+        $zoneIds = isset($data['zone_ids']) ? $this->validateZoneIds($data['zone_ids']) : null;
+
         $db = Database::getConnection();
         $db->beginTransaction();
 
@@ -168,8 +177,8 @@ class RouteController
                 $this->model->update($id, $updateData);
             }
 
-            if (isset($data['zone_ids']) && is_array($data['zone_ids'])) {
-                $this->model->setZones($id, $data['zone_ids']);
+            if ($zoneIds !== null) {
+                $this->model->setZones($id, $zoneIds);
             }
 
             $db->commit();
@@ -430,5 +439,43 @@ class RouteController
 
         $routes = $this->model->getRoutesByDriver($userId);
         jsonSuccess(['routes' => $routes]);
+    }
+
+    private function validateZoneIds(mixed $zoneIds): array
+    {
+        if (!is_array($zoneIds)) {
+            jsonError('zone_ids debe ser un arreglo', 422);
+        }
+
+        $seen = [];
+        $clean = [];
+        foreach ($zoneIds as $zoneId) {
+            $zoneId = (int) $zoneId;
+            if ($zoneId <= 0) continue;
+            if (isset($seen[$zoneId])) {
+                jsonError('Las zonas no pueden repetirse', 422);
+            }
+            $seen[$zoneId] = true;
+            $clean[] = $zoneId;
+        }
+
+        return $clean;
+    }
+
+    private function validateAssignments(?int $assignedTo, ?int $vehicleId, ?int $excludeRouteId = null): void
+    {
+        if ($assignedTo !== null) {
+            $conflict = $this->model->hasOpenAssignment('assigned_to', $assignedTo, $excludeRouteId);
+            if ($conflict !== null) {
+                jsonError("El conductor ya tiene la ruta '{$conflict['name']}' en curso", 409);
+            }
+        }
+
+        if ($vehicleId !== null) {
+            $conflict = $this->model->hasOpenAssignment('vehicle_id', $vehicleId, $excludeRouteId);
+            if ($conflict !== null) {
+                jsonError("El vehículo ya está asignado a la ruta '{$conflict['name']}' en curso", 409);
+            }
+        }
     }
 }

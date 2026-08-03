@@ -1,17 +1,24 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { driverLocationService, routeService, type DeliveryRoute, type RouteStop } from '../../services/routeService'
+import { useAuthStore } from '../../stores/auth'
+import { useBackgroundGeo } from '../../composables/useBackgroundGeo'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 const router = useRouter()
+const auth = useAuthStore()
+const geo = useBackgroundGeo()
 const loading = ref(true)
 const routeData = ref<DeliveryRoute | null>(null)
 const stops = ref<RouteStop[]>([])
 const error = ref('')
 const mapContainer = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
+let historyPolyline: L.Polyline | null = null
+let liveMarker: L.CircleMarker | null = null
+let historyTimer: ReturnType<typeof setInterval> | null = null
 
 async function load() {
   loading.value = true
@@ -28,6 +35,8 @@ async function load() {
 
     await nextTick()
     initMap()
+    await loadOwnHistory()
+    historyTimer = setInterval(loadOwnHistory, 30000)
   } catch (e: any) {
     error.value = e?.response?.data?.error || 'Error al cargar'
   } finally {
@@ -35,9 +44,55 @@ async function load() {
   }
 }
 
+async function loadOwnHistory() {
+  if (!auth.user?.id) return
+  try {
+    const res = await driverLocationService.history(auth.user.id)
+    drawOwnHistory(res.data.data.history ?? [])
+  } catch {
+    /* sin historial aun */
+  }
+}
+
+function drawOwnHistory(history: Array<{ latitude: number; longitude: number; recorded_at: string }>) {
+  if (!map) return
+  if (historyPolyline) {
+    historyPolyline.remove()
+    historyPolyline = null
+  }
+  const latlngs = history
+    .map(h => [Number(h.latitude), Number(h.longitude)] as [number, number])
+    .filter(ll => !Number.isNaN(ll[0]) && !Number.isNaN(ll[1]))
+  if (latlngs.length >= 2) {
+    historyPolyline = L.polyline(latlngs, { color: '#f97316', weight: 4, opacity: 0.85 }).addTo(map)
+  }
+}
+
+function upsertLiveMarker(lat: number, lng: number) {
+  if (!map) return
+  if (!liveMarker) {
+    liveMarker = L.circleMarker([lat, lng], {
+      radius: 9,
+      fillColor: '#ef4444',
+      color: '#fff',
+      weight: 2,
+      fillOpacity: 1,
+    }).addTo(map)
+    liveMarker.bindPopup('<b>Tu ubicación</b><br/>GPS en vivo')
+  } else {
+    liveMarker.setLatLng([lat, lng])
+  }
+}
+
+watch(() => geo.lastFix.value, (fix) => {
+  if (fix) upsertLiveMarker(fix.latitude, fix.longitude)
+})
+
 function initMap() {
   if (!mapContainer.value) return
   if (map) { map.remove(); map = null }
+  historyPolyline = null
+  liveMarker = null
 
   map = L.map(mapContainer.value, { zoomControl: true, attributionControl: false })
     .setView([12.1149, -86.2362], 8)
@@ -88,6 +143,11 @@ function initMap() {
     bounds.push([lat, lng])
   })
 
+  // Live GPS
+  if (geo.lastFix.value) {
+    upsertLiveMarker(geo.lastFix.value.latitude, geo.lastFix.value.longitude)
+  }
+
   if (bounds.length > 0) {
     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 })
   }
@@ -98,6 +158,17 @@ function goBack() {
 }
 
 onMounted(() => load())
+
+onBeforeUnmount(() => {
+  if (historyTimer) {
+    clearInterval(historyTimer)
+    historyTimer = null
+  }
+  if (map) {
+    map.remove()
+    map = null
+  }
+})
 </script>
 
 <template>
@@ -129,10 +200,12 @@ onMounted(() => load())
       <div ref="mapContainer" class="h-[60vh] w-full rounded-xl border border-[#1e293b] overflow-hidden" />
 
       <!-- Mini legend -->
-      <div class="flex items-center gap-4 text-xs text-[#64748b]">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#64748b]">
         <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#eab308]" /> Pendiente</span>
         <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#22c55e]" /> Entregado</span>
         <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#64748b]" /> Otro</span>
+        <span class="flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#f97316" /> Tu recorrido</span>
+        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ef4444]" /> Tu ubicación</span>
       </div>
     </template>
   </div>

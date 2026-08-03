@@ -151,6 +151,22 @@ class PackageController
             if (isset($data['recipient_department'])) {
                 $insertData['recipient_department'] = sanitizeString($data['recipient_department'], 100);
             }
+            if (isset($data['latitude']) && $data['latitude'] !== null && $data['latitude'] !== '') {
+                $lat = (float) $data['latitude'];
+                if ($lat < -90 || $lat > 90) {
+                    $db->rollBack();
+                    jsonError('Latitud inválida (rango -90 a 90)', 422);
+                }
+                $insertData['latitude'] = $lat;
+            }
+            if (isset($data['longitude']) && $data['longitude'] !== null && $data['longitude'] !== '') {
+                $lng = (float) $data['longitude'];
+                if ($lng < -180 || $lng > 180) {
+                    $db->rollBack();
+                    jsonError('Longitud inválida (rango -180 a 180)', 422);
+                }
+                $insertData['longitude'] = $lng;
+            }
             if (isset($data['zone_id'])) {
                 $insertData['zone_id'] = (int) $data['zone_id'];
             }
@@ -329,6 +345,20 @@ class PackageController
         }
         if (isset($data['recipient_department'])) {
             $updateData['recipient_department'] = sanitizeString($data['recipient_department'], 100);
+        }
+        if (isset($data['latitude']) && $data['latitude'] !== null && $data['latitude'] !== '') {
+            $lat = (float) $data['latitude'];
+            if ($lat < -90 || $lat > 90) {
+                jsonError('Latitud inválida (rango -90 a 90)', 422);
+            }
+            $updateData['latitude'] = $lat;
+        }
+        if (isset($data['longitude']) && $data['longitude'] !== null && $data['longitude'] !== '') {
+            $lng = (float) $data['longitude'];
+            if ($lng < -180 || $lng > 180) {
+                jsonError('Longitud inválida (rango -180 a 180)', 422);
+            }
+            $updateData['longitude'] = $lng;
         }
         if (isset($data['description'])) {
             $updateData['description'] = sanitizeString($data['description'], 500);

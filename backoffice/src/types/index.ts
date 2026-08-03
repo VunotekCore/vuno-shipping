@@ -272,7 +272,6 @@ export interface DeliveryRoute {
   vehicle_plate: string | null
   vehicle_brand: string | null
   vehicle_model: string | null
-  scheduled_date: string | null
   start_time: string | null
   end_time: string | null
   status_id: number | null

@@ -275,6 +275,8 @@ CREATE TABLE IF NOT EXISTS package (
     recipient_address TEXT NOT NULL,
     recipient_city VARCHAR(100) NULL,
     recipient_department VARCHAR(100) NULL,
+    latitude DECIMAL(10,8) NULL,
+    longitude DECIMAL(11,8) NULL,
     zone_id INT NULL,
     description TEXT NULL,
     weight DECIMAL(10,2) NULL,
@@ -413,7 +415,6 @@ CREATE TABLE IF NOT EXISTS delivery_route (
     description TEXT NULL,
     assigned_to INT NULL,
     vehicle_id INT NULL,
-    scheduled_date DATE NULL,
     start_time TIME NULL,
     end_time TIME NULL,
     status_id INT NULL,
@@ -431,14 +432,14 @@ CREATE TABLE IF NOT EXISTS delivery_route (
     FOREIGN KEY (status_id) REFERENCES route_status(id) ON DELETE SET NULL,
     INDEX idx_route_driver (assigned_to),
     INDEX idx_route_vehicle (vehicle_id),
-    INDEX idx_route_status (status_id),
-    INDEX idx_route_date (scheduled_date)
+    INDEX idx_route_status (status_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS route_zone (
     id INT AUTO_INCREMENT PRIMARY KEY,
     route_id INT NOT NULL,
     zone_id INT NOT NULL,
+    position INT NOT NULL DEFAULT 0,
     UNIQUE KEY unique_route_zone (route_id, zone_id),
     FOREIGN KEY (route_id) REFERENCES delivery_route(id) ON DELETE CASCADE,
     FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE CASCADE

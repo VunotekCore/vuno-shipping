@@ -30,18 +30,76 @@ const statusLoading = ref(false)
 let map: L.Map | null = null
 const mapContainer = ref<HTMLElement | null>(null)
 let liveMarker: L.CircleMarker | null = null
+let vehicleTrajectory: L.Polyline | null = null
+let routeCorridor: [number, number][] = []
 let driverTimer: ReturnType<typeof setInterval> | null = null
+let tickCount = 0
+const offRoute = ref(false)
+
+function haversine(a: [number, number], b: [number, number]): number {
+  const R = 6371000
+  const dLat = (b[0] - a[0]) * Math.PI / 180
+  const dLng = (b[1] - a[1]) * Math.PI / 180
+  const s = Math.sin(dLat / 2) ** 2
+    + Math.cos(a[0] * Math.PI / 180) * Math.cos(b[0] * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(s))
+}
+
+function distanceToCorridor(lat: number, lng: number): number {
+  if (routeCorridor.length === 0) return 0
+  const p: [number, number] = [lat, lng]
+  let min = Infinity
+  for (let i = 0; i < routeCorridor.length - 1; i++) {
+    const a = routeCorridor[i]
+    const b = routeCorridor[i + 1]
+    const dx = b[0] - a[0]
+    const dy = b[1] - a[1]
+    const len2 = dx * dx + dy * dy
+    let t = len2 === 0 ? 0 : ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2
+    t = Math.max(0, Math.min(1, t))
+    const proj: [number, number] = [a[0] + t * dx, a[1] + t * dy]
+    const d = haversine(p, proj)
+    if (d < min) min = d
+  }
+  return min
+}
+
+async function loadVehicleHistory() {
+  const userId = routeData.value?.assigned_to
+  if (!userId || !map) return
+  try {
+    const res = await driverLocationService.history(userId)
+    const history = (res.data.data as { history?: Array<{ latitude: number; longitude: number; recorded_at: string }> }).history ?? []
+    if (vehicleTrajectory) {
+      vehicleTrajectory.remove()
+      vehicleTrajectory = null
+    }
+    const latlngs = history
+      .map(h => [Number(h.latitude), Number(h.longitude)] as [number, number])
+      .filter(ll => !Number.isNaN(ll[0]) && !Number.isNaN(ll[1]))
+    if (latlngs.length >= 2) {
+      vehicleTrajectory = L.polyline(latlngs, { color: '#f97316', weight: 3, opacity: 0.85 }).addTo(map)
+    }
+  } catch {
+    /* sin historial aun */
+  }
+}
 
 function startDriverPolling() {
   stopDriverPolling()
   const userId = routeData.value?.assigned_to
   if (!userId) return
   const tick = async () => {
+    tickCount++
+    if (tickCount % 3 === 1) loadVehicleHistory()
     try {
       const res = await driverLocationService.get(userId)
       const loc = (res.data.data as { location?: DriverLocation }).location
       if (!loc || !loc.latitude || !loc.longitude) return
-      upsertLiveMarker(Number(loc.latitude), Number(loc.longitude))
+      const lat = Number(loc.latitude)
+      const lng = Number(loc.longitude)
+      upsertLiveMarker(lat, lng)
+      offRoute.value = routeCorridor.length > 0 && distanceToCorridor(lat, lng) > 250
     } catch {
       /* silencioso: sin señal del conductor */
     }
@@ -103,9 +161,12 @@ const allowedTransitions = computed(() => {
   return transitions[routeData.value?.status_name ?? ''] ?? []
 })
 
-function formatDate(d: string | null | undefined): string {
-  if (!d) return '—'
-  return new Date(d).toLocaleDateString('es-NI', { day: '2-digit', month: 'short', year: 'numeric' })
+function formatSchedule(): string {
+  const start = routeData.value?.start_time
+  const end = routeData.value?.end_time
+  if (!start && !end) return '—'
+  if (start && end) return `${start}–${end}`
+  return start || end || '—'
 }
 
 function parseCoords(raw: string | null | undefined): [number, number][] {
@@ -144,6 +205,9 @@ function initMap() {
     map = null
   }
   liveMarker = null
+  vehicleTrajectory = null
+  routeCorridor = []
+  offRoute.value = false
 
   map = L.map(mapContainer.value, {
     zoomControl: true,
@@ -159,22 +223,43 @@ function initMap() {
 
   const bounds: L.LatLngBoundsLiteral = []
 
-  // Trajectory (green line)
+  // Trajectory (green line) + corridor de referencia para deteccion off-route
   if (rd.trajectory) {
     try {
       const coords = typeof rd.trajectory === 'string' ? JSON.parse(rd.trajectory) : rd.trajectory
       if (Array.isArray(coords) && coords.length >= 2) {
         const latlngs: [number, number][] = coords.map((c: any) => [c[1] ?? c.lat, c[0] ?? c.lng])
         L.polyline(latlngs, { color: rd.color || '#22c55e', weight: 4, opacity: 0.8 }).addTo(map!)
+        routeCorridor = latlngs
         latlngs.forEach((ll) => bounds.push(ll))
       }
     } catch {}
+  }
+
+  // Zonas de la ruta (cobertura)
+  if (rd.zones && rd.zones.length > 0) {
+    rd.zones.forEach((z: any) => {
+      if (z.lat == null || z.lng == null) return
+      const lat = Number(z.lat)
+      const lng = Number(z.lng)
+      const circle = L.circle([lat, lng], {
+        radius: 1500,
+        color: rd.color || '#22c55e',
+        fillColor: rd.color || '#22c55e',
+        fillOpacity: 0.08,
+        weight: 1,
+        opacity: 0.35,
+      }).addTo(map!)
+      circle.bindPopup(`<b>${z.name}</b><br/>Zona cubierta por la ruta`)
+      bounds.push([lat, lng])
+    })
   }
 
   // OSRM optimal route (blue dashed line)
   const optimized = parseCoords(rd.optimized_geometry)
   if (optimized.length >= 2) {
     L.polyline(optimized, { color: '#00A8FF', weight: 3, dashArray: '8 8', opacity: 0.9 }).addTo(map!)
+    if (routeCorridor.length === 0) routeCorridor = optimized
     optimized.forEach((ll) => bounds.push(ll))
   }
 
@@ -369,8 +454,8 @@ onBeforeUnmount(() => {
           <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ routeData.vehicle_plate || 'Sin asignar' }}</p>
         </div>
         <div class="admin-card p-3">
-          <p class="text-xs text-[#64748b]">Fecha</p>
-          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ formatDate(routeData.scheduled_date) }}</p>
+          <p class="text-xs text-[#64748b]">Horario</p>
+          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ formatSchedule() }}</p>
         </div>
         <div class="admin-card p-3">
           <p class="text-xs text-[#64748b]">Paradas</p>
@@ -380,13 +465,25 @@ onBeforeUnmount(() => {
 
       <!-- Map -->
       <div>
-        <div class="mb-2 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-[#94a3b8]">
+        <div class="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[#94a3b8]">
           <span class="inline-flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#22c55e" /> Trayectoria</span>
           <span class="inline-flex items-center gap-1.5"><span class="h-0 w-5 border-t-2 border-dashed" style="border-color:#00A8FF" /> Ruta óptima OSRM</span>
-          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#eab308" /> Pendiente</span>
-          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#22c55e" /> Visitada</span>
-          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#64748b" /> Omitida/Fallada</span>
-          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#ef4444" /> Conductor / Fin</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#22c55e;opacity:.25" /> Zonas</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#eab308" /> Pendiente</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#22c55e" /> Visitada</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#64748b" /> Omitida/Fallada</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#f97316" /> Trayectoria vehículo</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#ef4444" /> Conductor / Fin</span>
+          <span
+            v-if="offRoute"
+            class="inline-flex items-center gap-1.5 rounded-full border border-[#DC2626] bg-[#DC2626]/15 px-2 py-0.5 font-semibold text-[#f87171]"
+          >
+            <span class="relative flex h-2 w-2">
+              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#DC2626] opacity-75" />
+              <span class="relative inline-flex h-2 w-2 rounded-full bg-[#DC2626]" />
+            </span>
+            FUERA DE RUTA
+          </span>
         </div>
         <div ref="mapContainer" class="h-[400px] w-full rounded-xl border border-[#1e293b] overflow-hidden" />
       </div>

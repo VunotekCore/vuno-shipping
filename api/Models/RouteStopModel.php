@@ -122,7 +122,7 @@ class RouteStopModel
         $placeholders = implode(',', array_fill(0, count($packageIds), '?'));
         $stmt = $this->db->prepare("
             SELECT p.id, p.recipient_name, p.recipient_address,
-                   z.lat, z.lng, p.zone_id
+                   p.latitude, p.longitude, z.lat, z.lng, p.zone_id
             FROM package p
             LEFT JOIN zone z ON z.id = p.zone_id
             WHERE p.id IN ({$placeholders})
@@ -141,14 +141,17 @@ class RouteStopModel
         ");
 
         foreach ($packages as $pkg) {
+            $lat = $pkg['latitude'] !== null && $pkg['latitude'] !== '' ? $pkg['latitude'] : $pkg['lat'];
+            $lng = $pkg['longitude'] !== null && $pkg['longitude'] !== '' ? $pkg['longitude'] : $pkg['lng'];
+
             $insertStmt->execute([
                 'route_id' => $routeId,
                 'package_id' => (int) $pkg['id'],
                 'stop_order' => $order,
                 'client_name' => $pkg['recipient_name'],
                 'address' => $pkg['recipient_address'],
-                'latitude' => $pkg['lat'],
-                'longitude' => $pkg['lng'],
+                'latitude' => $lat,
+                'longitude' => $lng,
                 'status_id' => $pendingStatusId,
             ]);
             $created[] = [

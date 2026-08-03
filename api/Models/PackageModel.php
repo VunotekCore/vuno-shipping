@@ -74,6 +74,7 @@ class PackageModel
             SELECT p.id, p.tracking_number, p.client_id, c.name AS client_name,
                    p.sender_name, p.sender_phone, p.recipient_name, p.recipient_phone,
                    p.recipient_address, p.recipient_city, p.recipient_department,
+                   p.latitude, p.longitude,
                    p.zone_id, z.name AS zone_name,
                    p.description, p.weight, p.length, p.width, p.height,
                    p.volumetric_weight, p.chargeable_weight,
@@ -161,12 +162,14 @@ class PackageModel
         $stmt = $this->db->prepare(
             'INSERT INTO package (tracking_number, tracking_token, client_id, sender_name, sender_phone,
              recipient_name, recipient_phone, recipient_address, recipient_city, recipient_department,
+             latitude, longitude,
              zone_id, description, weight, length, width, height,
              volumetric_weight, chargeable_weight, declared_value, flete_cost, delivery_cost, shipping_cost,
              pricing_rule_id, delivery_type_id, delivery_option, local_delivery_type_id,
              shipping_service_id, delivery_option_id, pricing_type, status_id, assigned_to, notes, created_by)
              VALUES (:tracking_number, :tracking_token, :client_id, :sender_name, :sender_phone,
              :recipient_name, :recipient_phone, :recipient_address, :recipient_city, :recipient_department,
+             :latitude, :longitude,
              :zone_id, :description, :weight, :length, :width, :height,
              :volumetric_weight, :chargeable_weight, :declared_value, :flete_cost, :delivery_cost, :shipping_cost,
              :pricing_rule_id, :delivery_type_id, :delivery_option, :local_delivery_type_id,
@@ -183,6 +186,8 @@ class PackageModel
             'recipient_address' => $data['recipient_address'],
             'recipient_city' => $data['recipient_city'] ?? null,
             'recipient_department' => $data['recipient_department'] ?? null,
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
             'zone_id' => $data['zone_id'] ?? null,
             'description' => $data['description'] ?? null,
             'weight' => $data['weight'] ?? null,
@@ -216,7 +221,8 @@ class PackageModel
         $params = ['id' => $id];
 
         foreach (['client_id', 'sender_name', 'sender_phone', 'recipient_name', 'recipient_phone',
-                   'recipient_address', 'recipient_city', 'recipient_department', 'zone_id',
+                   'recipient_address', 'recipient_city', 'recipient_department',
+                   'latitude', 'longitude', 'zone_id',
                    'description',
                    'weight', 'length', 'width', 'height',
                    'volumetric_weight', 'chargeable_weight', 'declared_value',

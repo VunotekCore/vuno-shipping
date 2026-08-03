@@ -36,9 +36,10 @@ async function load() {
   }
 }
 
-function formatDate(dateStr: string | null | undefined) {
-  if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('es-NI', { year: 'numeric', month: 'short', day: 'numeric' })
+function formatSchedule(start: string | null | undefined, end: string | null | undefined) {
+  if (!start && !end) return '—'
+  if (start && end) return `${start}–${end}`
+  return start || end || '—'
 }
 
 onMounted(() => load())
@@ -70,7 +71,7 @@ onMounted(() => load())
           <span class="shrink-0 rounded-full bg-[#22c55e]/15 px-2.5 py-0.5 text-[11px] font-medium text-[#22c55e]">Completada</span>
         </div>
         <div class="flex items-center gap-4 text-xs text-[#64748b]">
-          <span>{{ formatDate(item.route.scheduled_date) }}</span>
+          <span>{{ formatSchedule(item.route.start_time, item.route.end_time) }}</span>
           <span>{{ item.completed }}/{{ item.total }} entregas</span>
         </div>
         <div class="h-1.5 w-full overflow-hidden rounded-full bg-[#1e293b]">

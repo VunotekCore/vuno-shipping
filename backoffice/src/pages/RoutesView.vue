@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { routeService, type DeliveryRoute } from '../services/routeService'
 import { userService, type User } from '../services/userService'
@@ -66,13 +66,13 @@ const {
   entityName: 'Ruta',
   getDefaultForm: () => ({
     name: '', description: '', assigned_to: null, vehicle_id: null,
-    scheduled_date: '', start_time: '', end_time: '',
+    start_time: '', end_time: '',
     color: '#22c55e', zone_ids: [], trajectory: [],
   }),
   populateForm: (r) => ({
     name: r.name, description: r.description ?? '', assigned_to: r.assigned_to ?? null,
     vehicle_id: r.vehicle_id ?? null,
-    scheduled_date: r.scheduled_date ?? '', start_time: r.start_time ?? '', end_time: r.end_time ?? '',
+    start_time: r.start_time ?? '', end_time: r.end_time ?? '',
     color: r.color, zone_ids: r.zones?.map((z: any) => z.id) ?? [],
     trajectory: parseTrajectory(r.trajectory),
   }),
@@ -117,6 +117,49 @@ async function loadZones() {
   finally { loadingZones.value = false }
 }
 
+function selectedZone(id: number): Zone | undefined {
+  return zoneOptions.value.find((z) => z.id === id)
+}
+
+function deriveTrajectoryFromZones() {
+  const traj = (form.value.zone_ids as number[])
+    .map((id: number) => selectedZone(id))
+    .filter((z): z is Zone => !!z && z.lat != null && z.lng != null)
+    .map((z: Zone) => [Number(z.lng), Number(z.lat)] as [number, number])
+  form.value.trajectory = traj
+}
+
+function toggleZone(id: number) {
+  const ids = form.value.zone_ids as number[]
+  if (ids.includes(id)) {
+    form.value.zone_ids = ids.filter((i) => i !== id)
+  } else {
+    form.value.zone_ids = [...ids, id]
+  }
+  deriveTrajectoryFromZones()
+}
+
+function moveZone(id: number, dir: -1 | 1) {
+  const ids = [...(form.value.zone_ids as number[])]
+  const idx = ids.indexOf(id)
+  const target = idx + dir
+  if (idx < 0 || target < 0 || target >= ids.length) return
+  ;[ids[idx], ids[target]] = [ids[target], ids[idx]]
+  form.value.zone_ids = ids
+  deriveTrajectoryFromZones()
+}
+
+function zoneOrderLabel(id: number): number {
+  return (form.value.zone_ids as number[]).indexOf(id) + 1
+}
+
+const zoneMarkers = computed(() =>
+  (form.value.zone_ids as number[])
+    .map((id: number) => selectedZone(id))
+    .filter((z): z is Zone => !!z && z.lat != null && z.lng != null)
+    .map((z: Zone) => ({ id: z.id, name: z.name, lat: Number(z.lat), lng: Number(z.lng) }))
+)
+
 const statusBadge = (status: string | null | undefined): string => {
   const badges: Record<string, string> = {
     draft: 'admin-badge-warning',
@@ -127,7 +170,7 @@ const statusBadge = (status: string | null | undefined): string => {
   return badges[status ?? ''] ?? 'admin-badge-default'
 }
 
-function formatDate(d: string | null | undefined): string {
+function formatSchedule(d: string | null | undefined): string {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('es-NI', { day: '2-digit', month: 'short', year: 'numeric' })
 }
@@ -140,21 +183,12 @@ const columns: TableColumn[] = [
   { key: 'name', label: 'Nombre', width: '200px' },
   { key: 'status_name', label: 'Estado', width: '110px' },
   { key: 'driver_name', label: 'Conductor', width: '160px' },
-  { key: 'scheduled_date', label: 'Fecha', width: '130px' },
+  { key: 'start_time', label: 'Horario', width: '130px' },
   { key: 'stop_count', label: 'Paradas', width: '90px' },
   { key: 'actions', label: '', width: '100px', align: 'right' },
 ]
 
 onMounted(() => load())
-
-function toggleZone(zoneId: number) {
-  const ids = form.value.zone_ids as number[]
-  if (ids.includes(zoneId)) {
-    form.value.zone_ids = ids.filter((id: number) => id !== zoneId)
-  } else {
-    form.value.zone_ids = [...ids, zoneId]
-  }
-}
 </script>
 
 <template>
@@ -185,7 +219,7 @@ function toggleZone(zoneId: number) {
               <span :class="['admin-badge', statusBadge(r.status_name)]">{{ r.status_name }}</span>
             </td>
             <td class="text-[#94a3b8]">{{ r.driver_name || '—' }}</td>
-            <td class="text-[#94a3b8]">{{ formatDate(r.scheduled_date) }}</td>
+            <td class="text-[#94a3b8]">{{ formatSchedule(r.start_time) }}</td>
             <td class="text-[#94a3b8]">{{ r.stop_count ?? 0 }}</td>
             <td class="text-right" @click.stop>
               <div class="flex items-center justify-end gap-1">
@@ -235,7 +269,7 @@ function toggleZone(zoneId: number) {
             <span :class="['admin-badge shrink-0', statusBadge(r.status_name)]">{{ r.status_name }}</span>
           </div>
           <p class="text-sm text-[#94a3b8] truncate">{{ r.driver_name || 'Sin conductor' }}</p>
-          <p class="text-xs text-[#64748b]">{{ formatDate(r.scheduled_date) }} · {{ r.stop_count ?? 0 }} paradas</p>
+          <p class="text-xs text-[#64748b]">{{ formatSchedule(r.start_time) }} · {{ r.stop_count ?? 0 }} paradas</p>
           <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2" @click.stop>
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="goToDetail(r.id)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -324,13 +358,9 @@ function toggleZone(zoneId: number) {
         <div>
           <div class="admin-form-section">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Programación
+            Horario
           </div>
-          <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Fecha programada</label>
-              <input v-model="form.scheduled_date" type="date" class="admin-input" :disabled="saving" />
-            </div>
+          <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Hora inicio</label>
               <input v-model="form.start_time" type="time" class="admin-input" :disabled="saving" />
@@ -347,8 +377,11 @@ function toggleZone(zoneId: number) {
         <div>
           <div class="admin-form-section">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0zM12 13a3 3 0 100-6 3 3 0 000 6z"/></svg>
-            Zonas que cubre
+            Zonas de la ruta
           </div>
+          <p class="mt-1 text-xs text-[#64748b]">
+            Elegí las zonas en orden de visita: la primera es el inicio y la última el fin. La trayectoria se dibuja automáticamente.
+          </p>
           <div v-if="loadingZones" class="mt-3 text-sm text-[#64748b]">Cargando zonas...</div>
           <div v-else class="mt-3 flex flex-wrap gap-2">
             <button
@@ -356,7 +389,7 @@ function toggleZone(zoneId: number) {
               :key="z.id"
               type="button"
               :class="[
-                'rounded-lg border px-3 py-1.5 text-sm transition-colors',
+                'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors',
                 (form.zone_ids as number[]).includes(z.id)
                   ? 'border-[#69dca4] bg-[#69dca4]/10 text-[#69dca4]'
                   : 'border-[#1e293b] text-[#94a3b8] hover:border-[#334155]'
@@ -364,9 +397,33 @@ function toggleZone(zoneId: number) {
               :disabled="saving"
               @click="toggleZone(z.id)"
             >
+              <span v-if="(form.zone_ids as number[]).includes(z.id)" class="flex h-4 w-4 items-center justify-center rounded-full bg-[#69dca4] text-[10px] font-bold text-[#0a1022]">
+                {{ zoneOrderLabel(z.id) }}
+              </span>
               {{ z.name }}
             </button>
             <p v-if="zoneOptions.length === 0" class="text-sm text-[#64748b]">No hay zonas disponibles.</p>
+          </div>
+
+          <!-- Orden de la ruta -->
+          <div v-if="(form.zone_ids as number[]).length > 0" class="mt-4 rounded-lg border border-[#1e293b] divide-y divide-[#1e293b]">
+            <div
+              v-for="(zid, idx) in (form.zone_ids as number[])"
+              :key="zid"
+              class="flex items-center gap-3 px-3 py-2"
+            >
+              <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#69dca4]/15 text-xs font-bold text-[#69dca4]">{{ idx + 1 }}</span>
+              <span class="min-w-0 flex-1 truncate text-sm text-[#dae2fd]">{{ selectedZone(zid)?.name || 'Zona' }}</span>
+              <button type="button" class="admin-btn admin-btn-ghost admin-btn-sm" :disabled="saving || idx === 0" title="Mover arriba" @click="moveZone(zid, -1)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              </button>
+              <button type="button" class="admin-btn admin-btn-ghost admin-btn-sm" :disabled="saving || idx === (form.zone_ids as number[]).length - 1" title="Mover abajo" @click="moveZone(zid, 1)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              </button>
+              <button type="button" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" :disabled="saving" title="Quitar" @click="toggleZone(zid)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -381,6 +438,7 @@ function toggleZone(zoneId: number) {
             <RouteTrajectoryEditor
               :model-value="(form.trajectory as Array<[number, number]>)"
               :color="(form.color as string) || '#22c55e'"
+              :zone-markers="zoneMarkers"
               :disabled="saving"
               @update:model-value="(v: Array<[number, number]>) => form.trajectory = v"
             />
