@@ -1,26 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-import LoginView from '../pages/LoginView.vue'
-import DashboardView from '../pages/DashboardView.vue'
-
 const router = createRouter({
-  history: createWebHistory('/'),
+  history: createWebHistory('/backoffice/'),
   routes: [
     {
       path: '/login',
       name: 'login',
-      component: LoginView,
+      component: () => import('../pages/LoginView.vue'),
       meta: { public: true },
     },
+    // === Admin routes ===
     {
       path: '/',
       component: () => import('../pages/AdminLayout.vue'),
+      meta: { requiresAdmin: true },
       children: [
         {
           path: '',
           name: 'dashboard',
-          component: DashboardView,
+          component: () => import('../pages/DashboardView.vue'),
         },
         {
           path: 'users',
@@ -119,10 +118,60 @@ const router = createRouter({
           meta: { permission: 'pricing_rule', action: 'read' },
         },
         {
+          path: 'routes',
+          name: 'routes',
+          component: () => import('../pages/RoutesView.vue'),
+          meta: { permission: 'delivery_route', action: 'read' },
+        },
+        {
+          path: 'routes/:id',
+          name: 'route-detail',
+          component: () => import('../pages/RouteDetailView.vue'),
+          meta: { permission: 'delivery_route', action: 'read' },
+        },
+        {
           path: 'settings/shipping',
           name: 'shipping-settings',
           component: () => import('../pages/ShippingSettingsView.vue'),
           meta: { permission: 'shipping_service', action: 'read' },
+        },
+      ],
+    },
+    // === Conductor routes ===
+    {
+      path: '/conductor',
+      component: () => import('../pages/conductor/ConductorLayout.vue'),
+      meta: { requiresConductor: true },
+      children: [
+        {
+          path: '',
+          name: 'conductor-dashboard',
+          component: () => import('../pages/conductor/ConductorDashboard.vue'),
+        },
+        {
+          path: 'ruta',
+          name: 'conductor-ruta',
+          component: () => import('../pages/conductor/ConductorRouteMap.vue'),
+        },
+        {
+          path: 'stop/:id',
+          name: 'conductor-stop',
+          component: () => import('../pages/conductor/ConductorStopDetail.vue'),
+        },
+        {
+          path: 'deliver/:stopId',
+          name: 'conductor-deliver',
+          component: () => import('../pages/conductor/ConductorDeliveryForm.vue'),
+        },
+        {
+          path: 'historial',
+          name: 'conductor-historial',
+          component: () => import('../pages/conductor/ConductorHistory.vue'),
+        },
+        {
+          path: 'perfil',
+          name: 'conductor-perfil',
+          component: () => import('../pages/conductor/ConductorProfile.vue'),
         },
       ],
     },
@@ -132,13 +181,17 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
+  // Public routes (login)
   if (to.meta.public) {
     if (auth.isAuthenticated) {
+      const roleSlug = auth.user?.role_slug
+      if (roleSlug === 'conductor') return { name: 'conductor-dashboard' }
       return { name: 'dashboard' }
     }
     return true
   }
 
+  // Auth check
   if (!auth.isAuthenticated) {
     const verified = await auth.verify()
     if (!verified) {
@@ -146,6 +199,19 @@ router.beforeEach(async (to) => {
     }
   }
 
+  const roleSlug = auth.user?.role_slug
+
+  // Redirect conductor to conductor routes
+  if (to.meta.requiresAdmin && roleSlug === 'conductor') {
+    return { name: 'conductor-dashboard' }
+  }
+
+  // Redirect admin trying to access conductor routes
+  if (to.meta.requiresConductor && roleSlug !== 'conductor') {
+    return { name: 'dashboard' }
+  }
+
+  // Permission check for admin routes
   if (to.meta.permission && to.meta.action) {
     if (!auth.hasPermission(to.meta.permission as string, to.meta.action as string)) {
       return { name: 'dashboard' }

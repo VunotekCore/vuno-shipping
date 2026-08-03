@@ -5,6 +5,10 @@ import { buildPageParams } from './pagination'
 export type { User }
 
 export const userService = {
+  listByRole(role: string) {
+    return api.get<{ success: boolean; data: { users: User[] } }>(`/user/listByRole.php?role=${role}`)
+  },
+
   list(params?: { page?: number; limit?: number }) {
     return api.get<{ success: boolean; data: { users: User[]; pagination: import('./pagination').Pagination } }>(
       `/user/list.php${buildPageParams(params)}`

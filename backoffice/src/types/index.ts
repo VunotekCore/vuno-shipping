@@ -261,6 +261,74 @@ export interface Notification {
   created_at: string
 }
 
+export interface DeliveryRoute {
+  id: number
+  name: string
+  description: string | null
+  assigned_to: number | null
+  driver_name: string | null
+  driver_email: string | null
+  vehicle_id: number | null
+  vehicle_plate: string | null
+  vehicle_brand: string | null
+  vehicle_model: string | null
+  scheduled_date: string | null
+  start_time: string | null
+  end_time: string | null
+  status_id: number | null
+  status_name: string | null
+  trajectory: string | null
+  color: string
+  start_latitude: number | null
+  start_longitude: number | null
+  end_latitude: number | null
+  end_longitude: number | null
+  stop_count: number
+  pending_stops: number
+  visited_stops: number
+  zones?: Zone[]
+  stops?: RouteStop[]
+  created_at: string
+  updated_at: string
+}
+
+export interface RouteStop {
+  id: number
+  route_id: number
+  package_id: number | null
+  stop_order: number
+  client_name: string | null
+  address: string | null
+  latitude: number | null
+  longitude: number | null
+  estimated_arrival: string | null
+  actual_arrival: string | null
+  notes: string | null
+  status_id: number | null
+  status_name: string | null
+  signature_data: string | null
+  photo_url: string | null
+  tracking_number?: string
+  recipient_phone?: string
+  package_description?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DriverLocation {
+  user_id: number
+  driver_name: string
+  driver_email: string
+  latitude: number
+  longitude: number
+  accuracy: number | null
+  speed: number | null
+  heading: number | null
+  battery_level: number | null
+  is_active: number
+  last_update: string
+}
+
 export interface DashboardStats {
   total_packages: number
   active_packages: number
