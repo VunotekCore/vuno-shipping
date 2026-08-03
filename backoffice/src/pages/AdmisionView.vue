@@ -12,6 +12,7 @@ import { formatCurrency } from '../utils/format'
 import QRCode from 'qrcode'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS } from '../utils/map'
 import AppFormField from '../components/ui/AppFormField.vue'
 import AppPhoneInput from '../components/ui/AppPhoneInput.vue'
 import AppDropdown from '../components/ui/AppDropdown.vue'
@@ -144,14 +145,23 @@ function openGeoModal() {
     : null
   nextTick(() => {
     if (!geoMapContainer.value) return
-    geoMap = L.map(geoMapContainer.value, { zoomControl: true, attributionControl: false })
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(geoMap)
+    geoMap = L.map(geoMapContainer.value, {
+      zoomControl: true,
+      attributionControl: false,
+      ...NICARAGUA_MAP_OPTIONS,
+    })
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      bounds: NICARAGUA_BOUNDS,
+    }).addTo(geoMap)
     if (geoPoint.value) {
       geoMap.setView([geoPoint.value.lat, geoPoint.value.lng], 16)
       setGeoMarker(geoPoint.value)
     } else {
       geoMap.setView([12.1364, -86.2514], 12)
     }
+    // setView no respeta maxBounds: re-centrar dentro del pais si el punto cayo fuera
+    geoMap.panInsideBounds(NICARAGUA_BOUNDS, { animate: false })
     geoMap.on('click', (e: L.LeafletMouseEvent) => {
       geoPoint.value = { lat: e.latlng.lat, lng: e.latlng.lng }
       setGeoMarker(geoPoint.value)
@@ -210,6 +220,7 @@ function pickGeoResult(r: { display_name: string; lat: number; lon: number }) {
   geoPoint.value = { lat: r.lat, lng: r.lon }
   if (geoMap) {
     geoMap.setView([r.lat, r.lon], 16)
+    geoMap.panInsideBounds(NICARAGUA_BOUNDS, { animate: false })
     setGeoMarker(geoPoint.value)
   }
   geoResults.value = []

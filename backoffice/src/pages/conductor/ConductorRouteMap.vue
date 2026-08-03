@@ -6,6 +6,7 @@ import { useAuthStore } from '../../stores/auth'
 import { useBackgroundGeo } from '../../composables/useBackgroundGeo'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS } from '../../utils/map'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -94,10 +95,13 @@ function initMap() {
   historyPolyline = null
   liveMarker = null
 
-  map = L.map(mapContainer.value, { zoomControl: true, attributionControl: false })
-    .setView([12.1149, -86.2362], 8)
+  map = L.map(mapContainer.value, {
+    zoomControl: true,
+    attributionControl: false,
+    ...NICARAGUA_MAP_OPTIONS,
+  }).setView([12.1149, -86.2362], 8)
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 })
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, bounds: NICARAGUA_BOUNDS })
     .addTo(map!)
 
   const rd = routeData.value

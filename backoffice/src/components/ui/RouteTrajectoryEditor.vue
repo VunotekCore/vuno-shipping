@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS } from '../../utils/map'
 
 const props = withDefaults(defineProps<{
   modelValue: Array<[number, number]>
@@ -36,10 +37,12 @@ function initMap() {
   map = L.map(mapContainer.value, {
     zoomControl: true,
     attributionControl: false,
+    ...NICARAGUA_MAP_OPTIONS,
   }).setView([12.1149, -86.2362], 8)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
+    bounds: NICARAGUA_BOUNDS,
   }).addTo(map)
 
   map.on('click', (e: L.LeafletMouseEvent) => {
