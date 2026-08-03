@@ -280,20 +280,21 @@ function initMap() {
         opacity: 1,
         fillOpacity: 0.9,
       }).addTo(map!)
-      marker.bindPopup(`<b>#${stop.stop_order}</b> ${stop.client_name}<br/>${stop.address || ''}`)
+      const popupHtml = `<b>#${stop.stop_order}</b> ${stop.client_name}<br/>${stop.address || ''}${stop.from_zone_center ? '<br/><i style="color:#94a3b8">Punto por centro de zona (sin GPS)</i>' : ''}`
+      marker.bindPopup(popupHtml)
       bounds.push([lat, lng])
     }
   })
 
-  // Start/end markers
+  // Start/end markers (offset del centro de zona para no tapar stops fallback)
   if (rd.start_latitude && rd.start_longitude) {
-    const ll: [number, number] = [Number(rd.start_latitude), Number(rd.start_longitude)]
+    const ll: [number, number] = [Number(rd.start_latitude) + 0.004, Number(rd.start_longitude) - 0.004]
     L.circleMarker(ll, { radius: 6, fillColor: '#22c55e', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
       .bindPopup('Inicio')
     bounds.push(ll)
   }
   if (rd.end_latitude && rd.end_longitude) {
-    const ll: [number, number] = [Number(rd.end_latitude), Number(rd.end_longitude)]
+    const ll: [number, number] = [Number(rd.end_latitude) - 0.004, Number(rd.end_longitude) + 0.004]
     L.circleMarker(ll, { radius: 6, fillColor: '#ef4444', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
       .bindPopup('Fin')
     bounds.push(ll)

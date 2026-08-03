@@ -311,6 +311,7 @@ export interface RouteStop {
   tracking_number?: string
   recipient_phone?: string
   package_description?: string
+  from_zone_center?: number
   created_at: string
   updated_at: string
 }

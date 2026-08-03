@@ -142,6 +142,7 @@ function initMap() {
     marker.bindPopup(`
       <b>#${s.stop_order}</b> ${s.client_name || ''}<br/>
       ${s.address || ''}<br/>
+      ${s.from_zone_center ? '<i style="color:#94a3b8">Punto por centro de zona (sin GPS)</i><br/>' : ''}
       <span style="color:${color}">${s.status_name}</span>
     `)
     bounds.push([lat, lng])

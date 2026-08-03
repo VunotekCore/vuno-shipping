@@ -13,7 +13,8 @@ class RouteStopModel
     {
         $stmt = $this->db->prepare("
             SELECT rs.*, rss.name AS status_name,
-                   p.tracking_number, p.recipient_phone, p.description AS package_description
+                   p.tracking_number, p.recipient_phone, p.description AS package_description,
+                   CASE WHEN p.latitude IS NULL OR p.longitude IS NULL THEN 1 ELSE 0 END AS from_zone_center
             FROM route_stop rs
             LEFT JOIN route_stop_status rss ON rss.id = rs.status_id
             LEFT JOIN package p ON p.id = rs.package_id
@@ -160,6 +161,9 @@ class RouteStopModel
                 'package_id' => (int) $pkg['id'],
                 'client_name' => $pkg['recipient_name'],
                 'address' => $pkg['recipient_address'],
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'from_zone_center' => ($pkg['latitude'] === null || $pkg['latitude'] === '') ? 1 : 0,
             ];
             $order++;
         }
