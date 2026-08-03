@@ -98,6 +98,19 @@ class RouteStopModel
         return $id ? (int) $id : null;
     }
 
+    public function getRouteDriverId(int $stopId): ?int
+    {
+        $stmt = $this->db->prepare("
+            SELECT dr.assigned_to
+            FROM route_stop rs
+            JOIN delivery_route dr ON dr.id = rs.route_id
+            WHERE rs.id = :id LIMIT 1
+        ");
+        $stmt->execute(['id' => $stopId]);
+        $val = $stmt->fetchColumn();
+        return $val !== false && $val !== null ? (int) $val : null;
+    }
+
     public function generateFromPackages(int $routeId, array $packageIds): array
     {
         $pendingStatusId = $this->getStatusId('pending');

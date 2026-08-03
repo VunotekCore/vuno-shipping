@@ -83,7 +83,7 @@ export const routeStopService = {
   },
 
   deliver(data: {
-    id: number; signature_data?: string; photo_url?: string;
+    id: number;
     notes?: string; latitude?: number; longitude?: number
   }) {
     return api.post('/route_stop/deliver.php', data)

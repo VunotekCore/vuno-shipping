@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\RouteStopModel;
-use App\Models\PackageModel;
+use App\Services\PackageDeliveryService;
 use App\Config\Database;
 
 // ImageKit config
@@ -90,23 +90,27 @@ class RouteStopController
         $existing = $this->model->findById($id);
         if ($existing === null) jsonError('Parada no encontrada', 404);
 
+        $this->assertStopOwnership($existing, $payload);
+
+        if (!empty($existing['signature_data']) && !preg_match('#^data:image/(png|jpeg|jpg|webp);base64,#i', $existing['signature_data'])) {
+            jsonError('Firma invalida', 422);
+        }
+
         $db = Database::getConnection();
         $db->beginTransaction();
 
         try {
             $visitedStatusId = $this->model->getStatusId('visited');
+            if ($visitedStatusId === null) throw new \RuntimeException('Stop status visited not found');
+
+            $notes = isset($data['notes']) ? sanitizeString((string) $data['notes'], 1000) : $existing['notes'];
+
             $updateData = [
                 'status_id' => $visitedStatusId,
                 'actual_arrival' => date('H:i:s'),
-                'notes' => isset($data['notes']) ? sanitizeString((string) $data['notes'], 1000) : $existing['notes'],
+                'notes' => $notes,
             ];
 
-            if (isset($data['signature_data'])) {
-                $updateData['signature_data'] = sanitizeString((string) $data['signature_data'], 50000);
-            }
-            if (isset($data['photo_url'])) {
-                $updateData['photo_url'] = sanitizeString((string) $data['photo_url'], 500);
-            }
             if (isset($data['latitude'])) {
                 $updateData['latitude'] = (float) $data['latitude'];
             }
@@ -116,19 +120,27 @@ class RouteStopController
 
             $this->model->update($id, $updateData);
 
+            $delivery = null;
             if (!empty($existing['package_id'])) {
-                $packageModel = new PackageModel($db);
-                $packageModel->update((int) $existing['package_id'], [
-                    'delivered_at' => date('Y-m-d H:i:s'),
-                ]);
-
-                $statusId = $packageModel->getStatusId('delivered');
-                if ($statusId !== null) {
-                    $packageModel->update((int) $existing['package_id'], ['status_id' => $statusId]);
-                }
+                $svc = new PackageDeliveryService($db);
+                $delivery = $svc->markDelivered(
+                    (int) $existing['package_id'],
+                    (int) $payload['sub'],
+                    [
+                        'description' => $notes,
+                        'latitude' => $updateData['latitude'] ?? null,
+                        'longitude' => $updateData['longitude'] ?? null,
+                        'photo_url' => $existing['photo_url'] ?? null,
+                    ]
+                );
             }
 
             $db->commit();
+
+            if ($delivery !== null && !$delivery['already_delivered'] && !empty($delivery['package'])) {
+                $svc->notifyDelivered($delivery['package'], $delivery['old_status'], $notes);
+            }
+
             $stop = $this->model->findById($id);
             jsonSuccess(['stop' => $stop], 'Entrega registrada');
         } catch (\Throwable $e) {
@@ -156,8 +168,14 @@ class RouteStopController
             jsonError('ID y signature_data requeridos', 422);
         }
 
+        if (!preg_match('#^data:image/(png|jpeg|jpg|webp);base64,#i', $signatureData)) {
+            jsonError('Formato de firma invalido', 422);
+        }
+
         $existing = $this->model->findById($id);
         if ($existing === null) jsonError('Parada no encontrada', 404);
+
+        $this->assertStopOwnership($existing, $payload);
 
         $this->model->update($id, ['signature_data' => $signatureData]);
         jsonSuccess(null, 'Firma guardada');
@@ -179,13 +197,20 @@ class RouteStopController
         $existing = $this->model->findById($stopId);
         if ($existing === null) jsonError('Parada no encontrada', 404);
 
+        $this->assertStopOwnership($existing, $payload);
+
         if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
             jsonError('Archivo de foto requerido', 422);
         }
 
         $file = $_FILES['photo'];
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if (!in_array($file['type'], $allowedTypes, true)) {
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $detectedType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        $allowedTypes = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+        if (!isset($allowedTypes[$detectedType])) {
             jsonError('Tipo de archivo no permitido. Use JPG, PNG, WebP o GIF', 422);
         }
 
@@ -210,8 +235,8 @@ class RouteStopController
                     'Content-Type: application/json',
                 ],
                 CURLOPT_POSTFIELDS => json_encode([
-                    'file' => 'data:' . $file['type'] . ';base64,' . $uploadData,
-                    'fileName' => 'stop_' . $stopId . '_' . time() . '.jpg',
+                    'file' => 'data:' . $detectedType . ';base64,' . $uploadData,
+                    'fileName' => 'stop_' . $stopId . '_' . time() . '.' . $allowedTypes[$detectedType],
                     'folder' => '/shipping/stops/',
                     'useUniqueFileName' => true,
                 ]),
@@ -233,6 +258,21 @@ class RouteStopController
         } catch (\Throwable $e) {
             apiLog('ERROR', 'Error uploading photo for stop: ' . $e->getMessage());
             jsonError('Error al subir la foto', 500);
+        }
+    }
+
+    private function assertStopOwnership(array $stop, array $payload): void
+    {
+        $userId = (int) ($payload['sub'] ?? 0);
+        $roleSlug = (string) ($payload['role_slug'] ?? '');
+
+        if ($roleSlug !== 'conductor') {
+            return;
+        }
+
+        $driverId = $this->model->getRouteDriverId((int) $stop['id']);
+        if ($driverId === null || $driverId !== $userId) {
+            jsonError('Esta parada no pertenece a tu ruta', 403);
         }
     }
 }
