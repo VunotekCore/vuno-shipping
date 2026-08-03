@@ -127,7 +127,11 @@ class PermissionModel
 
     public function syncFromDatabase(): array
     {
-        $excluded = ['permission', 'token_blacklist', 'refresh_tokens'];
+        $excluded = [
+            'permission', 'token_blacklist', 'refresh_tokens',
+            'route_status', 'route_zone', 'route_stop_status',
+            'route_stop', 'driver_location', 'location_history',
+        ];
         $singleRecordModules = ['company'];
 
         $defaultActions = ['create', 'read', 'edit', 'delete'];

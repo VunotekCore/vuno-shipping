@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { routeService, routeStopService, type DeliveryRoute, type RouteStop } from '../services/routeService'
+import { routeService, routeStopService, driverLocationService, type DeliveryRoute, type RouteStop, type DriverLocation } from '../services/routeService'
 import { useToast } from '../composables/useToast'
 import AppModal from '../components/ui/AppModal.vue'
 import L from 'leaflet'
@@ -29,6 +29,49 @@ const statusLoading = ref(false)
 // Leaflet
 let map: L.Map | null = null
 const mapContainer = ref<HTMLElement | null>(null)
+let liveMarker: L.CircleMarker | null = null
+let driverTimer: ReturnType<typeof setInterval> | null = null
+
+function startDriverPolling() {
+  stopDriverPolling()
+  const userId = routeData.value?.assigned_to
+  if (!userId) return
+  const tick = async () => {
+    try {
+      const res = await driverLocationService.get(userId)
+      const loc = (res.data.data as { location?: DriverLocation }).location
+      if (!loc || !loc.latitude || !loc.longitude) return
+      upsertLiveMarker(Number(loc.latitude), Number(loc.longitude))
+    } catch {
+      /* silencioso: sin señal del conductor */
+    }
+  }
+  tick()
+  driverTimer = setInterval(tick, 10000)
+}
+
+function stopDriverPolling() {
+  if (driverTimer) {
+    clearInterval(driverTimer)
+    driverTimer = null
+  }
+}
+
+function upsertLiveMarker(lat: number, lng: number) {
+  if (!map) return
+  if (!liveMarker) {
+    liveMarker = L.circleMarker([lat, lng], {
+      radius: 9,
+      fillColor: '#ef4444',
+      color: '#fff',
+      weight: 2,
+      fillOpacity: 1,
+    }).addTo(map)
+    liveMarker.bindPopup('<b>Conductor</b><br/>Ubicación en vivo')
+  } else {
+    liveMarker.setLatLng([lat, lng])
+  }
+}
 
 const statusBadge = (status: string | null | undefined): string => {
   const m: Record<string, string> = {
@@ -85,6 +128,7 @@ async function load() {
     stops.value = routeData.value.stops ?? []
     await nextTick()
     initMap()
+    startDriverPolling()
   } catch (e: any) {
     error.value = e?.response?.data?.error || 'Error al cargar la ruta'
   } finally {
@@ -99,6 +143,7 @@ function initMap() {
     map.remove()
     map = null
   }
+  liveMarker = null
 
   map = L.map(mapContainer.value, {
     zoomControl: true,
@@ -259,6 +304,14 @@ async function updateStopStatus(stopId: number, status: string) {
 }
 
 onMounted(() => load())
+
+onBeforeUnmount(() => {
+  stopDriverPolling()
+  if (map) {
+    map.remove()
+    map = null
+  }
+})
 </script>
 
 <template>
@@ -333,7 +386,7 @@ onMounted(() => load())
           <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#eab308" /> Pendiente</span>
           <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#22c55e" /> Visitada</span>
           <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#64748b" /> Omitida/Fallada</span>
-          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#ef4444" /> Fin</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#ef4444" /> Conductor / Fin</span>
         </div>
         <div ref="mapContainer" class="h-[400px] w-full rounded-xl border border-[#1e293b] overflow-hidden" />
       </div>

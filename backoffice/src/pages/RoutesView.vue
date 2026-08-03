@@ -12,8 +12,41 @@ import AppModal from '../components/ui/AppModal.vue'
 import AppFormField from '../components/ui/AppFormField.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
+import RouteTrajectoryEditor from '../components/ui/RouteTrajectoryEditor.vue'
 
 const router = useRouter()
+
+function parseTrajectory(raw: string | null | undefined): Array<[number, number]> {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.map((c: any): [number, number] => [Number(c[0] ?? c.lng), Number(c[1] ?? c.lat)])
+  } catch {
+    return []
+  }
+}
+
+function buildRoutePayload(f: Record<string, unknown>): Record<string, unknown> {
+  const payload = { ...f }
+  const traj = (f.trajectory as Array<[number, number]>) ?? []
+  if (traj.length >= 2) {
+    const first = traj[0]
+    const last = traj[traj.length - 1]
+    payload.trajectory = traj
+    payload.start_latitude = first[1]
+    payload.start_longitude = first[0]
+    payload.end_latitude = last[1]
+    payload.end_longitude = last[0]
+  } else {
+    payload.trajectory = null
+    payload.start_latitude = null
+    payload.start_longitude = null
+    payload.end_latitude = null
+    payload.end_longitude = null
+  }
+  return payload
+}
 
 const drivers = ref<User[]>([])
 const vehicles = ref<Vehicle[]>([])
@@ -34,18 +67,21 @@ const {
   getDefaultForm: () => ({
     name: '', description: '', assigned_to: null, vehicle_id: null,
     scheduled_date: '', start_time: '', end_time: '',
-    color: '#22c55e', zone_ids: [],
+    color: '#22c55e', zone_ids: [], trajectory: [],
   }),
   populateForm: (r) => ({
     name: r.name, description: r.description ?? '', assigned_to: r.assigned_to ?? null,
     vehicle_id: r.vehicle_id ?? null,
     scheduled_date: r.scheduled_date ?? '', start_time: r.start_time ?? '', end_time: r.end_time ?? '',
     color: r.color, zone_ids: r.zones?.map((z: any) => z.id) ?? [],
+    trajectory: parseTrajectory(r.trajectory),
   }),
   validateForm: (f) => {
     if (!f.name) return 'El nombre es requerido'
     return null
   },
+  prepareCreateData: (f) => buildRoutePayload(f),
+  prepareUpdateData: (f, r) => ({ id: r.id, ...buildRoutePayload(f) }),
   getEntityId: (r) => r.id,
 })
 
@@ -331,6 +367,23 @@ function toggleZone(zoneId: number) {
               {{ z.name }}
             </button>
             <p v-if="zoneOptions.length === 0" class="text-sm text-[#64748b]">No hay zonas disponibles.</p>
+          </div>
+        </div>
+
+        <div class="admin-form-divider" />
+
+        <div>
+          <div class="admin-form-section">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Trayectoria en el mapa
+          </div>
+          <div class="mt-3">
+            <RouteTrajectoryEditor
+              :model-value="(form.trajectory as Array<[number, number]>)"
+              :color="(form.color as string) || '#22c55e'"
+              :disabled="saving"
+              @update:model-value="(v: Array<[number, number]>) => form.trajectory = v"
+            />
           </div>
         </div>
       </form>
