@@ -36,7 +36,14 @@ AGENTS.md
 # Design references
 html-designs/
 
+# Deploy artifact
+shipping-deploy.tar.gz
+
+# Dev/test scripts
+api/testlight.php
+
 # Backoffice
 backoffice/node_modules/
 backoffice/dist/
+backoffice/assets/
 backoffice/tsconfig.tsbuildinfo

@@ -52,8 +52,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       const refreshToken = localStorage.getItem('refresh_token')
       if (!refreshToken) {
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          window.location.href = '/login'
+        if (typeof window !== 'undefined' && window.location.pathname !== '/backoffice/login') {
+          window.location.href = '/backoffice/login'
         }
         return Promise.reject(error)
       }
@@ -80,15 +80,15 @@ api.interceptors.response.use(
 
         processQueue(error)
         localStorage.removeItem('refresh_token')
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          window.location.href = '/login'
+        if (typeof window !== 'undefined' && window.location.pathname !== '/backoffice/login') {
+          window.location.href = '/backoffice/login'
         }
         return Promise.reject(error)
       } catch (refreshError) {
         processQueue(refreshError)
         localStorage.removeItem('refresh_token')
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          window.location.href = '/login'
+        if (typeof window !== 'undefined' && window.location.pathname !== '/backoffice/login') {
+          window.location.href = '/backoffice/login'
         }
         return Promise.reject(refreshError)
       } finally {
