@@ -38,7 +38,8 @@ class VehicleModel
             SELECT v.id, v.plate, v.brand, v.model, vs.name AS status_name
             FROM vehicle v
             LEFT JOIN vehicle_status vs ON vs.id = v.status_id
-            WHERE v.status_id = (SELECT id FROM vehicle_status WHERE name = 'active' LIMIT 1)
+            WHERE v.status_id IS NULL
+               OR v.status_id = (SELECT id FROM vehicle_status WHERE name = 'active' LIMIT 1)
             ORDER BY v.plate ASC
         ");
         return $stmt->fetchAll();

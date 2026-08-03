@@ -94,7 +94,7 @@ async function loadDrivers() {
   loadingDrivers.value = true
   try {
     const res = await userService.listByRole('conductor')
-    drivers.value = (res.data as any).users ?? []
+    drivers.value = res.data.data.users ?? []
   } catch { drivers.value = [] }
   finally { loadingDrivers.value = false }
 }
@@ -103,7 +103,7 @@ async function loadVehicles() {
   loadingVehicles.value = true
   try {
     const res = await vehicleService.listAll()
-    vehicles.value = (res.data as any).vehicles ?? []
+    vehicles.value = res.data.data.vehicles ?? []
   } catch { vehicles.value = [] }
   finally { loadingVehicles.value = false }
 }
@@ -112,7 +112,7 @@ async function loadZones() {
   loadingZones.value = true
   try {
     const res = await zoneService.listAll()
-    zoneOptions.value = (res.data as any).zones ?? []
+    zoneOptions.value = res.data.data.zones ?? []
   } catch { zoneOptions.value = [] }
   finally { loadingZones.value = false }
 }
