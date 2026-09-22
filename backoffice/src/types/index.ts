@@ -122,6 +122,12 @@ export interface Zone {
   created_at: string
 }
 
+export interface Subzone {
+  id: number
+  zone_id: number
+  name: string
+}
+
 export interface Vehicle {
   id: number
   plate: string

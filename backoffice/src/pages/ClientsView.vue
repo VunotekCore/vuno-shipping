@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { onMounted, reactive, computed } from 'vue'
+import { onMounted, reactive, computed, ref } from 'vue'
 import { clientService, type Client } from '../services/clientService'
+import { zoneService, type Zone } from '../services/zoneService'
 import { useCrudView } from '../composables/useCrudView'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppFormField from '../components/ui/AppFormField.vue'
+import AppDropdown from '../components/ui/AppDropdown.vue'
 import AppPhoneInput from '../components/ui/AppPhoneInput.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
@@ -27,6 +29,8 @@ const {
   },
   getEntityId: (c) => c.id,
 })
+
+const zones = ref<Zone[]>([])
 
 const fieldErrors = reactive<Record<string, string>>({
   name: '', email: '', phone: '', address: '', department: '', notes: '',
@@ -92,7 +96,15 @@ const columns: TableColumn[] = [
   { key: 'actions', label: '', width: '100px', align: 'right' },
 ]
 
-onMounted(() => load())
+onMounted(async () => {
+  load()
+  try {
+    const res = await zoneService.listAll()
+    zones.value = res.data.data.zones ?? []
+  } catch {
+    zones.value = []
+  }
+})
 </script>
 
 <template>
@@ -261,19 +273,16 @@ onMounted(() => load())
               @blur="validateField('address')"
               @input="clearError('address')"
             />
-            <AppFormField
-              :model-value="fv('department')"
-              @update:model-value="(v: string | number | null) => form.department = v"
-              label="Departamento"
-              icon="map-pin"
-              placeholder="Ej: Managua, León, Masaya"
-              :disabled="saving"
-              :maxlength="100"
-              helper="Departamento o región de Nicaragua"
-              :error="fieldErrors.department"
-              @blur="validateField('department')"
-              @input="clearError('department')"
-            />
+            <div class="max-w-sm" style="overflow: visible">
+              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Departamento</label>
+              <AppDropdown
+                :model-value="fv('department')"
+                @update:model-value="(v: string | number | null) => form.department = v"
+                :options="zones.map(z => ({ value: z.name, label: z.name }))"
+                placeholder="Seleccionar departamento..."
+                :disabled="saving"
+              />
+            </div>
           </div>
         </div>
 

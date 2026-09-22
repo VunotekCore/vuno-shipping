@@ -5,6 +5,7 @@ import api from '../services/api'
 import { packageService, type Package } from '../services/packageService'
 import { clientService, type Client } from '../services/clientService'
 import { zoneService, type Zone } from '../services/zoneService'
+import { subzoneService, type Subzone } from '../services/subzoneService'
 import { pricingRuleService, type PricingRule } from '../services/pricingRuleService'
 import type { DeliveryOption } from '../types'
 import { useToast } from '../composables/useToast'
@@ -40,6 +41,8 @@ const qrDataUrl = ref<string | null>(null)
 // Reference data
 const clients = ref<Client[]>([])
 const zones = ref<Zone[]>([])
+const subzones = ref<Subzone[]>([])
+const subzonesLoading = ref(false)
 const pricingRules = ref<PricingRule[]>([])
 const currentShippingService = ref<{ id: number; name: string; description: string | null } | null>(null)
 
@@ -414,6 +417,29 @@ watch(() => form.delivery_option, (val) => {
   }
 })
 
+const departmentZone = computed(() => zones.value.find(z => z.name === form.recipient_department) ?? null)
+
+// Cargar municipalidades del departamento y limpiar ciudad al cambiar
+watch(departmentZone, async (zone) => {
+  if (!zone) {
+    subzones.value = []
+    form.recipient_city = ''
+    return
+  }
+  subzonesLoading.value = true
+  try {
+    const res = await subzoneService.byZone(zone.id)
+    subzones.value = res.data.data.subzones ?? []
+  } catch {
+    subzones.value = []
+  } finally {
+    subzonesLoading.value = false
+  }
+  if (!subzones.value.some(s => s.name === form.recipient_city)) {
+    form.recipient_city = ''
+  }
+})
+
 // Clear hidden fields when rule type changes
 watch(selectedPricingRule, (rule) => {
   const type = rule?.type_name
@@ -635,7 +661,11 @@ onMounted(() => loadReferenceData())
                 <input v-model="newClient.name" class="admin-input w-full" placeholder="Nombre *" />
                 <div class="grid grid-cols-2 gap-3">
                   <input v-model="newClient.email" class="admin-input w-full" placeholder="Email" type="email" />
-                  <input v-model="newClient.phone" class="admin-input w-full" placeholder="Teléfono" />
+                  <AppPhoneInput
+                    :model-value="newClient.phone"
+                    @update:model-value="(v: string) => newClient.phone = v"
+                    placeholder="1234-5678"
+                  />
                 </div>
                 <!-- Extra fields toggle -->
                 <button
@@ -742,30 +772,26 @@ onMounted(() => loadReferenceData())
                 </span>
               </div>
               <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <AppFormField
-                  :model-value="form.recipient_city"
-                  @update:model-value="(v: string | number | null) => form.recipient_city = String(v ?? '')"
-                  label="Ciudad"
-                  icon="map-pin"
-                  placeholder="Ciudad"
-                  :disabled="creating"
-                />
-                <AppFormField
-                  :model-value="form.recipient_department"
-                  @update:model-value="(v: string | number | null) => form.recipient_department = String(v ?? '')"
-                  label="Departamento"
-                  icon="map-pin"
-                  placeholder="Depto."
-                  :disabled="creating"
-                />
-                <div v-if="form.delivery_option === 'door'" style="overflow: visible">
-                  <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Zona de entrega</label>
+                <div class="max-w-sm" style="overflow: visible">
+                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Departamento</label>
                   <AppDropdown
-                    :model-value="form.zone_id"
-                    @update:model-value="(v: string | number | null) => form.zone_id = v as number | null"
-                    :options="zones.map(z => ({ value: z.id, label: z.name }))"
-                    placeholder="Seleccionar zona..."
+                    :model-value="form.recipient_department"
+                    @update:model-value="(v: string | number | null) => form.recipient_department = String(v ?? '')"
+                    :options="zones.map(z => ({ value: z.name, label: z.name }))"
+                    placeholder="Seleccionar departamento..."
                     :disabled="creating"
+                  />
+                </div>
+                <div class="max-w-sm" style="overflow: visible">
+                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Ciudad</label>
+                  <AppDropdown
+                    :model-value="form.recipient_city"
+                    @update:model-value="(v: string | number | null) => form.recipient_city = String(v ?? '')"
+                    :options="subzones.map(s => ({ value: s.name, label: s.name }))"
+                    :placeholder="!departmentZone
+                      ? 'Primero elegí el departamento'
+                      : (subzonesLoading ? 'Cargando...' : (subzones.length === 0 ? 'Sin ciudades' : 'Seleccionar ciudad...'))"
+                    :disabled="creating || !departmentZone || subzonesLoading"
                   />
                 </div>
               </div>
@@ -796,6 +822,16 @@ onMounted(() => loadReferenceData())
                   @update:model-value="(v: string | number | null) => form.pricing_rule_id = v as number | null"
                   :options="pricingRules.map(r => ({ value: r.id, label: pricingRuleLabel(r) }))"
                   :placeholder="pricingRules.length === 0 ? 'Sin reglas de precio' : 'Seleccionar regla de precio...'"
+                />
+              </div>
+              <div v-if="form.delivery_option === 'door'" class="max-w-md" style="overflow: visible">
+                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Zona de entrega</label>
+                <AppDropdown
+                  :model-value="form.zone_id"
+                  @update:model-value="(v: string | number | null) => form.zone_id = v as number | null"
+                  :options="zones.map(z => ({ value: z.id, label: z.name }))"
+                  placeholder="Seleccionar zona..."
+                  :disabled="creating"
                 />
               </div>
               <div v-if="visibleFields.weight" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
