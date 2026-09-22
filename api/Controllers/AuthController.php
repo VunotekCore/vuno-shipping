@@ -63,10 +63,10 @@ class AuthController
         ]);
 
         $refreshToken = createRefreshToken($user['id']);
+        setRefreshCookie($refreshToken);
         $csrfToken = generateCsrfToken();
 
         jsonSuccess([
-            'refresh_token' => $refreshToken,
             'csrf_token' => $csrfToken,
             'user' => [
                 'id'          => $user['id'],
@@ -134,6 +134,8 @@ class AuthController
         validateCsrfToken();
 
         blacklistToken($payload['jti'] ?? '', $payload['exp'] ?? time());
+        revokeRefreshToken($_COOKIE['refresh_token'] ?? '');
+        clearRefreshCookie();
 
         setcookie('admin_token', '', [
             'expires'  => time() - 3600,

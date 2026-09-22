@@ -498,8 +498,9 @@ function apiLog(string $level, string $message, array $context = []): void
 function generateCsrfToken(): string
 {
     $token = bin2hex(random_bytes(32));
+    $expiresIn = config()['jwt']['expires_in'] ?? 86400;
     setcookie('csrf_token', $token, [
-        'expires'  => time() + 3600,
+        'expires'  => time() + $expiresIn,
         'path'     => '/',
         'secure'   => isSecureRequest(),
         'httponly'  => false,
@@ -556,7 +557,7 @@ function verifyRefreshToken(string $rawToken): ?int
         $stmt->execute(['hash' => $tokenHash]);
         $row = $stmt->fetch();
 
-        if ($row === null) {
+        if ($row === false || $row === null) {
             return null;
         }
 
@@ -567,6 +568,43 @@ function verifyRefreshToken(string $rawToken): ?int
     } catch (\Throwable $e) {
         apiLog('ERROR', 'Failed to verify refresh token: ' . $e->getMessage());
         return null;
+    }
+}
+
+function setRefreshCookie(string $rawToken, int $ttl = 604800): void
+{
+    setcookie('refresh_token', $rawToken, [
+        'expires'  => time() + $ttl,
+        'path'     => '/api/admin/',
+        'secure'   => isSecureRequest(),
+        'httponly'  => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+function clearRefreshCookie(): void
+{
+    setcookie('refresh_token', '', [
+        'expires'  => time() - 3600,
+        'path'     => '/api/admin/',
+        'secure'   => isSecureRequest(),
+        'httponly'  => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+function revokeRefreshToken(string $rawToken): void
+{
+    if ($rawToken === '') {
+        return;
+    }
+
+    try {
+        $db = \App\Config\Database::getConnection();
+        $stmt = $db->prepare('DELETE FROM refresh_tokens WHERE token_hash = :hash');
+        $stmt->execute(['hash' => hash('sha256', $rawToken)]);
+    } catch (\Throwable $e) {
+        apiLog('ERROR', 'Failed to revoke refresh token: ' . $e->getMessage());
     }
 }
 

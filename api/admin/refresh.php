@@ -9,8 +9,7 @@ use App\Config\Database;
 requireMethod('POST');
 rateLimit('refresh', 15, 900);
 
-$data = getJsonInput();
-$refreshToken = $data['refresh_token'] ?? '';
+$refreshToken = $_COOKIE['refresh_token'] ?? '';
 
 if ($refreshToken === '') {
     jsonError('Refresh token requerido', 422);
@@ -38,6 +37,7 @@ $token = createJwt([
 ]);
 
 $newRefreshToken = createRefreshToken($user['id']);
+setRefreshCookie($newRefreshToken);
 
 $config = config();
 $expiresIn = $config['jwt']['expires_in'] ?? 86400;
@@ -53,7 +53,6 @@ setcookie('admin_token', $token, [
 generateCsrfToken();
 
 jsonSuccess([
-    'refresh_token' => $newRefreshToken,
     'user' => [
         'id'          => $user['id'],
         'email'       => $user['email'],

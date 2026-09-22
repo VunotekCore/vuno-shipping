@@ -3,9 +3,10 @@ import { ref, computed } from 'vue'
 import { authService } from '../services/authService'
 import type { User } from '../types'
 
+localStorage.removeItem('refresh_token')
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
-  const refreshToken = ref<string | null>(localStorage.getItem('refresh_token'))
   const mustChangePassword = ref(false)
 
   const isAuthenticated = computed(() => !!user.value)
@@ -23,10 +24,6 @@ export const useAuthStore = defineStore('auth', () => {
     if (data.success && data.data?.user) {
       user.value = data.data.user
       mustChangePassword.value = !!data.data.must_change_password
-      if (data.data.refresh_token) {
-        refreshToken.value = data.data.refresh_token
-        localStorage.setItem('refresh_token', data.data.refresh_token)
-      }
       return true
     }
 
@@ -35,27 +32,18 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout() {
     user.value = null
-    refreshToken.value = null
     mustChangePassword.value = false
-    localStorage.removeItem('refresh_token')
     authService.logout().catch(() => {})
-    window.location.href = '/login'
+    window.location.href = '/backoffice/login'
   }
 
   function setUser(userData: User) {
     user.value = userData
   }
 
-  function setRefreshToken(token: string) {
-    refreshToken.value = token
-    localStorage.setItem('refresh_token', token)
-  }
-
   function clearAuth() {
     user.value = null
-    refreshToken.value = null
     mustChangePassword.value = false
-    localStorage.removeItem('refresh_token')
   }
 
   async function verify(): Promise<boolean> {
@@ -76,5 +64,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, refreshToken, isAuthenticated, mustChangePassword, hasPermission, login, logout, setUser, setRefreshToken, clearAuth, verify }
+  return { user, isAuthenticated, mustChangePassword, hasPermission, login, logout, setUser, clearAuth, verify }
 })
