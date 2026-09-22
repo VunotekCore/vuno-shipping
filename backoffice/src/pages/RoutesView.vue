@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { routeService, type DeliveryRoute } from '../services/routeService'
+import { routeService, routeRunService, type DeliveryRoute } from '../services/routeService'
+import { zoneService, type Zone } from '../services/zoneService'
 import { userService, type User } from '../services/userService'
 import { vehicleService, type Vehicle } from '../services/vehicleService'
-import { zoneService, type Zone } from '../services/zoneService'
 import { useCrudView } from '../composables/useCrudView'
+import { useToast } from '../composables/useToast'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
@@ -15,6 +16,7 @@ import AppPagination from '../components/ui/AppPagination.vue'
 import RouteTrajectoryEditor from '../components/ui/RouteTrajectoryEditor.vue'
 
 const router = useRouter()
+const toast = useToast()
 
 function parseTrajectory(raw: string | null | undefined): Array<[number, number]> {
   if (!raw) return []
@@ -48,12 +50,12 @@ function buildRoutePayload(f: Record<string, unknown>): Record<string, unknown> 
   return payload
 }
 
-const drivers = ref<User[]>([])
-const vehicles = ref<Vehicle[]>([])
 const zoneOptions = ref<Zone[]>([])
-const loadingDrivers = ref(false)
-const loadingVehicles = ref(false)
 const loadingZones = ref(false)
+const driverOptions = ref<User[]>([])
+const vehicleOptions = ref<Vehicle[]>([])
+const loadingAssign = ref(false)
+const openingRun = ref<number | null>(null)
 
 const {
   items: routes, loading, showModal, showDelete,
@@ -65,16 +67,15 @@ const {
   dataKey: 'routes',
   entityName: 'Ruta',
   getDefaultForm: () => ({
-    name: '', description: '', assigned_to: null, vehicle_id: null,
-    start_time: '', end_time: '',
-    color: '#22c55e', zone_ids: [], trajectory: [],
+    name: '', description: '', color: '#22c55e', zone_ids: [], trajectory: [],
+    default_driver_id: null, default_vehicle_id: null,
   }),
   populateForm: (r) => ({
-    name: r.name, description: r.description ?? '', assigned_to: r.assigned_to ?? null,
-    vehicle_id: r.vehicle_id ?? null,
-    start_time: r.start_time ?? '', end_time: r.end_time ?? '',
+    name: r.name, description: r.description ?? '',
     color: r.color, zone_ids: r.zones?.map((z: any) => z.id) ?? [],
     trajectory: parseTrajectory(r.trajectory),
+    default_driver_id: r.default_driver_id ?? null,
+    default_vehicle_id: r.default_vehicle_id ?? null,
   }),
   validateForm: (f) => {
     if (!f.name) return 'El nombre es requerido'
@@ -87,26 +88,8 @@ const {
 
 watch(showModal, async (val) => {
   if (!val) return
-  await Promise.all([loadDrivers(), loadVehicles(), loadZones()])
+  await Promise.all([loadZones(), loadAssignOptions()])
 })
-
-async function loadDrivers() {
-  loadingDrivers.value = true
-  try {
-    const res = await userService.listByRole('conductor')
-    drivers.value = res.data.data.users ?? []
-  } catch { drivers.value = [] }
-  finally { loadingDrivers.value = false }
-}
-
-async function loadVehicles() {
-  loadingVehicles.value = true
-  try {
-    const res = await vehicleService.listAll()
-    vehicles.value = res.data.data.vehicles ?? []
-  } catch { vehicles.value = [] }
-  finally { loadingVehicles.value = false }
-}
 
 async function loadZones() {
   loadingZones.value = true
@@ -115,6 +98,21 @@ async function loadZones() {
     zoneOptions.value = res.data.data.zones ?? []
   } catch { zoneOptions.value = [] }
   finally { loadingZones.value = false }
+}
+
+async function loadAssignOptions() {
+  loadingAssign.value = true
+  try {
+    const [driversRes, vehiclesRes] = await Promise.all([
+      userService.listByRole('conductor'),
+      vehicleService.listAll(),
+    ])
+    driverOptions.value = driversRes.data.data.users ?? []
+    vehicleOptions.value = vehiclesRes.data.data.vehicles ?? []
+  } catch {
+    driverOptions.value = []
+    vehicleOptions.value = []
+  } finally { loadingAssign.value = false }
 }
 
 function selectedZone(id: number): Zone | undefined {
@@ -170,22 +168,30 @@ const statusBadge = (status: string | null | undefined): string => {
   return badges[status ?? ''] ?? 'admin-badge-default'
 }
 
-function formatSchedule(d: string | null | undefined): string {
-  if (!d) return '—'
-  return new Date(d).toLocaleDateString('es-NI', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function goToDetail(id: number) {
-  router.push(`/routes/${id}`)
+async function openTodayRun(r: DeliveryRoute) {
+  if (openingRun.value) return
+  if (r.open_run_id) {
+    router.push(`/runs/${r.open_run_id}`)
+    return
+  }
+  openingRun.value = r.id
+  try {
+    const res = await routeRunService.create({ route_id: r.id })
+    toast.success(`Despacho creado — ${res.data.data.carried_over} paquetes arrastrados`)
+    router.push(`/runs/${res.data.data.run.id}`)
+  } catch (e: any) {
+    toast.error(e?.response?.data?.message || 'No se pudo crear el despacho')
+  } finally {
+    openingRun.value = null
+  }
 }
 
 const columns: TableColumn[] = [
-  { key: 'name', label: 'Nombre', width: '200px' },
-  { key: 'status_name', label: 'Estado', width: '110px' },
-  { key: 'driver_name', label: 'Conductor', width: '160px' },
-  { key: 'start_time', label: 'Horario', width: '130px' },
-  { key: 'stop_count', label: 'Paradas', width: '90px' },
-  { key: 'actions', label: '', width: '100px', align: 'right' },
+  { key: 'name', label: 'Ruta', width: '220px' },
+  { key: 'zone_count', label: 'Zonas', width: '80px' },
+  { key: 'runs_count', label: 'Despachos', width: '100px' },
+  { key: 'open_run_status', label: 'Despacho de hoy', width: '140px' },
+  { key: 'actions', label: '', width: '130px', align: 'right' },
 ]
 
 onMounted(() => load())
@@ -195,8 +201,8 @@ onMounted(() => load())
   <div class="space-y-6">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Rutas de despacho</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Gestionar rutas de entrega y asignación de paquetes</p>
+        <h1 class="text-xl font-bold text-[#dae2fd]">Rutas maestras</h1>
+        <p class="mt-1 text-sm text-[#64748b]">Rutas geográficas fijas y sus despachos diarios</p>
       </div>
       <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
@@ -207,24 +213,25 @@ onMounted(() => load())
     <!-- Desktop: Table view (lg+) -->
     <div class="hidden lg:block">
       <div class="admin-card">
-        <AppTable :columns="columns" :loading="loading" :is-empty="routes.length === 0" empty-title="Sin rutas" empty-desc="Creá la primera ruta de despacho.">
-          <tr v-for="r in routes" :key="r.id" class="cursor-pointer transition-colors hover:bg-white/[0.02]" @click="goToDetail(r.id)">
+        <AppTable :columns="columns" :loading="loading" :is-empty="routes.length === 0" empty-title="Sin rutas" empty-desc="Creá la primera ruta maestra.">
+          <tr v-for="r in routes" :key="r.id">
             <td class="font-medium text-[#dae2fd]">
               <div class="flex items-center gap-2">
                 <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: r.color || '#22c55e' }" />
                 {{ r.name }}
               </div>
             </td>
+            <td class="text-[#94a3b8]">{{ r.zone_count ?? 0 }}</td>
+            <td class="text-[#94a3b8]">{{ r.runs_count ?? 0 }}</td>
             <td>
-              <span :class="['admin-badge', statusBadge(r.status_name)]">{{ r.status_name }}</span>
+              <span v-if="r.open_run_status" :class="['admin-badge', statusBadge(r.open_run_status)]">{{ r.open_run_status }}</span>
+              <span v-else class="text-[#64748b]">Sin despacho</span>
             </td>
-            <td class="text-[#94a3b8]">{{ r.driver_name || '—' }}</td>
-            <td class="text-[#94a3b8]">{{ formatSchedule(r.start_time) }}</td>
-            <td class="text-[#94a3b8]">{{ r.stop_count ?? 0 }}</td>
-            <td class="text-right" @click.stop>
+            <td class="text-right">
               <div class="flex items-center justify-end gap-1">
-                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="goToDetail(r.id)" title="Ver detalle">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <button class="admin-btn admin-btn-primary admin-btn-sm" :disabled="openingRun !== null" @click="openTodayRun(r)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  {{ openingRun === r.id ? 'Creando...' : (r.open_run_id ? 'Abrir' : 'Despacho de hoy') }}
                 </button>
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(r)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -260,29 +267,22 @@ onMounted(() => load())
       </template>
 
       <template v-else-if="routes.length > 0">
-        <div v-for="r in routes" :key="r.id" class="admin-card p-4 space-y-3 cursor-pointer transition-colors hover:bg-white/[0.02]" @click="goToDetail(r.id)">
+        <div v-for="r in routes" :key="r.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
               <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: r.color || '#22c55e' }" />
               <p class="font-medium text-[#dae2fd] truncate">{{ r.name }}</p>
             </div>
-            <span :class="['admin-badge shrink-0', statusBadge(r.status_name)]">{{ r.status_name }}</span>
+            <span v-if="r.open_run_status" :class="['admin-badge shrink-0', statusBadge(r.open_run_status)]">{{ r.open_run_status }}</span>
           </div>
-          <p class="text-sm text-[#94a3b8] truncate">{{ r.driver_name || 'Sin conductor' }}</p>
-          <p class="text-xs text-[#64748b]">{{ formatSchedule(r.start_time) }} · {{ r.stop_count ?? 0 }} paradas</p>
-          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2" @click.stop>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="goToDetail(r.id)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              Ver
+          <p class="text-sm text-[#94a3b8]">{{ r.zone_count ?? 0 }} zonas · {{ r.runs_count ?? 0 }} despachos</p>
+          <p v-if="!r.open_run_status" class="text-xs text-[#64748b]">Sin despacho para hoy</p>
+          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+            <button class="admin-btn admin-btn-primary admin-btn-sm" :disabled="openingRun !== null" @click="openTodayRun(r)">
+              {{ openingRun === r.id ? 'Creando...' : (r.open_run_id ? 'Abrir despacho' : 'Despacho de hoy') }}
             </button>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(r)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Editar
-            </button>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(r)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              Eliminar
-            </button>
+            <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(r)">Editar</button>
+            <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(r)">Eliminar</button>
           </div>
         </div>
       </template>
@@ -293,7 +293,7 @@ onMounted(() => load())
             <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
           </svg>
           <p class="admin-empty-state-title">Sin rutas</p>
-          <p class="admin-empty-state-desc">Creá la primera ruta de despacho.</p>
+          <p class="admin-empty-state-desc">Creá la primera ruta maestra.</p>
         </div>
       </div>
 
@@ -323,20 +323,6 @@ onMounted(() => load())
               <label class="text-sm text-[#94a3b8]">Color:</label>
               <input v-model="form.color" type="color" class="h-9 w-16 rounded border border-[#1e293b] bg-transparent cursor-pointer" :disabled="saving" />
             </div>
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Conductor</label>
-              <select v-model="form.assigned_to" class="admin-input" :disabled="saving || loadingDrivers">
-                <option :value="null">Sin asignar</option>
-                <option v-for="d in drivers" :key="d.id" :value="d.id">{{ d.name }} ({{ d.email }})</option>
-              </select>
-            </div>
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Vehículo</label>
-              <select v-model="form.vehicle_id" class="admin-input" :disabled="saving || loadingVehicles">
-                <option :value="null">Sin asignar</option>
-                <option v-for="v in vehicles" :key="v.id" :value="v.id">{{ v.plate }} — {{ v.brand }} {{ v.model }}</option>
-              </select>
-            </div>
           </div>
           <div class="mt-4">
             <AppFormField
@@ -350,25 +336,6 @@ onMounted(() => load())
               :maxlength="1000"
               :rows="2"
             />
-          </div>
-        </div>
-
-        <div class="admin-form-divider" />
-
-        <div>
-          <div class="admin-form-section">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Horario
-          </div>
-          <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Hora inicio</label>
-              <input v-model="form.start_time" type="time" class="admin-input" :disabled="saving" />
-            </div>
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Hora fin</label>
-              <input v-model="form.end_time" type="time" class="admin-input" :disabled="saving" />
-            </div>
           </div>
         </div>
 
@@ -431,6 +398,43 @@ onMounted(() => load())
 
         <div>
           <div class="admin-form-section">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Asignación por defecto
+          </div>
+          <p class="mt-1 text-xs text-[#64748b]">
+            Se copian al crear el despacho diario ("Despacho de hoy") y se pueden cambiar por día desde el detalle del despacho.
+          </p>
+          <div v-if="loadingAssign" class="mt-3 text-sm text-[#64748b]">Cargando conductores y vehículos...</div>
+          <div v-else class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Conductor por defecto</label>
+              <select
+                v-model="form.default_driver_id"
+                class="admin-input w-full"
+                :disabled="saving"
+              >
+                <option :value="null">Sin conductor</option>
+                <option v-for="d in driverOptions" :key="d.id" :value="d.id">{{ d.name }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Vehículo por defecto</label>
+              <select
+                v-model="form.default_vehicle_id"
+                class="admin-input w-full"
+                :disabled="saving"
+              >
+                <option :value="null">Sin vehículo</option>
+                <option v-for="v in vehicleOptions" :key="v.id" :value="v.id">{{ v.plate }}{{ v.brand ? ` · ${v.brand}` : '' }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-form-divider" />
+
+        <div>
+          <div class="admin-form-section">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             Trayectoria en el mapa
           </div>
@@ -460,7 +464,7 @@ onMounted(() => load())
     <AppConfirmDialog
       :visible="showDelete"
       title="Eliminar ruta"
-      :message="`¿Seguro que querés eliminar la ruta ${deleting?.name}? Esta acción no se puede deshacer.`"
+      :message="`¿Seguro que querés eliminar la ruta ${deleting?.name}? Se eliminarán también todos sus despachos.`"
       confirm-text="Eliminar"
       variant="danger"
       @confirm="confirmDelete"

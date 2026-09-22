@@ -1,20 +1,22 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { routeService, routeStopService, driverLocationService, type DeliveryRoute, type RouteStop, type DriverLocation } from '../services/routeService'
+import { routeRunService, routeStopService, driverLocationService, type RouteRun, type RouteStop, type DriverLocation } from '../services/routeService'
+import { userService, type User } from '../services/userService'
+import { vehicleService, type Vehicle } from '../services/vehicleService'
 import { useToast } from '../composables/useToast'
 import AppModal from '../components/ui/AppModal.vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS } from '../utils/map'
+import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS, stabilizeMapSize, fitMapToBounds } from '../utils/map'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 
-const routeId = computed(() => Number(route.params.id))
+const runId = computed(() => Number(route.params.id))
 const loading = ref(false)
-const routeData = ref<DeliveryRoute | null>(null)
+const runData = ref<RouteRun | null>(null)
 const stops = ref<RouteStop[]>([])
 const error = ref('')
 
@@ -27,12 +29,39 @@ const saving = ref(false)
 const optimizing = ref(false)
 const statusLoading = ref(false)
 
+const pendingStops = computed(() => stops.value.filter(s => s.status_name === 'pending'))
+const pendingWithCoords = computed(() =>
+  pendingStops.value.filter(s => Number(s.latitude) && Number(s.longitude)),
+)
+const canOptimize = computed(() => pendingWithCoords.value.length >= 2)
+
+// Asignacion de conductor/vehiculo por dia
+const showAssignDriverModal = ref(false)
+const assignDriverId = ref<number | null>(null)
+const assignVehicleId = ref<number | null>(null)
+const driverOptions = ref<User[]>([])
+const vehicleOptions = ref<Vehicle[]>([])
+const loadingAssignOptions = ref(false)
+const savingAssignment = ref(false)
+
+// Stop action modal (skip/fail con observacion)
+const showStopActionModal = ref(false)
+const stopActionTarget = ref<RouteStop | null>(null)
+const stopActionStatus = ref('skipped')
+const stopActionNotes = ref('')
+const stopActionSaving = ref(false)
+
 // Leaflet
 let map: L.Map | null = null
 const mapContainer = ref<HTMLElement | null>(null)
 let liveMarker: L.CircleMarker | null = null
 let vehicleTrajectory: L.Polyline | null = null
 let routeCorridor: [number, number][] = []
+let mapBounds: L.LatLngBoundsLiteral = []
+let cleanupMapSize: (() => void) | null = null
+const canRecenter = ref(false)
+
+const isRunActive = computed(() => runData.value?.status_name === 'active')
 let driverTimer: ReturnType<typeof setInterval> | null = null
 let tickCount = 0
 const offRoute = ref(false)
@@ -66,7 +95,7 @@ function distanceToCorridor(lat: number, lng: number): number {
 }
 
 async function loadVehicleHistory() {
-  const userId = routeData.value?.assigned_to
+  const userId = runData.value?.assigned_to
   if (!userId || !map) return
   try {
     const res = await driverLocationService.history(userId)
@@ -88,7 +117,7 @@ async function loadVehicleHistory() {
 
 function startDriverPolling() {
   stopDriverPolling()
-  const userId = routeData.value?.assigned_to
+  const userId = runData.value?.assigned_to
   if (!userId) return
   const tick = async () => {
     tickCount++
@@ -159,15 +188,20 @@ const allowedTransitions = computed(() => {
     completed: [],
     cancelled: ['draft'],
   }
-  return transitions[routeData.value?.status_name ?? ''] ?? []
+  return transitions[runData.value?.status_name ?? ''] ?? []
 })
 
 function formatSchedule(): string {
-  const start = routeData.value?.start_time
-  const end = routeData.value?.end_time
+  const start = runData.value?.start_time
+  const end = runData.value?.end_time
   if (!start && !end) return '—'
   if (start && end) return `${start}–${end}`
   return start || end || '—'
+}
+
+function formatDate(d: string | null | undefined): string {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('es-NI', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function parseCoords(raw: string | null | undefined): [number, number][] {
@@ -185,16 +219,16 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const res = await routeService.get(routeId.value)
-    routeData.value = res.data.data.route
-    stops.value = routeData.value.stops ?? []
+    const res = await routeRunService.get(runId.value)
+    runData.value = res.data.data.run
+    stops.value = runData.value.stops ?? []
+  } catch (e: any) {
+    error.value = e?.response?.data?.error || 'Error al cargar el despacho'
+  } finally {
+    loading.value = false
     await nextTick()
     initMap()
     startDriverPolling()
-  } catch (e: any) {
-    error.value = e?.response?.data?.error || 'Error al cargar la ruta'
-  } finally {
-    loading.value = false
   }
 }
 
@@ -205,9 +239,15 @@ function initMap() {
     map.remove()
     map = null
   }
+  if (cleanupMapSize) {
+    cleanupMapSize()
+    cleanupMapSize = null
+  }
   liveMarker = null
   vehicleTrajectory = null
   routeCorridor = []
+  mapBounds = []
+  canRecenter.value = false
   offRoute.value = false
 
   map = L.map(mapContainer.value, {
@@ -216,12 +256,14 @@ function initMap() {
     ...NICARAGUA_MAP_OPTIONS,
   }).setView([12.1149, -86.2362], 8)
 
+  cleanupMapSize = stabilizeMapSize(map, mapContainer.value)
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     bounds: NICARAGUA_BOUNDS,
   }).addTo(map!)
 
-  const rd = routeData.value
+  const rd = runData.value
   if (!rd) return
 
   const bounds: L.LatLngBoundsLiteral = []
@@ -232,14 +274,14 @@ function initMap() {
       const coords = typeof rd.trajectory === 'string' ? JSON.parse(rd.trajectory) : rd.trajectory
       if (Array.isArray(coords) && coords.length >= 2) {
         const latlngs: [number, number][] = coords.map((c: any) => [c[1] ?? c.lat, c[0] ?? c.lng])
-        L.polyline(latlngs, { color: rd.color || '#22c55e', weight: 4, opacity: 0.8 }).addTo(map!)
+        L.polyline(latlngs, { color: rd.route_color || '#22c55e', weight: 4, opacity: 0.8 }).addTo(map!)
         routeCorridor = latlngs
         latlngs.forEach((ll) => bounds.push(ll))
       }
     } catch {}
   }
 
-  // Zonas de la ruta (cobertura)
+  // Zonas de la ruta maestra (cobertura)
   if (rd.zones && rd.zones.length > 0) {
     rd.zones.forEach((z: any) => {
       if (z.lat == null || z.lng == null) return
@@ -247,8 +289,8 @@ function initMap() {
       const lng = Number(z.lng)
       const circle = L.circle([lat, lng], {
         radius: 1500,
-        color: rd.color || '#22c55e',
-        fillColor: rd.color || '#22c55e',
+        color: rd.route_color || '#22c55e',
+        fillColor: rd.route_color || '#22c55e',
         fillOpacity: 0.08,
         weight: 1,
         opacity: 0.35,
@@ -266,7 +308,7 @@ function initMap() {
     optimized.forEach((ll) => bounds.push(ll))
   }
 
-  // Stops markers (yellow)
+  // Stops markers
   stops.value.forEach((stop) => {
     if (stop.latitude && stop.longitude) {
       const lat = Number(stop.latitude)
@@ -280,7 +322,9 @@ function initMap() {
         opacity: 1,
         fillOpacity: 0.9,
       }).addTo(map!)
-      const popupHtml = `<b>#${stop.stop_order}</b> ${stop.client_name}<br/>${stop.address || ''}${stop.from_zone_center ? '<br/><i style="color:#94a3b8">Punto por centro de zona (sin GPS)</i>' : ''}`
+      const carryTag = stop.carried_over ? '<br/><i style="color:#f97316">↻ Arrastrado del despacho anterior</i>' : ''
+      const notesTag = stop.notes ? `<br/><i style="color:#94a3b8">${stop.notes}</i>` : ''
+      const popupHtml = `<b>#${stop.stop_order}</b> ${stop.client_name}<br/>${stop.address || ''}${stop.from_zone_center ? '<br/><i style="color:#94a3b8">Punto por centro de zona (sin GPS)</i>' : ''}${carryTag}${notesTag}`
       marker.bindPopup(popupHtml)
       bounds.push([lat, lng])
     }
@@ -300,16 +344,24 @@ function initMap() {
     bounds.push(ll)
   }
 
-  if (bounds.length > 0) {
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 })
+  mapBounds = bounds
+  canRecenter.value = bounds.length > 0
+  if (map && bounds.length > 0) {
+    fitMapToBounds(map, bounds, 40)
+  }
+}
+
+function recenterMap() {
+  if (map && mapBounds.length > 0) {
+    fitMapToBounds(map, mapBounds, 40)
   }
 }
 
 async function changeStatus(newStatus: string) {
   statusLoading.value = true
   try {
-    const res = await routeService.updateStatus(routeId.value, newStatus)
-    routeData.value = res.data.data.route
+    const res = await routeRunService.updateStatus(runId.value, newStatus)
+    runData.value = res.data.data.run
     toast.success(`Estado cambiado a "${newStatus}"`)
   } catch (e: any) {
     toast.error(e?.response?.data?.error || 'Error al cambiar estado')
@@ -322,13 +374,52 @@ async function loadCandidatePackages() {
   loadingPackages.value = true
   selectedPackageIds.value = []
   try {
-    const res = await routeService.getCandidatePackages(routeId.value)
+    const res = await routeRunService.getCandidatePackages(runId.value)
     candidatePackages.value = res.data.data.packages ?? []
     showAssignModal.value = true
   } catch (e: any) {
     toast.error(e?.response?.data?.error || 'Error al cargar paquetes')
   } finally {
     loadingPackages.value = false
+  }
+}
+
+async function openAssignDriverModal() {
+  loadingAssignOptions.value = true
+  try {
+    const [driversRes, vehiclesRes] = await Promise.all([
+      userService.listByRole('conductor'),
+      vehicleService.listAll(),
+    ])
+    driverOptions.value = driversRes.data.data.users ?? []
+    vehicleOptions.value = vehiclesRes.data.data.vehicles ?? []
+    assignDriverId.value = runData.value?.assigned_to ?? null
+    assignVehicleId.value = runData.value?.vehicle_id ?? null
+    showAssignDriverModal.value = true
+  } catch (e: any) {
+    toast.error(e?.response?.data?.error || 'Error al cargar conductores y vehículos')
+  } finally {
+    loadingAssignOptions.value = false
+  }
+}
+
+async function saveAssignment() {
+  savingAssignment.value = true
+  try {
+    const res = await routeRunService.update({
+      id: runId.value,
+      assigned_to: assignDriverId.value,
+      vehicle_id: assignVehicleId.value,
+    })
+    runData.value = res.data.data.run
+    showAssignDriverModal.value = false
+    toast.success('Conductor y vehículo actualizados')
+    stopDriverPolling()
+    startDriverPolling()
+  } catch (e: any) {
+    toast.error(e?.response?.data?.error || 'Error al asignar conductor y vehículo')
+  } finally {
+    savingAssignment.value = false
   }
 }
 
@@ -345,10 +436,9 @@ async function generateStops() {
   if (selectedPackageIds.value.length === 0) return
   saving.value = true
   try {
-    const res = await routeService.generateStops(routeId.value, selectedPackageIds.value)
-    const newStops = res.data.data.stops ?? []
-    stops.value = newStops
-    if (routeData.value) routeData.value.optimized_geometry = null
+    const res = await routeRunService.generateStops(runId.value, selectedPackageIds.value)
+    stops.value = res.data.data.stops ?? []
+    if (runData.value) runData.value.optimized_geometry = null
     showAssignModal.value = false
     toast.success(res.data.message || 'Paradas generadas')
     await nextTick()
@@ -363,13 +453,13 @@ async function generateStops() {
 async function optimizeStops() {
   optimizing.value = true
   try {
-    const res = await routeService.optimize(routeId.value)
+    const res = await routeRunService.optimize(runId.value)
     stops.value = res.data.data.stops ?? stops.value
     const optimized = (res.data.data as any).optimized_route as [number, number][] | null
-    if (routeData.value) {
-      routeData.value.optimized_geometry = optimized && optimized.length > 0 ? JSON.stringify(optimized) : null
+    if (runData.value) {
+      runData.value.optimized_geometry = optimized && optimized.length > 0 ? JSON.stringify(optimized) : null
     }
-    toast.success(res.data.message || 'Ruta optimizada')
+    toast.success(res.data.message || 'Despacho optimizado')
     await nextTick()
     initMap()
   } catch (e: any) {
@@ -379,23 +469,54 @@ async function optimizeStops() {
   }
 }
 
-async function updateStopStatus(stopId: number, status: string) {
+function openStopAction(stop: RouteStop, status: string) {
+  stopActionTarget.value = stop
+  stopActionStatus.value = status
+  stopActionNotes.value = stop.notes ?? ''
+  showStopActionModal.value = true
+}
+
+async function confirmStopAction() {
+  if (!stopActionTarget.value) return
+  stopActionSaving.value = true
   try {
-    await routeStopService.updateStatus(stopId, status)
-    const res = await routeService.get(routeId.value)
-    stops.value = res.data.data.route.stops ?? []
-    await nextTick()
-    initMap()
-    toast.success(`Parada marcada como "${status}"`)
+    await routeStopService.updateStatus(stopActionTarget.value.id, stopActionStatus.value, stopActionNotes.value)
+    showStopActionModal.value = false
+    toast.success(`Parada marcada como "${stopActionStatus.value}"`)
+    await refresh()
+  } catch (e: any) {
+    toast.error(e?.response?.data?.error || 'Error al actualizar la parada')
+  } finally {
+    stopActionSaving.value = false
+  }
+}
+
+async function markVisited(stopId: number) {
+  try {
+    await routeStopService.updateStatus(stopId, 'visited')
+    toast.success('Parada marcada como visitada')
+    await refresh()
   } catch (e: any) {
     toast.error(e?.response?.data?.error || 'Error al actualizar')
   }
+}
+
+async function refresh() {
+  const res = await routeRunService.get(runId.value)
+  runData.value = res.data.data.run
+  stops.value = runData.value.stops ?? []
+  await nextTick()
+  initMap()
 }
 
 onMounted(() => load())
 
 onBeforeUnmount(() => {
   stopDriverPolling()
+  if (cleanupMapSize) {
+    cleanupMapSize()
+    cleanupMapSize = null
+  }
   if (map) {
     map.remove()
     map = null
@@ -406,9 +527,9 @@ onBeforeUnmount(() => {
 <template>
   <div class="space-y-6">
     <!-- Back button -->
-    <button class="flex items-center gap-2 text-sm text-[#94a3b8] transition-colors hover:text-[#dae2fd]" @click="router.push('/routes')">
+    <button class="flex items-center gap-2 text-sm text-[#94a3b8] transition-colors hover:text-[#dae2fd]" @click="router.push('/runs')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      Volver a rutas
+      Volver a despachos
     </button>
 
     <!-- Loading -->
@@ -422,16 +543,19 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Content -->
-    <template v-else-if="routeData">
+    <template v-else-if="runData">
       <!-- Header -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div class="flex items-center gap-3">
-          <span class="inline-block h-5 w-5 rounded-full shrink-0" :style="{ backgroundColor: routeData.color || '#22c55e' }" />
+          <span class="inline-block h-5 w-5 rounded-full shrink-0" :style="{ backgroundColor: runData.route_color || '#22c55e' }" />
           <div>
-            <h1 class="text-xl font-bold text-[#dae2fd]">{{ routeData.name }}</h1>
-            <p class="mt-0.5 text-sm text-[#64748b]">{{ routeData.description || 'Sin descripción' }}</p>
+            <h1 class="text-xl font-bold text-[#dae2fd]">{{ runData.route_name }}</h1>
+            <p class="mt-0.5 text-sm text-[#64748b]">
+              Despacho del {{ formatDate(runData.run_date) }}
+              <span v-if="runData.carried_over" class="text-[#f97316]">· ↻ {{ runData.carried_over }} arrastrados</span>
+            </p>
           </div>
-          <span :class="['admin-badge', statusBadge(routeData.status_name)]">{{ routeData.status_name }}</span>
+          <span :class="['admin-badge', statusBadge(runData.status_name)]">{{ runData.status_name }}</span>
         </div>
         <div class="flex flex-wrap gap-2">
           <button
@@ -450,12 +574,17 @@ onBeforeUnmount(() => {
       <!-- Info cards -->
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div class="admin-card p-3">
-          <p class="text-xs text-[#64748b]">Conductor</p>
-          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ routeData.driver_name || 'Sin asignar' }}</p>
+          <div class="flex items-center justify-between gap-1">
+            <p class="text-xs text-[#64748b]">Conductor</p>
+            <button class="admin-btn admin-btn-ghost admin-btn-sm" title="Asignar conductor y vehículo" @click="openAssignDriverModal">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+          </div>
+          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ runData.driver_name || 'Sin asignar' }}</p>
         </div>
         <div class="admin-card p-3">
           <p class="text-xs text-[#64748b]">Vehículo</p>
-          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ routeData.vehicle_plate || 'Sin asignar' }}</p>
+          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ runData.vehicle_plate || 'Sin asignar' }}</p>
         </div>
         <div class="admin-card p-3">
           <p class="text-xs text-[#64748b]">Horario</p>
@@ -463,7 +592,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="admin-card p-3">
           <p class="text-xs text-[#64748b]">Paradas</p>
-          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ routeData.stop_count ?? 0 }} ({{ routeData.pending_stops ?? 0 }} pendientes)</p>
+          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ runData.stop_count ?? 0 }} ({{ runData.pending_stops ?? 0 }} pendientes)</p>
         </div>
       </div>
 
@@ -489,18 +618,34 @@ onBeforeUnmount(() => {
             FUERA DE RUTA
           </span>
         </div>
-        <div ref="mapContainer" class="h-[400px] w-full rounded-xl border border-[#1e293b] overflow-hidden" />
+        <div ref="mapContainer" class="relative h-[400px] w-full rounded-xl border border-[#1e293b] overflow-hidden">
+          <button
+            v-if="canRecenter"
+            class="absolute right-3 top-3 z-[1010] rounded-lg bg-[#0b1326]/90 px-3 py-1.5 text-xs font-medium text-[#dae2fd] shadow-md transition-colors hover:bg-[#1e293b]"
+            @click.stop="recenterMap"
+          >
+            Re-centrar ruta
+          </button>
+        </div>
       </div>
 
       <!-- Actions -->
       <div class="flex flex-wrap gap-3">
-        <button class="admin-btn admin-btn-primary" :disabled="routeData.status_name !== 'draft'" @click="loadCandidatePackages">
+        <button class="admin-btn admin-btn-primary" :disabled="runData.status_name !== 'draft'" @click="loadCandidatePackages">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16m8-8H4"/></svg>
           Asignar paquetes
         </button>
-        <button class="admin-btn admin-btn-ghost" :disabled="stops.length < 2 || optimizing" @click="optimizeStops">
+        <button
+          class="admin-btn admin-btn-ghost"
+          :disabled="!canOptimize || optimizing"
+          :title="canOptimize ? 'Reordenar paradas pendientes con OSRM' : 'Se necesitan al menos 2 paradas pendientes con coordenadas para optimizar'"
+          @click="optimizeStops"
+        >
           {{ optimizing ? 'Optimizando...' : 'Optimizar ruta (OSRM)' }}
         </button>
+        <p v-if="!canOptimize" class="basis-full text-xs text-[#64748b]">
+          {{ stops.length > 0 ? 'Se necesitan al menos 2 paradas pendientes con coordenadas para optimizar.' : 'Sin paradas pendientes para optimizar.' }}
+        </p>
       </div>
 
       <!-- Stops table -->
@@ -523,23 +668,28 @@ onBeforeUnmount(() => {
                 <th class="px-5 py-3 font-medium">Dirección</th>
                 <th class="px-5 py-3 font-medium">Tracking</th>
                 <th class="px-5 py-3 font-medium">Estado</th>
+                <th class="px-5 py-3 font-medium">Observación</th>
                 <th class="px-5 py-3 font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="s in stops" :key="s.id" class="border-b border-[#1e293b] transition-colors hover:bg-white/[0.02]">
-                <td class="px-5 py-3 text-[#94a3b8]">{{ s.stop_order }}</td>
+                <td class="px-5 py-3 text-[#94a3b8]">
+                  {{ s.stop_order }}
+                  <span v-if="s.carried_over" class="ml-1 rounded-full bg-[#f97316]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#f97316]" title="Arrastrado del despacho anterior">↻</span>
+                </td>
                 <td class="px-5 py-3 font-medium text-[#dae2fd]">{{ s.client_name || '—' }}</td>
-                <td class="px-5 py-3 text-[#94a3b8] max-w-[200px] truncate">{{ s.address || '—' }}</td>
+                <td class="px-5 py-3 text-[#94a3b8] max-w-[200px] truncate" :title="s.address || ''">{{ s.address || '—' }}</td>
                 <td class="px-5 py-3 text-[#94a3b8]">{{ s.tracking_number || '—' }}</td>
                 <td class="px-5 py-3">
                   <span :class="['admin-badge', stopStatusBadge(s.status_name)]">{{ s.status_name }}</span>
                 </td>
+                <td class="px-5 py-3 text-xs text-[#94a3b8] max-w-[220px] truncate" :title="s.notes || ''">{{ s.notes || '—' }}</td>
                 <td class="px-5 py-3">
                   <div v-if="s.status_name === 'pending'" class="flex gap-1">
-                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#22c55e]" @click="updateStopStatus(s.id, 'visited')" title="Visitar">✔</button>
-                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#94a3b8]" @click="updateStopStatus(s.id, 'skipped')" title="Saltar">→</button>
-                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="updateStopStatus(s.id, 'failed')" title="Fallar">✕</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#22c55e]" :disabled="!isRunActive" :title="isRunActive ? 'Visitar' : 'El despacho debe estar activo'" @click="markVisited(s.id)">✔</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#94a3b8]" :disabled="!isRunActive" :title="isRunActive ? 'Saltar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'skipped')">→</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" :disabled="!isRunActive" :title="isRunActive ? 'Fallar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'failed')">✕</button>
                   </div>
                   <span v-else class="text-xs text-[#64748b]">—</span>
                 </td>
@@ -551,7 +701,7 @@ onBeforeUnmount(() => {
     </template>
 
     <!-- Assign packages modal -->
-    <AppModal :visible="showAssignModal" title="Asignar paquetes a la ruta" size="lg" @close="showAssignModal = false">
+    <AppModal :visible="showAssignModal" title="Asignar paquetes al despacho" size="lg" @close="showAssignModal = false">
       <div v-if="loadingPackages" class="flex items-center justify-center py-10">
         <div class="h-6 w-6 animate-spin rounded-full border-2 border-[#69dca4] border-t-transparent" />
       </div>
@@ -593,6 +743,68 @@ onBeforeUnmount(() => {
               {{ saving ? 'Generando...' : `Generar ${selectedPackageIds.length} paradas` }}
             </button>
           </div>
+        </div>
+      </template>
+    </AppModal>
+
+    <!-- Stop action modal (skip/fail con observacion) -->
+    <AppModal :visible="showStopActionModal" :title="`Marcar parada como '${stopActionStatus}'`" @close="showStopActionModal = false">
+      <div class="space-y-4">
+        <div class="rounded-lg border border-[#1e293b] bg-white/[0.02] p-3">
+          <p class="text-sm font-medium text-[#dae2fd]">{{ stopActionTarget?.client_name || 'Cliente' }}</p>
+          <p class="mt-0.5 text-xs text-[#94a3b8]">{{ stopActionTarget?.tracking_number }} · {{ stopActionTarget?.address }}</p>
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Observación (se arrastrará al próximo despacho)</label>
+          <textarea
+            v-model="stopActionNotes"
+            class="admin-input min-h-[90px]"
+            placeholder="Ej: Cliente no estaba, coordinar por teléfono..."
+            :disabled="stopActionSaving"
+            maxlength="1000"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button class="admin-btn admin-btn-ghost" @click="showStopActionModal = false" :disabled="stopActionSaving">Cancelar</button>
+          <button class="admin-btn admin-btn-primary" @click="confirmStopAction" :disabled="stopActionSaving">
+            {{ stopActionSaving ? 'Guardando...' : 'Confirmar' }}
+          </button>
+        </div>
+      </template>
+    </AppModal>
+
+    <!-- Asignar conductor y vehiculo (por dia) -->
+    <AppModal :visible="showAssignDriverModal" title="Asignar conductor y vehículo" @close="showAssignDriverModal = false">
+      <div v-if="loadingAssignOptions" class="flex items-center justify-center py-10">
+        <div class="h-6 w-6 animate-spin rounded-full border-2 border-[#69dca4] border-t-transparent" />
+      </div>
+      <div v-else class="space-y-4">
+        <p class="text-xs text-[#64748b]">
+          Los valores por defecto de la ruta se copian al crear el despacho; acá podés cambiarlos para este día.
+        </p>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Conductor</label>
+          <select v-model="assignDriverId" class="admin-input w-full" :disabled="savingAssignment">
+            <option :value="null">Sin conductor</option>
+            <option v-for="d in driverOptions" :key="d.id" :value="d.id">{{ d.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Vehículo</label>
+          <select v-model="assignVehicleId" class="admin-input w-full" :disabled="savingAssignment">
+            <option :value="null">Sin vehículo</option>
+            <option v-for="v in vehicleOptions" :key="v.id" :value="v.id">{{ v.plate }}{{ v.brand ? ` · ${v.brand}` : '' }}</option>
+          </select>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button class="admin-btn admin-btn-ghost" @click="showAssignDriverModal = false" :disabled="savingAssignment">Cancelar</button>
+          <button class="admin-btn admin-btn-primary" @click="saveAssignment" :disabled="savingAssignment || loadingAssignOptions">
+            {{ savingAssignment ? 'Guardando...' : 'Guardar' }}
+          </button>
         </div>
       </template>
     </AppModal>

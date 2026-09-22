@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { driverLocationService, routeService, type DeliveryRoute, type RouteStop } from '../../services/routeService'
+import { driverLocationService, routeRunService, type RouteRun, type RouteStop } from '../../services/routeService'
+import { useToast } from '../../composables/useToast'
 
 const router = useRouter()
+const toast = useToast()
 
 const loading = ref(true)
-const routeData = ref<DeliveryRoute | null>(null)
+const starting = ref(false)
+const routeData = ref<RouteRun | null>(null)
 const stops = ref<RouteStop[]>([])
 const error = ref('')
 
@@ -15,18 +18,36 @@ async function load() {
   error.value = ''
   try {
     const res = await driverLocationService.driverRoutes()
-    const routes: DeliveryRoute[] = res.data.data.routes ?? []
-    const active = routes.find(r => r.status_name === 'active') || routes[0] || null
+    const runs: RouteRun[] = res.data.data.runs ?? []
+    const active = runs.find(r => r.status_name === 'active') || runs[0] || null
     routeData.value = active
 
     if (active) {
-      const stopRes = await routeService.get(active.id)
-      stops.value = stopRes.data.data.route.stops ?? []
+      const stopRes = await routeRunService.get(active.id)
+      stops.value = stopRes.data.data.run.stops ?? []
     }
   } catch (e: any) {
     error.value = e?.response?.data?.error || 'Error al cargar datos'
   } finally {
     loading.value = false
+  }
+}
+
+const isDraft = computed(() => routeData.value?.status_name === 'draft')
+const canOperate = computed(() => routeData.value?.status_name === 'active')
+
+async function startJourney() {
+  const run = routeData.value
+  if (!run) return
+  starting.value = true
+  try {
+    const res = await routeRunService.updateStatus(run.id, 'active')
+    routeData.value = res.data.data.run
+    toast.success('Jornada iniciada — el despacho ahora está en curso')
+  } catch (e: any) {
+    toast.error(e?.response?.data?.error || 'Error al iniciar la jornada')
+  } finally {
+    starting.value = false
   }
 }
 
@@ -36,7 +57,28 @@ const progress = computed(() => totalStops.value > 0 ? Math.round((visitedStops.
 
 const nextStop = computed(() => stops.value.find(s => s.status_name === 'pending'))
 
+const pendingStops = computed(() => stops.value.filter(s => s.status_name === 'pending').length)
+const canFinishJourney = computed(() => canOperate.value && pendingStops.value === 0)
+
+const finishing = ref(false)
+
+async function finishJourney() {
+  const run = routeData.value
+  if (!run || !canFinishJourney.value) return
+  finishing.value = true
+  try {
+    const res = await routeRunService.updateStatus(run.id, 'completed')
+    routeData.value = res.data.data.run
+    toast.success('Jornada terminada — el despacho fue marcado como completado')
+  } catch (e: any) {
+    toast.error(e?.response?.data?.error || 'Error al terminar la jornada')
+  } finally {
+    finishing.value = false
+  }
+}
+
 function goToStop(stopId: number) {
+  if (!canOperate.value) return
   router.push(`/conductor/stop/${stopId}`)
 }
 
@@ -89,18 +131,34 @@ onMounted(() => load())
       <!-- Route info card -->
       <div class="admin-card overflow-hidden">
         <div class="relative p-5">
-          <div class="absolute inset-0 opacity-5" :style="{ backgroundColor: routeData.color || '#22c55e' }" />
+          <div class="absolute inset-0 opacity-5" :style="{ backgroundColor: routeData.route_color || '#22c55e' }" />
           <div class="relative">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <span class="inline-block h-3 w-3 rounded-full" :style="{ backgroundColor: routeData.color || '#22c55e' }" />
-                <h2 class="font-semibold">{{ routeData.name }}</h2>
+                <span class="inline-block h-3 w-3 rounded-full" :style="{ backgroundColor: routeData.route_color || '#22c55e' }" />
+                <h2 class="font-semibold">{{ routeData.route_name }}</h2>
               </div>
-              <span class="rounded-full bg-[#69dca4]/15 px-2.5 py-0.5 text-[11px] font-medium text-[#69dca4]">{{ routeData.status_name }}</span>
+              <span
+                class="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+                :class="isDraft ? 'bg-[#eab308]/15 text-[#eab308]' : routeData.status_name === 'completed' ? 'bg-[#00A8FF]/15 text-[#00A8FF]' : 'bg-[#69dca4]/15 text-[#69dca4]'"
+              >{{ routeData.status_name }}</span>
             </div>
-            <p class="mt-1.5 text-sm text-[#64748b]">{{ routeData.description || 'Sin descripción' }}</p>
+            <p class="mt-1.5 text-sm text-[#64748b]">{{ routeData.route_description || 'Sin descripción' }}</p>
             <p class="mt-1 text-xs text-[#64748b]">{{ formatSchedule() }} · {{ routeData.driver_name }}</p>
           </div>
+        </div>
+
+        <!-- Start journey (draft) -->
+        <div v-if="isDraft" class="border-t border-[#eab308]/20 bg-[#eab308]/5 px-5 py-4">
+          <p class="text-sm text-[#dae2fd]">Tu jornada está en planificación</p>
+          <p class="mt-0.5 text-xs text-[#94a3b8]">Las entregas se habilitan cuando inicies la jornada.</p>
+          <button
+            class="mt-3 w-full rounded-lg bg-[#69dca4] py-2.5 text-center text-sm font-semibold text-[#0b1326] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="starting"
+            @click="startJourney"
+          >
+            {{ starting ? 'Iniciando...' : 'Iniciar jornada' }}
+          </button>
         </div>
 
         <!-- Progress bar -->
@@ -120,6 +178,18 @@ onMounted(() => load())
           <button class="flex-1 rounded-lg bg-[#69dca4] py-2.5 text-center text-sm font-semibold text-[#0b1326] transition-opacity hover:opacity-90" @click="goToRoute">
             Ver ruta en mapa
           </button>
+          <button
+            v-if="canOperate"
+            class="flex-1 rounded-lg py-2.5 text-center text-sm font-semibold transition-colors"
+            :class="canFinishJourney
+              ? 'bg-[#00A8FF] text-[#0b1326] hover:opacity-90'
+              : 'cursor-not-allowed bg-[#1e293b] text-[#64748b]'"
+            :disabled="!canFinishJourney || finishing"
+            :title="canFinishJourney ? 'Cerrar el despacho al finalizar todas las paradas' : `Quedan ${pendingStops} paradas pendientes`"
+            @click="finishJourney"
+          >
+            {{ finishing ? 'Terminando...' : 'Terminar jornada' }}
+          </button>
         </div>
       </div>
 
@@ -137,8 +207,14 @@ onMounted(() => load())
         <div v-if="nextStop.tracking_number" class="mt-2">
           <span class="rounded-md bg-[#1e293b] px-2 py-0.5 text-xs text-[#94a3b8]">{{ nextStop.tracking_number }}</span>
         </div>
-        <button class="mt-4 w-full rounded-lg bg-[#1e293b] py-2.5 text-sm font-medium text-[#dae2fd] transition-colors hover:bg-[#334155]" @click="goToStop(nextStop.id)">
-          Ir a entregar
+        <button
+          class="mt-4 w-full rounded-lg py-2.5 text-sm font-medium transition-colors"
+          :class="canOperate ? 'bg-[#1e293b] text-[#dae2fd] hover:bg-[#334155]' : 'cursor-not-allowed bg-[#1e293b]/50 text-[#64748b]'"
+          :disabled="!canOperate"
+          :title="canOperate ? '' : 'El despacho debe estar en curso para entregar'"
+          @click="goToStop(nextStop.id)"
+        >
+          {{ canOperate ? 'Ir a entregar' : (isDraft ? 'Inicia tu jornada para entregar' : 'Despacho finalizado') }}
         </button>
       </div>
 

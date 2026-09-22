@@ -2,24 +2,24 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 const router = useRouter()
-import { driverLocationService, routeService, type DeliveryRoute, type RouteStop } from '../../services/routeService'
+import { driverLocationService, routeRunService, type RouteRun, type RouteStop } from '../../services/routeService'
 
 const loading = ref(true)
-const history = ref<{ route: DeliveryRoute; stops: RouteStop[]; completed: number; total: number }[]>([])
+const history = ref<{ route: RouteRun; stops: RouteStop[]; completed: number; total: number }[]>([])
 const error = ref('')
 
 async function load() {
   loading.value = true
   try {
     const res = await driverLocationService.driverRoutes()
-    const routes: DeliveryRoute[] = res.data.data.routes ?? []
-    const completedRoutes = routes.filter(r => r.status_name === 'completed')
+    const runs: RouteRun[] = res.data.data.runs ?? []
+    const completedRuns = runs.filter(r => r.status_name === 'completed')
 
     const items = []
-    for (const r of completedRoutes.slice(0, 20)) {
+    for (const r of completedRuns.slice(0, 20)) {
       try {
-        const detail = await routeService.get(r.id)
-        const stops: RouteStop[] = detail.data.data.route.stops ?? []
+        const detail = await routeRunService.get(r.id)
+        const stops: RouteStop[] = detail.data.data.run.stops ?? []
         items.push({
           route: r,
           stops,
@@ -67,7 +67,7 @@ onMounted(() => load())
     <div v-else class="space-y-3">
       <div v-for="item in history" :key="item.route.id" class="admin-card p-4 space-y-2">
         <div class="flex items-center justify-between">
-          <p class="font-medium text-[#dae2fd] truncate">{{ item.route.name }}</p>
+          <p class="font-medium text-[#dae2fd] truncate">{{ item.route.route_name }}</p>
           <span class="shrink-0 rounded-full bg-[#22c55e]/15 px-2.5 py-0.5 text-[11px] font-medium text-[#22c55e]">Completada</span>
         </div>
         <div class="flex items-center gap-4 text-xs text-[#64748b]">

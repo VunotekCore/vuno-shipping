@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\DriverLocationModel;
-use App\Models\RouteModel;
+use App\Models\RouteRunModel;
 use App\Config\Database;
 
 class DriverLocationController
@@ -30,17 +30,23 @@ class DriverLocationController
         $userId = (int) ($payload['sub'] ?? 0);
         if ($userId <= 0) jsonError('Usuario no valido', 401);
 
+        $lat = isset($data['latitude']) ? (float) $data['latitude'] : null;
+        $lng = isset($data['longitude']) ? (float) $data['longitude'] : null;
+        if ($lat === null || $lng === null || !isValidNicaraguaCoord($lat, $lng)) {
+            jsonSuccess(null, 'Ubicacion descartada (fuera de Nicaragua)');
+        }
+
         $this->model->upsert($userId, $data);
 
-        $routeModel = new RouteModel(Database::getConnection());
-        $activeRoute = $routeModel->getActiveRouteByDriver($userId);
+        $runModel = new RouteRunModel(Database::getConnection());
+        $activeRun = $runModel->getActiveRunByDriver($userId);
 
         $this->model->logHistory(
             $userId,
-            $activeRoute['vehicle_id'] ?? null,
-            $activeRoute['id'] ?? null,
-            (float) ($data['latitude'] ?? 0),
-            (float) ($data['longitude'] ?? 0),
+            $activeRun['vehicle_id'] ?? null,
+            $activeRun['id'] ?? null,
+            $lat,
+            $lng,
             isset($data['accuracy']) ? (float) $data['accuracy'] : null,
             isset($data['speed']) ? (float) $data['speed'] : null,
             isset($data['heading']) ? (float) $data['heading'] : null,

@@ -265,6 +265,37 @@ export interface DeliveryRoute {
   id: number
   name: string
   description: string | null
+  trajectory: string | null
+  color: string
+  default_driver_id: number | null
+  default_vehicle_id: number | null
+  default_driver_name: string | null
+  default_vehicle_plate: string | null
+  start_latitude: number | null
+  start_longitude: number | null
+  end_latitude: number | null
+  end_longitude: number | null
+  zone_count: number
+  runs_count: number
+  open_run_id: number | null
+  open_run_status: string | null
+  zones?: Zone[]
+  created_at: string
+  updated_at: string
+}
+
+export interface RouteRun {
+  id: number
+  route_id: number
+  route_name: string
+  route_description: string | null
+  route_color: string
+  trajectory: string | null
+  start_latitude: number | null
+  start_longitude: number | null
+  end_latitude: number | null
+  end_longitude: number | null
+  run_date: string
   assigned_to: number | null
   driver_name: string | null
   driver_email: string | null
@@ -276,25 +307,21 @@ export interface DeliveryRoute {
   end_time: string | null
   status_id: number | null
   status_name: string | null
-  trajectory: string | null
   optimized_geometry: string | null
-  color: string
-  start_latitude: number | null
-  start_longitude: number | null
-  end_latitude: number | null
-  end_longitude: number | null
+  notes: string | null
   stop_count: number
   pending_stops: number
   visited_stops: number
-  zones?: Zone[]
+  carried_over?: number
   stops?: RouteStop[]
+  zones?: Zone[]
   created_at: string
   updated_at: string
 }
 
 export interface RouteStop {
   id: number
-  route_id: number
+  route_run_id: number
   package_id: number | null
   stop_order: number
   client_name: string | null
@@ -304,6 +331,7 @@ export interface RouteStop {
   estimated_arrival: string | null
   actual_arrival: string | null
   notes: string | null
+  carried_over: number
   status_id: number | null
   status_name: string | null
   signature_data: string | null

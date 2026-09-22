@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { routeService, routeStopService, type RouteStop } from '../../services/routeService'
+import { routeRunService, routeStopService, type RouteStop } from '../../services/routeService'
 import { useToast } from '../../composables/useToast'
 import { driverLocationService } from '../../services/routeService'
 
@@ -30,12 +30,12 @@ async function load() {
   loading.value = true
   try {
     const res = await driverLocationService.driverRoutes()
-    const routes: any[] = res.data.data.routes ?? []
-    const active = routes.find(r => r.status_name === 'active') || routes[0]
+    const runs: any[] = res.data.data.runs ?? []
+    const active = runs.find(r => r.status_name === 'active') || runs[0]
     if (!active) { error.value = 'Sin ruta activa'; return }
 
-    const detail = await routeService.get(active.id)
-    const stops: RouteStop[] = detail.data.data.route.stops ?? []
+    const detail = await routeRunService.get(active.id)
+    const stops: RouteStop[] = detail.data.data.run.stops ?? []
     stop.value = stops.find(s => s.id === stopId.value) ?? null
     if (!stop.value) error.value = 'Parada no encontrada'
 

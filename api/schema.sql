@@ -413,26 +413,14 @@ CREATE TABLE IF NOT EXISTS delivery_route (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT NULL,
-    assigned_to INT NULL,
-    vehicle_id INT NULL,
-    start_time TIME NULL,
-    end_time TIME NULL,
-    status_id INT NULL,
     trajectory JSON NULL,
-    optimized_geometry LONGTEXT NULL,
     color VARCHAR(7) DEFAULT '#22c55e',
     start_latitude DECIMAL(10,8) NULL,
     start_longitude DECIMAL(11,8) NULL,
     end_latitude DECIMAL(10,8) NULL,
     end_longitude DECIMAL(11,8) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (assigned_to) REFERENCES `user`(id) ON DELETE SET NULL,
-    FOREIGN KEY (vehicle_id) REFERENCES vehicle(id) ON DELETE SET NULL,
-    FOREIGN KEY (status_id) REFERENCES route_status(id) ON DELETE SET NULL,
-    INDEX idx_route_driver (assigned_to),
-    INDEX idx_route_vehicle (vehicle_id),
-    INDEX idx_route_status (status_id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS route_zone (
@@ -443,6 +431,29 @@ CREATE TABLE IF NOT EXISTS route_zone (
     UNIQUE KEY unique_route_zone (route_id, zone_id),
     FOREIGN KEY (route_id) REFERENCES delivery_route(id) ON DELETE CASCADE,
     FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS route_run (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    route_id INT NOT NULL,
+    run_date DATE NOT NULL,
+    assigned_to INT NULL,
+    vehicle_id INT NULL,
+    start_time TIME NULL,
+    end_time TIME NULL,
+    status_id INT NULL,
+    optimized_geometry LONGTEXT NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (route_id) REFERENCES delivery_route(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_to) REFERENCES `user`(id) ON DELETE SET NULL,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicle(id) ON DELETE SET NULL,
+    FOREIGN KEY (status_id) REFERENCES route_status(id) ON DELETE SET NULL,
+    INDEX idx_run_route_date (route_id, run_date),
+    INDEX idx_run_driver (assigned_to),
+    INDEX idx_run_vehicle (vehicle_id),
+    INDEX idx_run_status (status_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS route_stop_status (
@@ -460,7 +471,7 @@ INSERT IGNORE INTO route_stop_status (name, description) VALUES
 
 CREATE TABLE IF NOT EXISTS route_stop (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    route_id INT NOT NULL,
+    route_run_id INT NOT NULL,
     package_id INT NULL,
     stop_order INT NOT NULL,
     client_name VARCHAR(255) NULL,
@@ -470,18 +481,19 @@ CREATE TABLE IF NOT EXISTS route_stop (
     estimated_arrival TIME NULL,
     actual_arrival TIME NULL,
     notes TEXT NULL,
+    carried_over TINYINT(1) DEFAULT 0,
     status_id INT NULL,
     signature_data TEXT NULL,
     photo_url VARCHAR(500) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (route_id) REFERENCES delivery_route(id) ON DELETE CASCADE,
+    FOREIGN KEY (route_run_id) REFERENCES route_run(id) ON DELETE CASCADE,
     FOREIGN KEY (package_id) REFERENCES package(id) ON DELETE SET NULL,
     FOREIGN KEY (status_id) REFERENCES route_stop_status(id) ON DELETE SET NULL,
-    INDEX idx_stop_route (route_id),
+    INDEX idx_stop_run (route_run_id),
     INDEX idx_stop_package (package_id),
     INDEX idx_stop_status (status_id),
-    INDEX idx_stop_order (route_id, stop_order)
+    INDEX idx_stop_order (route_run_id, stop_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS driver_location (
@@ -503,7 +515,7 @@ CREATE TABLE IF NOT EXISTS location_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     vehicle_id INT NULL,
-    route_id INT NULL,
+    route_run_id INT NULL,
     latitude DECIMAL(10,8) NOT NULL,
     longitude DECIMAL(11,8) NOT NULL,
     accuracy DECIMAL(8,2) NULL,
@@ -514,6 +526,7 @@ CREATE TABLE IF NOT EXISTS location_history (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES `user`(id) ON DELETE CASCADE,
     FOREIGN KEY (vehicle_id) REFERENCES vehicle(id) ON DELETE SET NULL,
+    FOREIGN KEY (route_run_id) REFERENCES route_run(id) ON DELETE SET NULL,
     INDEX idx_lh_user (user_id),
     INDEX idx_lh_recorded (recorded_at),
     INDEX idx_lh_user_recorded (user_id, recorded_at)

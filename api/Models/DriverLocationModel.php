@@ -74,18 +74,18 @@ class DriverLocationModel
         return $stmt->fetchAll();
     }
 
-    public function logHistory(int $userId, ?int $vehicleId, ?int $routeId, float $lat, float $lng, ?float $accuracy, ?float $speed, ?float $heading, ?float $battery): void
+    public function logHistory(int $userId, ?int $vehicleId, ?int $runId, float $lat, float $lng, ?float $accuracy, ?float $speed, ?float $heading, ?float $battery): void
     {
         $stmt = $this->db->prepare("
-            INSERT INTO location_history (user_id, vehicle_id, route_id, latitude, longitude,
+            INSERT INTO location_history (user_id, vehicle_id, route_run_id, latitude, longitude,
              accuracy, speed, heading, battery_level, recorded_at)
-            VALUES (:user_id, :vehicle_id, :route_id, :latitude, :longitude,
+            VALUES (:user_id, :vehicle_id, :route_run_id, :latitude, :longitude,
              :accuracy, :speed, :heading, :battery_level, NOW())
         ");
         $stmt->execute([
             'user_id' => $userId,
             'vehicle_id' => $vehicleId,
-            'route_id' => $routeId,
+            'route_run_id' => $runId,
             'latitude' => $lat,
             'longitude' => $lng,
             'accuracy' => $accuracy,

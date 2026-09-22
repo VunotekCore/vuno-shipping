@@ -223,6 +223,16 @@ function sanitizeString(string $value, int $maxLen = 255): string
     return $value;
 }
 
+function isValidNicaraguaCoord(mixed $latitude, mixed $longitude): bool
+{
+    if (!is_numeric($latitude) || !is_numeric($longitude)) {
+        return false;
+    }
+    $lat = (float) $latitude;
+    $lng = (float) $longitude;
+    return $lat >= 10.6 && $lat <= 15.1 && $lng >= -88.0 && $lng <= -82.5;
+}
+
 function requireAuth(): array
 {
     $token = $_COOKIE['admin_token'] ?? '';

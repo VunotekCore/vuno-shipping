@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\RouteStopModel;
-use App\Models\RouteModel;
 use App\Services\PackageDeliveryService;
 use App\Config\Database;
 
@@ -31,10 +30,10 @@ class RouteStopController
             jsonError('No tenes permiso', 403);
         }
 
-        $routeId = (int) ($_GET['route_id'] ?? 0);
-        if ($routeId <= 0) jsonError('route_id requerido', 422);
+        $runId = (int) ($_GET['run_id'] ?? 0);
+        if ($runId <= 0) jsonError('run_id requerido', 422);
 
-        $stops = $this->model->listByRoute($routeId);
+        $stops = $this->model->listByRun($runId);
         jsonSuccess(['stops' => $stops]);
     }
 
@@ -60,13 +59,19 @@ class RouteStopController
         if ($existing === null) jsonError('Parada no encontrada', 404);
 
         $this->assertStopOwnership($existing, $payload);
+        $this->assertRunActive((int) $existing['id']);
 
         $statusId = $this->model->getStatusId($newStatus);
         if ($statusId === null) jsonError('Estado invalido', 422);
 
         $updateData = ['status_id' => $statusId];
+
         if ($newStatus === 'visited') {
             $updateData['actual_arrival'] = date('H:i:s');
+        }
+
+        if (in_array($newStatus, ['skipped', 'failed'], true) && isset($data['notes'])) {
+            $updateData['notes'] = sanitizeString((string) $data['notes'], 1000);
         }
 
         $this->model->update($id, $updateData);
@@ -94,6 +99,7 @@ class RouteStopController
         if ($existing === null) jsonError('Parada no encontrada', 404);
 
         $this->assertStopOwnership($existing, $payload);
+        $this->assertRunActive((int) $existing['id']);
 
         if (!empty($existing['signature_data']) && !preg_match('#^data:image/(png|jpeg|jpg|webp);base64,#i', $existing['signature_data'])) {
             jsonError('Firma invalida', 422);
@@ -114,30 +120,12 @@ class RouteStopController
                 'notes' => $notes,
             ];
 
-            if (isset($data['latitude'])) {
+            if (isset($data['latitude']) && isset($data['longitude']) && isValidNicaraguaCoord($data['latitude'], $data['longitude'])) {
                 $updateData['latitude'] = (float) $data['latitude'];
-            }
-            if (isset($data['longitude'])) {
                 $updateData['longitude'] = (float) $data['longitude'];
             }
 
             $this->model->update($id, $updateData);
-
-            $routeId = (int) ($existing['route_id'] ?? 0);
-            $routeCompleted = false;
-            if ($routeId > 0) {
-                $routeModel = new RouteModel($db);
-                $route = $routeModel->findById($routeId);
-                if ($route !== null
-                    && ($route['status_name'] ?? '') === 'active'
-                    && (int) ($route['pending_stops'] ?? 1) === 0) {
-                    $completedId = $routeModel->getStatusId('completed');
-                    if ($completedId !== null) {
-                        $routeModel->update($routeId, ['status_id' => $completedId]);
-                        $routeCompleted = true;
-                    }
-                }
-            }
 
             $delivery = null;
             if (!empty($existing['package_id'])) {
@@ -161,7 +149,7 @@ class RouteStopController
             }
 
             $stop = $this->model->findById($id);
-            jsonSuccess(['stop' => $stop, 'route_completed' => $routeCompleted], $routeCompleted ? 'Entrega registrada — ruta completada' : 'Entrega registrada');
+            jsonSuccess(['stop' => $stop], 'Entrega registrada');
         } catch (\Throwable $e) {
             $db->rollBack();
             apiLog('ERROR', 'Error delivering stop: ' . $e->getMessage());
@@ -195,6 +183,7 @@ class RouteStopController
         if ($existing === null) jsonError('Parada no encontrada', 404);
 
         $this->assertStopOwnership($existing, $payload);
+        $this->assertRunActive((int) $existing['id']);
 
         $this->model->update($id, ['signature_data' => $signatureData]);
         jsonSuccess(null, 'Firma guardada');
@@ -217,6 +206,7 @@ class RouteStopController
         if ($existing === null) jsonError('Parada no encontrada', 404);
 
         $this->assertStopOwnership($existing, $payload);
+        $this->assertRunActive((int) $existing['id']);
 
         if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
             jsonError('Archivo de foto requerido', 422);
@@ -280,6 +270,14 @@ class RouteStopController
         }
     }
 
+    private function assertRunActive(int $stopId): void
+    {
+        $runStatus = $this->model->getRunStatusByStop($stopId);
+        if ($runStatus !== 'active') {
+            jsonError('El despacho debe estar en estado "active" para registrar entregas o acciones', 409);
+        }
+    }
+
     private function assertStopOwnership(array $stop, array $payload): void
     {
         $userId = (int) ($payload['sub'] ?? 0);
@@ -289,9 +287,9 @@ class RouteStopController
             return;
         }
 
-        $driverId = $this->model->getRouteDriverId((int) $stop['id']);
+        $driverId = $this->model->getRunDriverId((int) $stop['id']);
         if ($driverId === null || $driverId !== $userId) {
-            jsonError('Esta parada no pertenece a tu ruta', 403);
+            jsonError('Esta parada no pertenece a tu despacho', 403);
         }
     }
 }

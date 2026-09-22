@@ -124,9 +124,15 @@ const router = createRouter({
           meta: { permission: 'delivery_route', action: 'read' },
         },
         {
-          path: 'routes/:id',
-          name: 'route-detail',
-          component: () => import('../pages/RouteDetailView.vue'),
+          path: 'runs',
+          name: 'runs',
+          component: () => import('../pages/RunsView.vue'),
+          meta: { permission: 'delivery_route', action: 'read' },
+        },
+        {
+          path: 'runs/:id',
+          name: 'run-detail',
+          component: () => import('../pages/RunDetailView.vue'),
           meta: { permission: 'delivery_route', action: 'read' },
         },
         {

@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useBackgroundGeo } from '../../composables/useBackgroundGeo'
 import ProfileModal from '../../components/ui/ProfileModal.vue'
+import AppToast from '../../components/ui/AppToast.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -176,4 +177,5 @@ onUnmounted(() => {
   </div>
 
   <ProfileModal :visible="showProfile" @close="showProfile = false" />
+  <AppToast />
 </template>

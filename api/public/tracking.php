@@ -37,7 +37,7 @@ $stmt = $db->prepare("
 $stmt->execute(['tn' => $trackingNumber]);
 $package = $stmt->fetch();
 
-if ($package === null) {
+if (!$package) {
     jsonError('Paquete no encontrado', 404);
 }
 

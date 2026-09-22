@@ -1,48 +1,66 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { driverLocationService, routeService, type DeliveryRoute, type RouteStop } from '../../services/routeService'
+import { driverLocationService, routeRunService, type RouteRun, type RouteStop } from '../../services/routeService'
 import { useAuthStore } from '../../stores/auth'
 import { useBackgroundGeo } from '../../composables/useBackgroundGeo'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS } from '../../utils/map'
+import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS, stabilizeMapSize, fitMapToBounds } from '../../utils/map'
 
 const router = useRouter()
 const auth = useAuthStore()
 const geo = useBackgroundGeo()
 const loading = ref(true)
-const routeData = ref<DeliveryRoute | null>(null)
+const routeData = ref<RouteRun | null>(null)
 const stops = ref<RouteStop[]>([])
 const error = ref('')
 const mapContainer = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 let historyPolyline: L.Polyline | null = null
 let liveMarker: L.CircleMarker | null = null
+let mapBounds: L.LatLngBoundsLiteral = []
+let cleanupMapSize: (() => void) | null = null
+const canRecenter = ref(false)
 let historyTimer: ReturnType<typeof setInterval> | null = null
+
+function parseCoords(raw: string | null | undefined): [number, number][] {
+  if (!raw) return []
+  try {
+    const coords = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (!Array.isArray(coords)) return []
+    return coords.map((c: any): [number, number] => [Number(c[0] ?? c.lat), Number(c[1] ?? c.lng)]).filter((ll) => !Number.isNaN(ll[0]) && !Number.isNaN(ll[1]))
+  } catch {
+    return []
+  }
+}
 
 async function load() {
   loading.value = true
   try {
     const res = await driverLocationService.driverRoutes()
-    const routes: DeliveryRoute[] = res.data.data.routes ?? []
-    const active = routes.find(r => r.status_name === 'active') || routes[0] || null
-    routeData.value = active
+    const runs: RouteRun[] = res.data.data.runs ?? []
+    const active = runs.find(r => r.status_name === 'active') || runs[0] || null
 
     if (active) {
-      const stopRes = await routeService.get(active.id)
-      stops.value = stopRes.data.data.route.stops ?? []
+      const detail = await routeRunService.get(active.id)
+      const run = detail.data.data.run
+      routeData.value = run
+      stops.value = run.stops ?? []
+    } else {
+      routeData.value = null
+      stops.value = []
     }
-
-    await nextTick()
-    initMap()
-    await loadOwnHistory()
-    historyTimer = setInterval(loadOwnHistory, 30000)
   } catch (e: any) {
     error.value = e?.response?.data?.error || 'Error al cargar'
   } finally {
     loading.value = false
   }
+
+  await nextTick()
+  initMap()
+  await loadOwnHistory()
+  historyTimer = setInterval(loadOwnHistory, 30000)
 }
 
 async function loadOwnHistory() {
@@ -92,14 +110,22 @@ watch(() => geo.lastFix.value, (fix) => {
 function initMap() {
   if (!mapContainer.value) return
   if (map) { map.remove(); map = null }
+  if (cleanupMapSize) {
+    cleanupMapSize()
+    cleanupMapSize = null
+  }
   historyPolyline = null
   liveMarker = null
+  mapBounds = []
+  canRecenter.value = false
 
   map = L.map(mapContainer.value, {
     zoomControl: true,
     attributionControl: false,
     ...NICARAGUA_MAP_OPTIONS,
   }).setView([12.1149, -86.2362], 8)
+
+  cleanupMapSize = stabilizeMapSize(map, mapContainer.value)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, bounds: NICARAGUA_BOUNDS })
     .addTo(map!)
@@ -115,10 +141,36 @@ function initMap() {
       const coords = typeof rd.trajectory === 'string' ? JSON.parse(rd.trajectory) : rd.trajectory
       if (Array.isArray(coords) && coords.length >= 2) {
         const latlngs: [number, number][] = coords.map((c: any) => [c[1] ?? c.lat, c[0] ?? c.lng])
-        L.polyline(latlngs, { color: rd.color || '#22c55e', weight: 4, opacity: 0.8 }).addTo(map!)
+        L.polyline(latlngs, { color: rd.route_color || '#22c55e', weight: 4, opacity: 0.8 }).addTo(map!)
         latlngs.forEach(ll => bounds.push(ll))
       }
     } catch {}
+  }
+
+  // Cobertura de zonas de la ruta
+  if (rd.zones && rd.zones.length > 0) {
+    rd.zones.forEach((z: any) => {
+      if (z.lat == null || z.lng == null) return
+      const lat = Number(z.lat)
+      const lng = Number(z.lng)
+      const circle = L.circle([lat, lng], {
+        radius: 1500,
+        color: rd.route_color || '#22c55e',
+        fillColor: rd.route_color || '#22c55e',
+        fillOpacity: 0.08,
+        weight: 1,
+        opacity: 0.35,
+      }).addTo(map!)
+      circle.bindPopup(`<b>${z.name}</b><br/>Zona cubierta por la ruta`)
+      bounds.push([lat, lng])
+    })
+  }
+
+  // Ruta optima OSRM (azul punteada)
+  const optimized = parseCoords(rd.optimized_geometry)
+  if (optimized.length >= 2) {
+    L.polyline(optimized, { color: '#00A8FF', weight: 3, dashArray: '8 8', opacity: 0.9 }).addTo(map!)
+    optimized.forEach(ll => bounds.push(ll))
   }
 
   // Stops
@@ -148,13 +200,35 @@ function initMap() {
     bounds.push([lat, lng])
   })
 
+  // Inicio / Fin de ruta (offset del centro de zona para no tapar stops fallback)
+  if (rd.start_latitude && rd.start_longitude) {
+    const ll: [number, number] = [Number(rd.start_latitude) + 0.004, Number(rd.start_longitude) - 0.004]
+    L.circleMarker(ll, { radius: 6, fillColor: '#22c55e', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
+      .bindPopup('Inicio')
+    bounds.push(ll)
+  }
+  if (rd.end_latitude && rd.end_longitude) {
+    const ll: [number, number] = [Number(rd.end_latitude) - 0.004, Number(rd.end_longitude) + 0.004]
+    L.circleMarker(ll, { radius: 6, fillColor: '#ef4444', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
+      .bindPopup('Fin')
+    bounds.push(ll)
+  }
+
   // Live GPS
   if (geo.lastFix.value) {
     upsertLiveMarker(geo.lastFix.value.latitude, geo.lastFix.value.longitude)
   }
 
-  if (bounds.length > 0) {
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 })
+  mapBounds = bounds
+  canRecenter.value = bounds.length > 0
+  if (map && bounds.length > 0) {
+    fitMapToBounds(map, bounds, 50)
+  }
+}
+
+function recenterMap() {
+  if (map && mapBounds.length > 0) {
+    fitMapToBounds(map, mapBounds, 50)
   }
 }
 
@@ -168,6 +242,10 @@ onBeforeUnmount(() => {
   if (historyTimer) {
     clearInterval(historyTimer)
     historyTimer = null
+  }
+  if (cleanupMapSize) {
+    cleanupMapSize()
+    cleanupMapSize = null
   }
   if (map) {
     map.remove()
@@ -197,20 +275,30 @@ onBeforeUnmount(() => {
 
     <template v-else>
       <div class="flex items-center gap-2">
-        <span class="inline-block h-3 w-3 rounded-full" :style="{ backgroundColor: routeData.color || '#22c55e' }" />
-        <h2 class="font-semibold">{{ routeData.name }}</h2>
+        <span class="inline-block h-3 w-3 rounded-full" :style="{ backgroundColor: routeData.route_color || '#22c55e' }" />
+        <h2 class="font-semibold">{{ routeData.route_name }}</h2>
         <span class="ml-auto text-xs text-[#64748b]">{{ stops.filter(s => s.status_name === 'pending').length }} pendientes</span>
       </div>
 
-      <div ref="mapContainer" class="h-[60vh] w-full rounded-xl border border-[#1e293b] overflow-hidden" />
+      <div ref="mapContainer" class="relative h-[60vh] w-full rounded-xl border border-[#1e293b] overflow-hidden">
+        <button
+          v-if="canRecenter"
+          class="absolute right-3 top-3 z-[1010] rounded-lg bg-[#0b1326]/90 px-3 py-1.5 text-xs font-medium text-[#dae2fd] shadow-md transition-colors hover:bg-[#1e293b]"
+          @click.stop="recenterMap"
+        >
+          Re-centrar ruta
+        </button>
+      </div>
 
       <!-- Mini legend -->
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#64748b]">
+        <span class="flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#22c55e" /> Trayectoria ruta</span>
+        <span class="flex items-center gap-1.5"><span class="h-0.5 w-5 border-t-2 border-dashed" style="border-color:#00A8FF" /> Ruta óptima</span>
         <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#eab308]" /> Pendiente</span>
         <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#22c55e]" /> Entregado</span>
         <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#64748b]" /> Otro</span>
         <span class="flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#f97316" /> Tu recorrido</span>
-        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ef4444]" /> Tu ubicación</span>
+        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ef4444]" /> Fin / Tu ubicación</span>
       </div>
     </template>
   </div>

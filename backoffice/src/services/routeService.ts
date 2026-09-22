@@ -1,13 +1,20 @@
 import api from './api'
-import type { DeliveryRoute, RouteStop, DriverLocation } from '../types'
+import type { DeliveryRoute, RouteRun, RouteStop, DriverLocation } from '../types'
 
-export type { DeliveryRoute, RouteStop, DriverLocation }
+export type { DeliveryRoute, RouteRun, RouteStop, DriverLocation }
 
 export interface RouteListParams {
   page?: number
   limit?: number
+}
+
+export interface RunListParams {
+  page?: number
+  limit?: number
   status?: string
   driver_id?: number
+  route_id?: number
+  date?: string
 }
 
 export const routeService = {
@@ -15,8 +22,6 @@ export const routeService = {
     const sp = new URLSearchParams()
     if (params?.page) sp.set('page', String(params.page))
     if (params?.limit) sp.set('limit', String(params.limit))
-    if (params?.status) sp.set('status', params.status)
-    if (params?.driver_id) sp.set('driver_id', String(params.driver_id))
     const qs = sp.toString()
     return api.get<{ success: boolean; data: { routes: DeliveryRoute[]; pagination: import('./pagination').Pagination } }>(
       `/route/list.php${qs ? '?' + qs : ''}`
@@ -28,9 +33,9 @@ export const routeService = {
   },
 
   create(data: {
-    name: string; description?: string; assigned_to?: number; vehicle_id?: number;
-    start_time?: string; end_time?: string;
+    name: string; description?: string;
     trajectory?: unknown; color?: string;
+    default_driver_id?: number | null; default_vehicle_id?: number | null;
     start_latitude?: number; start_longitude?: number;
     end_latitude?: number; end_longitude?: number;
     zone_ids?: number[]
@@ -40,9 +45,8 @@ export const routeService = {
 
   update(data: {
     id: number; name?: string; description?: string | null;
-    assigned_to?: number | null; vehicle_id?: number | null;
-    start_time?: string | null; end_time?: string | null;
     trajectory?: unknown; color?: string;
+    default_driver_id?: number | null; default_vehicle_id?: number | null;
     start_latitude?: number | null; start_longitude?: number | null;
     end_latitude?: number | null; end_longitude?: number | null;
     zone_ids?: number[]
@@ -53,31 +57,68 @@ export const routeService = {
   delete(id: number) {
     return api.delete('/route/delete.php', { data: { id } })
   },
+}
+
+export const routeRunService = {
+  list(params?: RunListParams) {
+    const sp = new URLSearchParams()
+    if (params?.page) sp.set('page', String(params.page))
+    if (params?.limit) sp.set('limit', String(params.limit))
+    if (params?.status) sp.set('status', params.status)
+    if (params?.driver_id) sp.set('driver_id', String(params.driver_id))
+    if (params?.route_id) sp.set('route_id', String(params.route_id))
+    if (params?.date) sp.set('date', params.date)
+    const qs = sp.toString()
+    return api.get<{ success: boolean; data: { runs: RouteRun[]; pagination: import('./pagination').Pagination } }>(
+      `/route_run/list.php${qs ? '?' + qs : ''}`
+    )
+  },
+
+  get(id: number) {
+    return api.get<{ success: boolean; data: { run: RouteRun } }>('/route_run/get.php', { params: { id } })
+  },
+
+  create(data: {
+    route_id: number; run_date?: string; assigned_to?: number; vehicle_id?: number; notes?: string
+  }) {
+    return api.post<{ success: boolean; data: { run: RouteRun; carried_over: number } }>('/route_run/create.php', data)
+  },
+
+  update(data: {
+    id: number; run_date?: string; assigned_to?: number | null; vehicle_id?: number | null;
+    start_time?: string | null; end_time?: string | null; notes?: string | null
+  }) {
+    return api.put('/route_run/update.php', data)
+  },
+
+  delete(id: number) {
+    return api.delete('/route_run/delete.php', { data: { id } })
+  },
 
   updateStatus(id: number, status: string) {
-    return api.put('/route/status.php', { id, status })
+    return api.put('/route_run/status.php', { id, status })
   },
 
-  getCandidatePackages(routeId: number) {
-    return api.get<{ success: boolean; data: { packages: import('./packageService').Package[] } }>('/route/packages.php', { params: { route_id: routeId } })
+  getCandidatePackages(runId: number) {
+    return api.get<{ success: boolean; data: { packages: import('./packageService').Package[] } }>('/route_run/packages.php', { params: { run_id: runId } })
   },
 
-  generateStops(routeId: number, packageIds: number[]) {
-    return api.post('/route/generate-stops.php', { route_id: routeId, package_ids: packageIds })
+  generateStops(runId: number, packageIds: number[]) {
+    return api.post('/route_run/generate-stops.php', { run_id: runId, package_ids: packageIds })
   },
 
-  optimize(routeId: number) {
-    return api.post('/route/optimize.php', { route_id: routeId })
+  optimize(runId: number) {
+    return api.post('/route_run/optimize.php', { run_id: runId })
   },
 }
 
 export const routeStopService = {
-  list(routeId: number) {
-    return api.get<{ success: boolean; data: { stops: RouteStop[] } }>('/route_stop/list.php', { params: { route_id: routeId } })
+  list(runId: number) {
+    return api.get<{ success: boolean; data: { stops: RouteStop[] } }>('/route_stop/list.php', { params: { run_id: runId } })
   },
 
-  updateStatus(id: number, status: string) {
-    return api.put('/route_stop/status.php', { id, status })
+  updateStatus(id: number, status: string, notes?: string) {
+    return api.put('/route_stop/status.php', { id, status, notes })
   },
 
   deliver(data: {
@@ -122,6 +163,6 @@ export const driverLocationService = {
   },
 
   driverRoutes() {
-    return api.get<{ success: boolean; data: { routes: DeliveryRoute[] } }>('/driver/routes.php')
+    return api.get<{ success: boolean; data: { runs: RouteRun[] } }>('/driver/routes.php')
   },
 }
