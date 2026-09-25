@@ -60,7 +60,7 @@ watch(() => modalRef.value, (el) => {
     <Transition name="modal">
       <div
         v-if="visible"
-        class="admin-modal-overlay fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        class="admin-modal-overlay fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click="onBackdrop"
         @keydown="onKeydown"
       >

@@ -17,7 +17,7 @@ function toastColor(type: string) {
 </script>
 
 <template>
-  <div class="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
+  <div class="fixed top-4 right-4 z-[1300] flex flex-col gap-2 max-w-sm">
     <TransitionGroup name="toast">
       <div
         v-for="toast in toasts"

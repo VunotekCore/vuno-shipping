@@ -58,7 +58,7 @@ watch(() => dialogRef.value, (el) => {
     <Transition name="confirm-modal">
       <div
         v-if="visible"
-        class="admin-confirm-overlay fixed inset-0 z-[90] flex items-center justify-center p-4"
+        class="admin-confirm-overlay fixed inset-0 z-[1200] flex items-center justify-center p-4"
         @click.self="$emit('cancel')"
         @keydown="onKeydown"
       >
