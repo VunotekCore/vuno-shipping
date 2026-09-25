@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { routeRunService, routeService, type RouteRun, type DeliveryRoute } from '../services/routeService'
+import { statusLabel } from '../utils/format'
 import { useToast } from '../composables/useToast'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
@@ -171,7 +172,7 @@ const columns: TableColumn[] = [
             <td class="text-[#94a3b8]">{{ run.driver_name || '—' }}</td>
             <td class="text-[#94a3b8]">{{ run.vehicle_plate || '—' }}</td>
             <td>
-              <span :class="['admin-badge', statusBadge(run.status_name)]">{{ run.status_name }}</span>
+              <span :class="['admin-badge', statusBadge(run.status_name)]">{{ statusLabel(run.status_name) }}</span>
             </td>
             <td class="text-[#94a3b8]">{{ run.stop_count ?? 0 }} <span v-if="run.pending_stops" class="text-[#eab308]">({{ run.pending_stops }} pend.)</span></td>
             <td class="text-right">
@@ -206,7 +207,7 @@ const columns: TableColumn[] = [
               <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: run.route_color || '#22c55e' }" />
               <p class="font-medium text-[#dae2fd] truncate">{{ run.route_name }}</p>
             </div>
-            <span :class="['admin-badge shrink-0', statusBadge(run.status_name)]">{{ run.status_name }}</span>
+            <span :class="['admin-badge shrink-0', statusBadge(run.status_name)]">{{ statusLabel(run.status_name) }}</span>
           </div>
           <p class="text-sm text-[#94a3b8]">{{ formatDate(run.run_date) }} · {{ run.driver_name || 'Sin conductor' }}</p>
           <p class="text-xs text-[#64748b]">

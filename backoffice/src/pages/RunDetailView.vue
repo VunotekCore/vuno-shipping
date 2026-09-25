@@ -9,6 +9,7 @@ import AppModal from '../components/ui/AppModal.vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS, stabilizeMapSize, fitMapToBounds } from '../utils/map'
+import { statusLabel } from '../utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -174,7 +175,7 @@ const statusBadge = (status: string | null | undefined): string => {
 const stopStatusBadge = (status: string | null | undefined): string => {
   const m: Record<string, string> = {
     pending: 'admin-badge-warning',
-    visited: 'admin-badge-success',
+    delivered: 'admin-badge-success',
     skipped: 'admin-badge-info',
     failed: 'admin-badge-danger',
   }
@@ -313,7 +314,7 @@ function initMap() {
     if (stop.latitude && stop.longitude) {
       const lat = Number(stop.latitude)
       const lng = Number(stop.longitude)
-      const markerColor = stop.status_name === 'visited' ? '#22c55e' : stop.status_name === 'pending' ? '#eab308' : '#64748b'
+      const markerColor = stop.status_name === 'delivered' ? '#22c55e' : stop.status_name === 'pending' ? '#eab308' : '#64748b'
       const marker = L.circleMarker([lat, lng], {
         radius: 8,
         fillColor: markerColor,
@@ -482,7 +483,7 @@ async function confirmStopAction() {
   try {
     await routeStopService.updateStatus(stopActionTarget.value.id, stopActionStatus.value, stopActionNotes.value)
     showStopActionModal.value = false
-    toast.success(`Parada marcada como "${stopActionStatus.value}"`)
+    toast.success(`Parada marcada como "${statusLabel(stopActionStatus.value)}"`)
     await refresh()
   } catch (e: any) {
     toast.error(e?.response?.data?.error || 'Error al actualizar la parada')
@@ -491,13 +492,13 @@ async function confirmStopAction() {
   }
 }
 
-async function markVisited(stopId: number) {
+async function markDelivered(stopId: number) {
   try {
-    await routeStopService.updateStatus(stopId, 'visited')
-    toast.success('Parada marcada como visitada')
+    await routeStopService.deliver({ id: stopId })
+    toast.success('Entrega registrada')
     await refresh()
   } catch (e: any) {
-    toast.error(e?.response?.data?.error || 'Error al actualizar')
+    toast.error(e?.response?.data?.error || 'Error al registrar entrega')
   }
 }
 
@@ -555,7 +556,7 @@ onBeforeUnmount(() => {
               <span v-if="runData.carried_over" class="text-[#f97316]">· ↻ {{ runData.carried_over }} arrastrados</span>
             </p>
           </div>
-          <span :class="['admin-badge', statusBadge(runData.status_name)]">{{ runData.status_name }}</span>
+          <span :class="['admin-badge', statusBadge(runData.status_name)]">{{ statusLabel(runData.status_name) }}</span>
         </div>
         <div class="flex flex-wrap gap-2">
           <button
@@ -682,12 +683,12 @@ onBeforeUnmount(() => {
                 <td class="px-5 py-3 text-[#94a3b8] max-w-[200px] truncate" :title="s.address || ''">{{ s.address || '—' }}</td>
                 <td class="px-5 py-3 text-[#94a3b8]">{{ s.tracking_number || '—' }}</td>
                 <td class="px-5 py-3">
-                  <span :class="['admin-badge', stopStatusBadge(s.status_name)]">{{ s.status_name }}</span>
+                  <span :class="['admin-badge', stopStatusBadge(s.status_name)]">{{ statusLabel(s.status_name) }}</span>
                 </td>
                 <td class="px-5 py-3 text-xs text-[#94a3b8] max-w-[220px] truncate" :title="s.notes || ''">{{ s.notes || '—' }}</td>
                 <td class="px-5 py-3">
                   <div v-if="s.status_name === 'pending'" class="flex gap-1">
-                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#22c55e]" :disabled="!isRunActive" :title="isRunActive ? 'Visitar' : 'El despacho debe estar activo'" @click="markVisited(s.id)">✔</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#22c55e]" :disabled="!isRunActive" :title="isRunActive ? 'Entregar' : 'El despacho debe estar activo'" @click="markDelivered(s.id)">✔</button>
                     <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#94a3b8]" :disabled="!isRunActive" :title="isRunActive ? 'Saltar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'skipped')">→</button>
                     <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" :disabled="!isRunActive" :title="isRunActive ? 'Fallar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'failed')">✕</button>
                   </div>

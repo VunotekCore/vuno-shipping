@@ -64,11 +64,11 @@ class RouteStopController
         $statusId = $this->model->getStatusId($newStatus);
         if ($statusId === null) jsonError('Estado invalido', 422);
 
-        $updateData = ['status_id' => $statusId];
-
-        if ($newStatus === 'visited') {
-            $updateData['actual_arrival'] = date('H:i:s');
+        if ($newStatus === 'delivered') {
+            jsonError('Para registrar una entrega usa el endpoint de entrega', 409);
         }
+
+        $updateData = ['status_id' => $statusId];
 
         if (in_array($newStatus, ['skipped', 'failed'], true) && isset($data['notes'])) {
             $updateData['notes'] = sanitizeString((string) $data['notes'], 1000);
@@ -109,13 +109,13 @@ class RouteStopController
         $db->beginTransaction();
 
         try {
-            $visitedStatusId = $this->model->getStatusId('visited');
-            if ($visitedStatusId === null) throw new \RuntimeException('Stop status visited not found');
+            $deliveredStatusId = $this->model->getStatusId('delivered');
+            if ($deliveredStatusId === null) throw new \RuntimeException('Stop status delivered not found');
 
             $notes = isset($data['notes']) ? sanitizeString((string) $data['notes'], 1000) : $existing['notes'];
 
             $updateData = [
-                'status_id' => $visitedStatusId,
+                'status_id' => $deliveredStatusId,
                 'actual_arrival' => date('H:i:s'),
                 'notes' => $notes,
             ];

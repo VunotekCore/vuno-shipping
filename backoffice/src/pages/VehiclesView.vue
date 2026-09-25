@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, computed } from 'vue'
 import { vehicleService, type Vehicle } from '../services/vehicleService'
+import { statusLabel } from '../utils/format'
 import { useCrudView } from '../composables/useCrudView'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
@@ -126,7 +127,7 @@ onMounted(() => load())
             <td class="text-[#64748b]">{{ v.year ?? '—' }}</td>
             <td class="text-[#64748b]">{{ v.capacity_kg ?? '—' }}</td>
             <td>
-              <span class="admin-badge admin-badge-info">{{ v.status_name }}</span>
+              <span class="admin-badge admin-badge-info">{{ statusLabel(v.status_name) }}</span>
             </td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
@@ -167,7 +168,7 @@ onMounted(() => load())
         <div v-for="v in vehicles" :key="v.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
             <p class="font-medium text-[#dae2fd] truncate">{{ v.plate }}</p>
-            <span class="admin-badge admin-badge-info shrink-0">{{ v.status_name }}</span>
+            <span class="admin-badge admin-badge-info shrink-0">{{ statusLabel(v.status_name) }}</span>
           </div>
           <p class="text-sm text-[#94a3b8] truncate">{{ v.brand }} {{ v.model }}</p>
           <p class="text-xs text-[#64748b]">{{ v.year ?? '—' }} · {{ v.capacity_kg ? v.capacity_kg + ' kg' : '—' }}</p>

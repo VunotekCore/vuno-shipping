@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { driverLocationService, routeRunService, type RouteRun, type RouteStop } from '../../services/routeService'
 import { useToast } from '../../composables/useToast'
+import { statusLabel } from '../../utils/format'
 
 const router = useRouter()
 const toast = useToast()
@@ -52,8 +53,8 @@ async function startJourney() {
 }
 
 const totalStops = computed(() => stops.value.length)
-const visitedStops = computed(() => stops.value.filter(s => s.status_name === 'visited').length)
-const progress = computed(() => totalStops.value > 0 ? Math.round((visitedStops.value / totalStops.value) * 100) : 0)
+const deliveredStops = computed(() => stops.value.filter(s => s.status_name === 'delivered').length)
+const progress = computed(() => totalStops.value > 0 ? Math.round((deliveredStops.value / totalStops.value) * 100) : 0)
 
 const nextStop = computed(() => stops.value.find(s => s.status_name === 'pending'))
 
@@ -141,7 +142,7 @@ onMounted(() => load())
               <span
                 class="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
                 :class="isDraft ? 'bg-[#eab308]/15 text-[#eab308]' : routeData.status_name === 'completed' ? 'bg-[#00A8FF]/15 text-[#00A8FF]' : 'bg-[#69dca4]/15 text-[#69dca4]'"
-              >{{ routeData.status_name }}</span>
+              >{{ statusLabel(routeData.status_name) }}</span>
             </div>
             <p class="mt-1.5 text-sm text-[#64748b]">{{ routeData.route_description || 'Sin descripción' }}</p>
             <p class="mt-1 text-xs text-[#64748b]">{{ formatSchedule() }} · {{ routeData.driver_name }}</p>
@@ -165,7 +166,7 @@ onMounted(() => load())
         <div class="border-t border-[#1e293b] px-5 py-4">
           <div class="mb-2 flex items-center justify-between text-sm">
             <span class="text-[#94a3b8]">Progreso</span>
-            <span class="font-medium text-[#dae2fd]">{{ visitedStops }} / {{ totalStops }} entregados</span>
+            <span class="font-medium text-[#dae2fd]">{{ deliveredStops }} / {{ totalStops }} entregados</span>
           </div>
           <div class="h-2 overflow-hidden rounded-full bg-[#1e293b]">
             <div class="h-full rounded-full bg-[#69dca4] transition-all duration-500" :style="{ width: progress + '%' }" />
@@ -232,12 +233,12 @@ onMounted(() => load())
           >
             <span
               class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-              :class="s.status_name === 'visited' ? 'bg-[#22c55e]/15 text-[#22c55e]' : s.status_name === 'pending' ? 'bg-[#eab308]/15 text-[#eab308]' : 'bg-[#1e293b] text-[#64748b]'"
+              :class="s.status_name === 'delivered' ? 'bg-[#22c55e]/15 text-[#22c55e]' : s.status_name === 'pending' ? 'bg-[#eab308]/15 text-[#eab308]' : 'bg-[#1e293b] text-[#64748b]'"
             >
-              {{ s.status_name === 'visited' ? '✓' : s.stop_order }}
+              {{ s.status_name === 'delivered' ? '✓' : s.stop_order }}
             </span>
             <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium" :class="s.status_name === 'visited' ? 'text-[#64748b] line-through' : 'text-[#dae2fd]'">
+              <p class="truncate text-sm font-medium" :class="s.status_name === 'delivered' ? 'text-[#64748b] line-through' : 'text-[#dae2fd]'">
                 {{ s.client_name || 'Sin nombre' }}
               </p>
               <p class="truncate text-xs text-[#64748b]">{{ s.address || 'Sin dirección' }}</p>

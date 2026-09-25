@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { packageService, type Package, type TrackingEvent } from '../services/packageService'
 import { useToast } from '../composables/useToast'
-import { formatCurrency, statusColor } from '../utils/format'
+import { formatCurrency, statusColor, statusLabel } from '../utils/format'
 import AppModal from '../components/ui/AppModal.vue'
 
 const route = useRoute()
@@ -27,9 +27,10 @@ const savingStatus = ref(false)
 
 const statusOptions = [
   { value: 'pending', label: 'Pendiente' },
-  { value: 'received', label: 'Recibido' },
-  { value: 'in_transit', label: 'En tránsito' },
-  { value: 'out_for_delivery', label: 'Salió para entrega' },
+  { value: 'received', label: 'Recibido en almacén Miami' },
+  { value: 'in_transit', label: 'En tránsito a Nicaragua' },
+  { value: 'in_nicaragua', label: 'Recibido en Nicaragua' },
+  { value: 'out_for_delivery', label: 'En ruta de entrega' },
   { value: 'delivered', label: 'Entregado' },
   { value: 'returned', label: 'Devuelto' },
   { value: 'cancelled', label: 'Cancelado' },
@@ -152,7 +153,7 @@ onMounted(() => loadPackage())
               <div>
                 <p class="text-xs text-[#64748b] mb-1">Estado</p>
                 <span class="admin-badge" :class="statusColor(pkg.status_name)">
-                  {{ pkg.status_name || '—' }}
+                  {{ statusLabel(pkg.status_name) }}
                 </span>
               </div>
               <div>
@@ -357,7 +358,7 @@ onMounted(() => loadPackage())
                 </div>
                 <div class="pb-4 flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-0.5">
-                    <p class="text-sm font-medium text-[#dae2fd]">{{ event.status }}</p>
+                    <p class="text-sm font-medium text-[#dae2fd]">{{ statusLabel(event.status) }}</p>
                     <span
                       v-if="idx === 0"
                       class="admin-badge admin-badge-success text-[10px] py-0 px-1.5"

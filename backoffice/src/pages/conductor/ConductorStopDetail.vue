@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { routeRunService, routeStopService, driverLocationService, type RouteStop } from '../../services/routeService'
 import { useToast } from '../../composables/useToast'
+import { statusLabel } from '../../utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -94,9 +95,9 @@ onMounted(() => load())
       <div class="flex items-center justify-between">
         <h1 class="text-lg font-bold">Parada #{{ stop.stop_order }}</h1>
         <span class="rounded-full px-3 py-1 text-[11px] font-medium"
-          :class="stop.status_name === 'visited' ? 'bg-[#22c55e]/15 text-[#22c55e]' : stop.status_name === 'pending' ? 'bg-[#eab308]/15 text-[#eab308]' : stop.status_name === 'failed' ? 'bg-[#DC2626]/15 text-[#f87171]' : 'bg-[#1e293b] text-[#64748b]'"
+          :class="stop.status_name === 'delivered' ? 'bg-[#22c55e]/15 text-[#22c55e]' : stop.status_name === 'pending' ? 'bg-[#eab308]/15 text-[#eab308]' : stop.status_name === 'failed' ? 'bg-[#DC2626]/15 text-[#f87171]' : 'bg-[#1e293b] text-[#64748b]'"
         >
-          {{ stop.status_name }}
+          {{ statusLabel(stop.status_name) }}
         </span>
       </div>
 

@@ -232,9 +232,9 @@ class RouteStopModel
     public function carryForward(int $newRunId, int $previousRunId): array
     {
         $pendingStatusId = $this->getStatusId('pending');
-        $visitedStatusId = $this->getStatusId('visited');
-        if ($pendingStatusId === null || $visitedStatusId === null) {
-            throw new \RuntimeException('Stop status pending/visited not found');
+        $deliveredStatusId = $this->getStatusId('delivered');
+        if ($pendingStatusId === null || $deliveredStatusId === null) {
+            throw new \RuntimeException('Stop status pending/delivered not found');
         }
 
         $stmt = $this->db->prepare("
@@ -246,10 +246,10 @@ class RouteStopModel
             LEFT JOIN zone z ON z.id = p.zone_id
             WHERE rs.route_run_id = :prev_run_id
               AND rs.package_id IS NOT NULL
-              AND (rs.status_id IS NULL OR rs.status_id != :visited_id)
+              AND (rs.status_id IS NULL OR rs.status_id != :delivered_id)
             ORDER BY rs.stop_order ASC
         ");
-        $stmt->execute(['prev_run_id' => $previousRunId, 'visited_id' => $visitedStatusId]);
+        $stmt->execute(['prev_run_id' => $previousRunId, 'delivered_id' => $deliveredStatusId]);
         $carryOver = $stmt->fetchAll();
 
         $created = [];

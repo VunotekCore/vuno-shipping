@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { packageService, type Package } from '../services/packageService'
-import { formatCurrency, statusColor } from '../utils/format'
+import { formatCurrency, statusColor, statusLabel } from '../utils/format'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
@@ -117,9 +117,19 @@ onMounted(() => load())
       >Pendientes</button>
       <button
         class="admin-btn admin-btn-ghost admin-btn-sm"
+        :class="statusFilter === 'received' && 'bg-white/[0.08]'"
+        @click="filterByStatus('received')"
+      >En Miami</button>
+      <button
+        class="admin-btn admin-btn-ghost admin-btn-sm"
         :class="statusFilter === 'in_transit' && 'bg-white/[0.08]'"
         @click="filterByStatus('in_transit')"
       >En tránsito</button>
+      <button
+        class="admin-btn admin-btn-ghost admin-btn-sm"
+        :class="statusFilter === 'in_nicaragua' && 'bg-white/[0.08]'"
+        @click="filterByStatus('in_nicaragua')"
+      >En Nicaragua</button>
       <button
         class="admin-btn admin-btn-ghost admin-btn-sm"
         :class="statusFilter === 'delivered' && 'bg-white/[0.08]'"
@@ -136,7 +146,7 @@ onMounted(() => load())
             <td class="text-[#94a3b8]">{{ p.recipient_name }}</td>
             <td class="text-[#94a3b8]">{{ p.recipient_department ?? '—' }}</td>
             <td>
-              <span class="admin-badge" :class="statusColor(p.status_name)">{{ p.status_name ?? '—' }}</span>
+              <span class="admin-badge" :class="statusColor(p.status_name)">{{ statusLabel(p.status_name) }}</span>
             </td>
             <td class="text-[#94a3b8] text-xs" :title="'Costo del envío internacional Miami → Nicaragua'">{{ formatCurrency(p.flete_cost) }}</td>
             <td class="text-[#94a3b8] text-xs" :title="'Costo de entrega a domicilio en Nicaragua (última milla)'">{{ formatCurrency(p.delivery_cost) }}</td>
@@ -160,7 +170,7 @@ onMounted(() => load())
                   class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]"
                   @click="openDelete(p)"
                   title="Eliminar"
-                  :disabled="p.status_name !== 'pending'"
+                  :disabled="!['pending','received','in_nicaragua'].includes(p.status_name ?? '')"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
@@ -195,7 +205,7 @@ onMounted(() => load())
         <div v-for="p in packages" :key="p.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
             <p class="font-mono font-medium text-[#dae2fd] truncate">{{ p.tracking_number }}</p>
-            <span class="admin-badge shrink-0" :class="statusColor(p.status_name)">{{ p.status_name ?? '—' }}</span>
+            <span class="admin-badge shrink-0" :class="statusColor(p.status_name)">{{ statusLabel(p.status_name) }}</span>
           </div>
           <p class="text-sm text-[#94a3b8] truncate">{{ p.recipient_name }}{{ p.recipient_department ? ' · ' + p.recipient_department : '' }}</p>
           <p class="text-xs text-[#64748b]" title="Flete (envío internacional) + Delivery (última milla)">
@@ -219,7 +229,7 @@ onMounted(() => load())
             <button
               class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]"
               @click="openDelete(p)"
-              :disabled="p.status_name !== 'pending'"
+              :disabled="!['pending','received','in_nicaragua'].includes(p.status_name ?? '')"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               Eliminar
@@ -243,7 +253,7 @@ onMounted(() => load())
     <AppConfirmDialog
       :visible="showDelete"
       title="Eliminar paquete"
-      :message="`¿Seguro que querés eliminar el paquete ${deleting?.tracking_number}? Solo se pueden eliminar paquetes con estado pendiente. Esta acción no se puede deshacer.`"
+      :message="`¿Seguro que querés eliminar el paquete ${deleting?.tracking_number}? Solo se pueden eliminar paquetes pendientes, en Miami o en Nicaragua sin despachar. Esta acción no se puede deshacer.`"
       confirm-text="Eliminar"
       variant="danger"
       @confirm="confirmDelete"

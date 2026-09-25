@@ -21,8 +21,9 @@ const historyMode = ref(false)
 
 const statusLabels: Record<string, { label: string; color: string; icon: string }> = {
   pending: { label: 'Pendiente', color: 'admin-badge-warning', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-  received: { label: 'Recibido en bodega', color: 'admin-badge-info', icon: 'M5 13l4 4L19 7' },
-  in_transit: { label: 'En tránsito', color: 'admin-badge-info', icon: 'M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2-1m4 0l2 1m4-3l2 1m-4 3v2a1 1 0 001 1h3M7 17v2a1 1 0 001 1h3' },
+  received: { label: 'Recibido en almacén Miami', color: 'admin-badge-info', icon: 'M5 13l4 4L19 7' },
+  in_transit: { label: 'En tránsito a Nicaragua', color: 'admin-badge-info', icon: 'M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2-1m4 0l2 1m4-3l2 1m-4 3v2a1 1 0 001 1h3M7 17v2a1 1 0 001 1h3' },
+  in_nicaragua: { label: 'Recibido en Nicaragua', color: 'admin-badge-info', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
   out_for_delivery: { label: 'En ruta de entrega', color: 'admin-badge-warning', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' },
   delivered: { label: 'Entregado', color: 'admin-badge-success', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
   returned: { label: 'Devuelto', color: 'admin-badge-danger', icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z' },
@@ -34,7 +35,8 @@ const statusLabels: Record<string, { label: string; color: string; icon: string 
 const validTransitions: Record<string, string[]> = {
   pending: ['received', 'cancelled'],
   received: ['in_transit', 'cancelled'],
-  in_transit: ['out_for_delivery'],
+  in_transit: ['in_nicaragua'],
+  in_nicaragua: ['out_for_delivery', 'cancelled'],
   out_for_delivery: ['delivered', 'returned'],
   delivered: ['disputed'],
   returned: ['disputed'],

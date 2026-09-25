@@ -23,7 +23,7 @@ async function load() {
         items.push({
           route: r,
           stops,
-          completed: stops.filter(s => s.status_name === 'visited').length,
+          completed: stops.filter(s => s.status_name === 'delivered').length,
           total: stops.length,
         })
       } catch {}

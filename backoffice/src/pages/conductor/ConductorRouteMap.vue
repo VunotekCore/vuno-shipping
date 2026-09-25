@@ -7,6 +7,7 @@ import { useBackgroundGeo } from '../../composables/useBackgroundGeo'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS, stabilizeMapSize, fitMapToBounds } from '../../utils/map'
+import { statusLabel } from '../../utils/format'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -179,12 +180,12 @@ function initMap() {
     const lat = Number(s.latitude)
     const lng = Number(s.longitude)
     const isPending = s.status_name === 'pending'
-    const isVisited = s.status_name === 'visited'
+    const isDelivered = s.status_name === 'delivered'
 
-    const color = isVisited ? '#22c55e' : isPending ? '#eab308' : '#64748b'
+    const color = isDelivered ? '#22c55e' : isPending ? '#eab308' : '#64748b'
 
     const marker = L.circleMarker([lat, lng], {
-      radius: isPending ? 10 : isVisited ? 7 : 7,
+      radius: isPending ? 10 : isDelivered ? 7 : 7,
       fillColor: color,
       color: '#fff',
       weight: 2,
@@ -195,7 +196,7 @@ function initMap() {
       <b>#${s.stop_order}</b> ${s.client_name || ''}<br/>
       ${s.address || ''}<br/>
       ${s.from_zone_center ? '<i style="color:#94a3b8">Punto por centro de zona (sin GPS)</i><br/>' : ''}
-      <span style="color:${color}">${s.status_name}</span>
+      <span style="color:${color}">${statusLabel(s.status_name)}</span>
     `)
     bounds.push([lat, lng])
   })
