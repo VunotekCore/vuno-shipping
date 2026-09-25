@@ -74,12 +74,14 @@ import Input from '../atoms/Input.astro';
 
   const statusLabels: Record<string, string> = {
     pending: 'Pendiente',
-    received: 'Recibido',
-    in_transit: 'En Tránsito',
-    out_for_delivery: 'En Camino',
+    received: 'Recibido en Miami',
+    in_transit: 'En Tránsito a Nicaragua',
+    in_nicaragua: 'Recibido en Nicaragua',
+    out_for_delivery: 'En Ruta de Entrega',
     delivered: 'Entregado',
     returned: 'Devuelto',
     cancelled: 'Cancelado',
+    disputed: 'Disputado',
   };
 
   function escapeHtml(str: string): string {
@@ -124,7 +126,7 @@ import Input from '../atoms/Input.astro';
 
     const status = (pkg.status_name as string) || 'unknown';
     const progress: Record<string, number> = {
-      pending: 10, received: 25, in_transit: 50, out_for_delivery: 75, delivered: 100, returned: 100, cancelled: 100,
+      pending: 10, received: 25, in_transit: 50, in_nicaragua: 65, out_for_delivery: 85, delivered: 100, returned: 100, cancelled: 100,
     };
     const pct = progress[status] || 0;
 
@@ -162,17 +164,19 @@ import Input from '../atoms/Input.astro';
     const safeAddress = hasToken ? escapeHtml(pkg.recipient_address as string) : '';
     const safeCity = hasToken ? escapeHtml((pkg.recipient_city as string) || (pkg.recipient_department as string) || '') : '';
     const safeStatusLabel = statusLabels[status] || escapeHtml(status);
+    const safeOrigin = pkg.origin === 'local' ? 'Directo en Nicaragua' : 'Compra online en Miami';
 
     const detailsHtml = hasToken ? `
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-sp-sm text-body-sm mb-sp-md">
         <div><span class="text-outline">Tracking:</span> <span class="font-mono font-bold">${safeTracking}</span></div>
+        <div><span class="text-outline">Origen:</span> ${safeOrigin}</div>
         <div><span class="text-outline">Destinatario:</span> ${safeRecipient}</div>
         <div><span class="text-outline">Dirección:</span> ${safeAddress}</div>
         <div><span class="text-outline">Ciudad:</span> ${safeCity}</div>
       </div>
     ` : `
       <div class="text-body-sm text-outline mb-sp-md">
-        <span class="font-mono font-bold">${safeTracking}</span>
+        <span class="font-mono font-bold">${safeTracking}</span> · ${safeOrigin}
       </div>
     `;
 

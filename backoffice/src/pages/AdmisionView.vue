@@ -73,6 +73,7 @@ function pricingRuleLabel(rule: PricingRule): string {
 // Form data
 const form = reactive({
   client_id: null as number | null,
+  origin: 'online' as 'online' | 'local',
   sender_name: '',
   sender_phone: '',
   recipient_name: '',
@@ -491,6 +492,7 @@ async function handleCreate() {
       recipient_phone: form.recipient_phone,
       recipient_address: form.recipient_address,
       delivery_option: form.delivery_option,
+      origin: form.origin,
     }
     if (form.shipping_service_id && currentShippingService.value) {
       payload.shipping_service = currentShippingService.value.name
@@ -541,6 +543,7 @@ function goToDetail() {
 
 function resetForm() {
   form.client_id = null
+  form.origin = 'online'
   form.sender_name = ''
   form.sender_phone = ''
   form.recipient_name = ''
@@ -691,6 +694,47 @@ onMounted(() => loadReferenceData())
                   <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="showClientCreate = false">Cancelar</button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Origen del envío -->
+          <div class="admin-card p-5">
+            <p class="admin-form-section mb-4">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h4l2 2h8a2 2 0 012 2v2M3 7v8a2 2 0 002 2h3m-9-2h3m0 0V9a2 2 0 012-2h10l3 3v3m-8 2v4h8v-4"/></svg>
+              Origen del envío</p>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                class="flex items-center gap-3 rounded-xl border p-4 text-left transition-colors"
+                :class="form.origin === 'online'
+                  ? 'border-[#00a8ff]/60 bg-[#00a8ff]/10'
+                  : 'border-[#1e293b] bg-transparent hover:border-[#334155]'"
+                @click="form.origin = 'online'"
+              >
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#00a8ff]/15 text-[#00a8ff]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                </span>
+                <span>
+                  <span class="block text-sm font-semibold text-[#dae2fd]">Compra online (Miami)</span>
+                  <span class="mt-0.5 block text-xs text-[#64748b]">Recibido en el almacén de Miami, viaja en embarque a Nicaragua</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                class="flex items-center gap-3 rounded-xl border p-4 text-left transition-colors"
+                :class="form.origin === 'local'
+                  ? 'border-[#00a8ff]/60 bg-[#00a8ff]/10'
+                  : 'border-[#1e293b] bg-transparent hover:border-[#334155]'"
+                @click="form.origin = 'local'"
+              >
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#00a8ff]/15 text-[#00a8ff]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 019.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10zM2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+                </span>
+                <span>
+                  <span class="block text-sm font-semibold text-[#dae2fd]">Directo Nicaragua</span>
+                  <span class="mt-0.5 block text-xs text-[#64748b]">Cliente llega a la oficina con el paquete, listo para entrega local</span>
+                </span>
+              </button>
             </div>
           </div>
 

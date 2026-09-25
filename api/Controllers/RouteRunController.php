@@ -332,8 +332,38 @@ class RouteRunController
         try {
             $result = $stopModel->generateFromPackages($runId, $packageIds);
             $this->applyCorridorOrder($run, $stopModel);
+
+            $packageModel = new \App\Models\PackageModel($db);
+            $outForDeliveryStatusId = $packageModel->getStatusId('out_for_delivery');
+            $trackingModel = new \App\Models\TrackingEventModel($db);
+            $notifiedPackages = [];
+
+            foreach ($result['created'] as $stop) {
+                $packageId = (int) $stop['package_id'];
+                $pkg = $packageModel->findById($packageId);
+                $currentStatus = $packageModel->getStatusName((int) ($pkg['status_id'] ?? 0));
+                if ($currentStatus === 'in_nicaragua' && $outForDeliveryStatusId !== null) {
+                    $packageModel->update($packageId, ['status_id' => $outForDeliveryStatusId]);
+                    $trackingModel->create([
+                        'package_id' => $packageId,
+                        'status' => 'out_for_delivery',
+                        'description' => 'Asignado al despacho ' . ($run['route_name'] ?? 'local') . ' — en ruta de entrega local',
+                        'recorded_at' => date('Y-m-d H:i:s'),
+                        'created_by' => (int) $payload['sub'],
+                    ]);
+                    $notifiedPackages[] = $pkg;
+                }
+            }
+
             $this->model->update($runId, ['optimized_geometry' => null]);
             $db->commit();
+
+            $notifier = new \App\Services\PackageNotifierService($db);
+            $descOut = 'Asignado al despacho ' . ($run['route_name'] ?? 'local') . ' — en ruta de entrega local';
+            foreach ($notifiedPackages as $pkg) {
+                $notifier->notifyStatusChange($pkg, 'in_nicaragua', 'out_for_delivery', $descOut);
+            }
+
             $updated = $stopModel->listByRun($runId);
             jsonSuccess(['stops' => $updated, 'created' => $result['created']], count($result['created']) . ' paradas generadas');
         } catch (\Throwable $e) {

@@ -42,7 +42,8 @@ export const packageService = {
     recipient_name: string; recipient_phone: string; recipient_address: string;
     recipient_city?: string; recipient_department?: string;
     description?: string; weight?: number; length?: number; width?: number; height?: number;
-    declared_value?: number; delivery_type?: string; zone_id?: number; notes?: string
+    declared_value?: number; delivery_type?: string; zone_id?: number; notes?: string;
+    origin?: 'online' | 'local'; local_delivery_type?: string; pricing_rule_id?: number
   }) {
     return api.post('/package/create.php', data)
   },

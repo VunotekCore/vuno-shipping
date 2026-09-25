@@ -234,9 +234,51 @@ export interface Package {
   assigned_to: number | null
   assigned_to_name: string | null
   notes: string | null
+  origin: 'online' | 'local'
   received_at: string | null
   delivered_at: string | null
   created_by: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ShipmentPackage {
+  id: number
+  tracking_number: string
+  tracking_token?: string
+  client_id: number | null
+  client_name: string | null
+  recipient_name: string
+  recipient_address: string | null
+  recipient_city: string | null
+  recipient_department: string | null
+  zone_id: number | null
+  zone_name: string | null
+  description: string | null
+  weight: number | null
+  chargeable_weight: number | null
+  flete_cost: number | null
+  delivery_cost: number | null
+  shipping_cost: number | null
+  shipping_service_name: string | null
+  status_id: number | null
+  status_name: string | null
+  origin: 'online' | 'local'
+  received_at: string | null
+}
+
+export interface Shipment {
+  id: number
+  code: string
+  mode: 'air' | 'sea'
+  status: 'draft' | 'in_transit' | 'arrived' | 'cancelled'
+  departure_date: string | null
+  arrival_date: string | null
+  notes: string | null
+  created_by: number | null
+  created_by_name: string | null
+  package_count: number
+  packages?: ShipmentPackage[]
   created_at: string
   updated_at: string
 }
@@ -317,7 +359,7 @@ export interface RouteRun {
   notes: string | null
   stop_count: number
   pending_stops: number
-  visited_stops: number
+  delivered_stops: number
   carried_over?: number
   stops?: RouteStop[]
   zones?: Zone[]

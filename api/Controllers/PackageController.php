@@ -7,8 +7,7 @@ use App\Models\PackageModel;
 use App\Models\TrackingEventModel;
 use App\Models\DocumentSequenceModel;
 use App\Services\PricingService;
-use App\Services\NotificationService;
-use App\Services\MailService;
+use App\Services\PackageNotifierService;
 use App\Config\Database;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
@@ -225,6 +224,27 @@ class PackageController
                 $insertData['status_id'] = $statusId;
             }
 
+            // Origin: compra online (Miami) vs directo en Nicaragua (local).
+            // - online: al admitirlo queda 'received' (recibido en almacen Miami).
+            // - local:  nace directo en 'in_nicaragua' (listo para entrega local).
+            $origin = ($data['origin'] ?? '') === 'local' ? 'local' : 'online';
+            $insertData['origin'] = $origin;
+
+            $statusName = 'received';
+            $statusDescription = 'Paquete recibido en almacén Miami';
+            if ($origin === 'local') {
+                $statusName = 'in_nicaragua';
+                $statusDescription = 'Paquete recibido en Nicaragua, listo para entrega local';
+            }
+
+            $initialStatusId = $this->model->getStatusId($statusName);
+            if ($initialStatusId !== null) {
+                $insertData['status_id'] = $initialStatusId;
+                if ($statusName === 'received') {
+                    $insertData['received_at'] = date('Y-m-d H:i:s');
+                }
+            }
+
             $pricingService = new PricingService();
 
             $zoneId = isset($data['zone_id']) ? (int) $data['zone_id'] : null;
@@ -277,8 +297,8 @@ class PackageController
             $trackingModel = new TrackingEventModel($db);
             $trackingModel->create([
                 'package_id' => $packageId,
-                'status' => 'pending',
-                'description' => 'Paquete registrado en el sistema',
+                'status' => $statusName,
+                'description' => $statusDescription,
                 'recorded_at' => date('Y-m-d H:i:s'),
                 'created_by' => (int) $payload['sub'],
             ]);
@@ -286,6 +306,10 @@ class PackageController
             $db->commit();
 
             $package = $this->model->findById($packageId);
+
+            $notifier = new PackageNotifierService($db);
+            $notifier->notifyStatusChange($package, 'pending', $statusName, $statusDescription);
+
             jsonSuccess(['package' => $package, 'pricing' => $pricing], 'Paquete creado', 201);
         } catch (\Throwable $e) {
             $db->rollBack();
@@ -442,8 +466,8 @@ class PackageController
         }
 
         $statusName = $this->model->getStatusName((int) $existing['status_id']);
-        if ($statusName !== null && $statusName !== 'pending') {
-            jsonError('Solo se pueden eliminar paquetes en estado pendiente', 409);
+        if ($statusName !== null && !in_array($statusName, ['pending', 'received', 'in_nicaragua'], true)) {
+            jsonError('Solo se pueden eliminar paquetes pendientes, recibidos en Miami o recibidos en Nicaragua', 409);
         }
 
         $this->model->delete($id);
@@ -549,51 +573,8 @@ class PackageController
 
             $updated = $this->model->findById($id);
 
-            try {
-                $statusLabels = [
-                    'pending' => 'Pendiente',
-                    'received' => 'Recibido en bodega',
-                    'in_transit' => 'En tránsito',
-                    'out_for_delivery' => 'En ruta de entrega',
-                    'delivered' => 'Entregado',
-                    'returned' => 'Devuelto',
-                    'cancelled' => 'Cancelado',
-                    'disputed' => 'En disputa',
-                ];
-                $oldLabel = $statusLabels[$currentStatusName] ?? $currentStatusName;
-                $newLabel = $statusLabels[$newStatus] ?? $newStatus;
-                $msg = "{$oldLabel} → {$newLabel}";
-
-                $notifSvc = new NotificationService($db);
-                $notifSvc->create(
-                    $id,
-                    'status_change',
-                    "Paquete {$updated['tracking_number']}: {$newLabel}",
-                    $msg
-                );
-
-                $clientEmail = $updated['client_email'] ?? null;
-                if ($clientEmail) {
-                    $baseUrl = (config()['app']['base_url'] ?? 'http://localhost:4321');
-                    $trackingUrl = rtrim($baseUrl, '/') . '/rastreo?tracking=' . rawurlencode($updated['tracking_number']);
-                    if (!empty($updated['tracking_token'])) {
-                        $trackingUrl .= '&token=' . rawurlencode($updated['tracking_token']);
-                    }
-
-                    $mailSvc = new MailService();
-                    $mailSvc->sendStatusChange(
-                        $clientEmail,
-                        $updated['client_name'] ?? 'Cliente',
-                        $updated['tracking_number'],
-                        $trackingUrl,
-                        $currentStatusName,
-                        $newStatus,
-                        $data['description'] ?? null
-                    );
-                }
-            } catch (\Throwable $e) {
-                apiLog('ERROR', 'Post-status notification failed: ' . $e->getMessage());
-            }
+            $notifier = new PackageNotifierService($db);
+            $notifier->notifyStatusChange($updated, $currentStatusName, $newStatus, $data['description'] ?? null);
 
             jsonSuccess(['package' => $updated], 'Estado actualizado');
         } catch (\Throwable $e) {

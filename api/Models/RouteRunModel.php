@@ -71,7 +71,7 @@ class RouteRunModel
                    rr.created_at, rr.updated_at,
                    (SELECT COUNT(*) FROM route_stop WHERE route_run_id = rr.id) AS stop_count,
                    (SELECT COUNT(*) FROM route_stop WHERE route_run_id = rr.id AND status_id = (SELECT id FROM route_stop_status WHERE name = 'pending')) AS pending_stops,
-                   (SELECT COUNT(*) FROM route_stop WHERE route_run_id = rr.id AND status_id = (SELECT id FROM route_stop_status WHERE name = 'visited')) AS visited_stops
+                   (SELECT COUNT(*) FROM route_stop WHERE route_run_id = rr.id AND status_id = (SELECT id FROM route_stop_status WHERE name = 'delivered')) AS delivered_stops
             FROM route_run rr
             JOIN delivery_route dr ON dr.id = rr.route_id
             LEFT JOIN `user` u ON u.id = rr.assigned_to
@@ -101,7 +101,7 @@ class RouteRunModel
                    rs.name AS status_name,
                    (SELECT COUNT(*) FROM route_stop WHERE route_run_id = rr.id) AS stop_count,
                    (SELECT COUNT(*) FROM route_stop WHERE route_run_id = rr.id AND status_id = (SELECT id FROM route_stop_status WHERE name = 'pending')) AS pending_stops,
-                   (SELECT COUNT(*) FROM route_stop WHERE route_run_id = rr.id AND status_id = (SELECT id FROM route_stop_status WHERE name = 'visited')) AS visited_stops
+                   (SELECT COUNT(*) FROM route_stop WHERE route_run_id = rr.id AND status_id = (SELECT id FROM route_stop_status WHERE name = 'delivered')) AS delivered_stops
             FROM route_run rr
             JOIN delivery_route dr ON dr.id = rr.route_id
             LEFT JOIN `user` u ON u.id = rr.assigned_to
@@ -184,8 +184,7 @@ class RouteRunModel
             LEFT JOIN package_status ps ON ps.id = p.status_id
             LEFT JOIN `user` u ON u.id = p.assigned_to
             WHERE p.zone_id IN (SELECT zone_id FROM route_zone WHERE route_id = :route_id)
-              AND (p.status_id = (SELECT id FROM package_status WHERE name = 'pending')
-                   OR p.status_id = (SELECT id FROM package_status WHERE name = 'received'))
+              AND p.status_id = (SELECT id FROM package_status WHERE name = 'in_nicaragua')
               AND NOT EXISTS (
                   SELECT 1 FROM route_stop rs
                   WHERE rs.route_run_id = :exclude_run_id AND rs.package_id = p.id
@@ -195,16 +194,18 @@ class RouteRunModel
                   JOIN route_run rr2 ON rr2.id = rs2.route_run_id
                   LEFT JOIN route_status rrs2 ON rrs2.id = rr2.status_id
                   WHERE rs2.package_id = p.id
-                    AND rr2.id != :exclude_run_id
+                    AND rr2.id != :exclude_run_id2
                     AND rrs2.name IN ('draft', 'active')
               )
             ORDER BY
-                (SELECT rz.position FROM route_zone rz WHERE rz.route_id = :route_id AND rz.zone_id = p.zone_id LIMIT 1) ASC,
+                (SELECT rz.position FROM route_zone rz WHERE rz.route_id = :route_id2 AND rz.zone_id = p.zone_id LIMIT 1) ASC,
                 p.created_at DESC
         ");
         $stmt->execute([
             'route_id' => $routeId,
+            'route_id2' => $routeId,
             'exclude_run_id' => $excludeRunId,
+            'exclude_run_id2' => $excludeRunId,
         ]);
         return $stmt->fetchAll();
     }

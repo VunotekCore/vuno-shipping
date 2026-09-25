@@ -207,8 +207,9 @@ ON DUPLICATE KEY UPDATE name = VALUES(name), type_id = VALUES(type_id), delivery
 
 INSERT INTO package_status (name, description) VALUES
 ('pending', 'Paquete registrado, pendiente de recepción'),
-('received', 'Recibido en bodega'),
-('in_transit', 'En tránsito al destino'),
+('received', 'Recibido en almacén Miami'),
+('in_transit', 'En tránsito a Nicaragua (aduana incluida)'),
+('in_nicaragua', 'Recibido en Nicaragua, listo para entrega local'),
 ('out_for_delivery', 'En ruta de entrega'),
 ('delivered', 'Entregado al destinatario'),
 ('returned', 'Devuelto al remitente'),
@@ -221,13 +222,15 @@ ON DUPLICATE KEY UPDATE description = VALUES(description);
 INSERT INTO package_status_transition (from_status, to_status) VALUES
 ('pending', 'received'),
 ('received', 'in_transit'),
-('in_transit', 'out_for_delivery'),
+('received', 'cancelled'),
+('in_transit', 'in_nicaragua'),
+('in_nicaragua', 'out_for_delivery'),
+('in_nicaragua', 'cancelled'),
 ('out_for_delivery', 'delivered'),
 ('out_for_delivery', 'returned'),
 ('delivered', 'disputed'),
 ('returned', 'disputed'),
-('pending', 'cancelled'),
-('received', 'cancelled')
+('pending', 'cancelled')
 ON DUPLICATE KEY UPDATE to_status = VALUES(to_status);
 
 -- === Vehicle Statuses ===

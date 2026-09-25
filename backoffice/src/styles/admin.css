@@ -163,6 +163,24 @@ select.admin-input {
 .admin-btn-danger:hover:not(:disabled) {
   background: #b91c1c;
 }
+.admin-btn-secondary {
+  background: transparent;
+  color: #94a3b8;
+  border-color: #334155;
+}
+.admin-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: #dae2fd;
+  border-color: #475569;
+}
+.admin-btn-success {
+  background: #69dca4;
+  color: #04120a;
+  border-color: #69dca4;
+}
+.admin-btn-success:hover:not(:disabled) {
+  background: #4ed58f;
+}
 .admin-btn-ghost {
   background: transparent;
   color: #94a3b8;

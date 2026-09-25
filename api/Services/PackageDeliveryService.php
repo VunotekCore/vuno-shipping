@@ -68,36 +68,7 @@ class PackageDeliveryService
      */
     public function notifyDelivered(array $package, string $oldStatus, ?string $description): void
     {
-        try {
-            $notifSvc = new NotificationService($this->db);
-            $notifSvc->create(
-                (int) $package['id'],
-                'status_change',
-                "Paquete {$package['tracking_number']}: Entregado",
-                $description !== null ? "Entregado — {$description}" : 'Entregado'
-            );
-
-            $clientEmail = $package['client_email'] ?? null;
-            if ($clientEmail) {
-                $baseUrl = (config()['app']['base_url'] ?? 'http://localhost:4321');
-                $trackingUrl = rtrim($baseUrl, '/') . '/rastreo?tracking=' . rawurlencode($package['tracking_number']);
-                if (!empty($package['tracking_token'])) {
-                    $trackingUrl .= '&token=' . rawurlencode($package['tracking_token']);
-                }
-
-                $mailSvc = new MailService();
-                $mailSvc->sendStatusChange(
-                    $clientEmail,
-                    $package['client_name'] ?? 'Cliente',
-                    $package['tracking_number'],
-                    $trackingUrl,
-                    $oldStatus,
-                    'delivered',
-                    $description
-                );
-            }
-        } catch (\Throwable $e) {
-            apiLog('ERROR', 'Post-delivery notification failed: ' . $e->getMessage());
-        }
+        $notifier = new PackageNotifierService($this->db);
+        $notifier->notifyStatusChange($package, $oldStatus, 'delivered', $description);
     }
 }

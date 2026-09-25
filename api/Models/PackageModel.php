@@ -86,7 +86,7 @@ class PackageModel
                    p.shipping_service_id, ss.name AS shipping_service_name,
                    p.delivery_option_id, dopt.name AS delivery_option_name,
                    p.assigned_to, u.name AS assigned_to_name,
-                   p.received_at, p.delivered_at, p.created_at
+                   p.origin, p.received_at, p.delivered_at, p.created_at
             FROM package p
             LEFT JOIN client c ON c.id = p.client_id
             LEFT JOIN zone z ON z.id = p.zone_id
@@ -166,14 +166,14 @@ class PackageModel
              zone_id, description, weight, length, width, height,
              volumetric_weight, chargeable_weight, declared_value, flete_cost, delivery_cost, shipping_cost,
              pricing_rule_id, delivery_type_id, delivery_option, local_delivery_type_id,
-             shipping_service_id, delivery_option_id, pricing_type, status_id, assigned_to, notes, created_by)
+             shipping_service_id, delivery_option_id, pricing_type, status_id, assigned_to, notes, origin, created_by)
              VALUES (:tracking_number, :tracking_token, :client_id, :sender_name, :sender_phone,
              :recipient_name, :recipient_phone, :recipient_address, :recipient_city, :recipient_department,
              :latitude, :longitude,
              :zone_id, :description, :weight, :length, :width, :height,
              :volumetric_weight, :chargeable_weight, :declared_value, :flete_cost, :delivery_cost, :shipping_cost,
              :pricing_rule_id, :delivery_type_id, :delivery_option, :local_delivery_type_id,
-             :shipping_service_id, :delivery_option_id, :pricing_type, :status_id, :assigned_to, :notes, :created_by)'
+             :shipping_service_id, :delivery_option_id, :pricing_type, :status_id, :assigned_to, :notes, :origin, :created_by)'
         );
         $stmt->execute([
             'tracking_number' => $data['tracking_number'],
@@ -210,6 +210,7 @@ class PackageModel
             'status_id' => $data['status_id'] ?? null,
             'assigned_to' => $data['assigned_to'] ?? null,
             'notes' => $data['notes'] ?? null,
+            'origin' => $data['origin'] ?? 'online',
             'created_by' => $data['created_by'] ?? null,
         ]);
         return (int) $this->db->lastInsertId();
@@ -227,9 +228,9 @@ class PackageModel
                    'weight', 'length', 'width', 'height',
                    'volumetric_weight', 'chargeable_weight', 'declared_value',
                    'flete_cost', 'delivery_cost', 'shipping_cost',
-                   'pricing_rule_id', 'delivery_type_id', 'delivery_option', 'local_delivery_type_id',
-                   'shipping_service_id', 'delivery_option_id', 'pricing_type', 'status_id', 'assigned_to',
-                   'notes', 'received_at', 'delivered_at'] as $field) {
+'pricing_rule_id', 'delivery_type_id', 'delivery_option', 'local_delivery_type_id',
+                    'shipping_service_id', 'delivery_option_id', 'pricing_type', 'status_id', 'assigned_to',
+                    'notes', 'origin', 'received_at', 'delivered_at'] as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = :$field";
                 $params[$field] = $data[$field];
@@ -297,5 +298,58 @@ class PackageModel
         $stmt = $this->db->prepare('SELECT name FROM package_status WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $statusId]);
         return $stmt->fetchColumn() ?: null;
+    }
+
+    /**
+     * Paquetes candidatos para ser agregados a un embarque: estado received, sin
+     * embarque asignado y del servicio internacional compatible con el modo del
+     * embarque (air|sea). Opcionalmente filtra por query de tracking/nombre.
+     */
+    public function findEligibleForShipment(?string $q = null, ?string $mode = null, int $limit = 500): array
+    {
+        $where = ['ps.name = :status'];
+        $params = ['status' => 'received'];
+
+        $serviceJoin = ' LEFT JOIN shipping_service ss ON ss.id = p.shipping_service_id';
+        if ($mode === 'air' || $mode === 'sea') {
+            $serviceJoin .= ' INNER JOIN delivery_type sdt ON sdt.id = ss.delivery_type_id';
+            $where[] = "sdt.category = 'international'";
+            $where[] = 'sdt.name = :mode_name';
+            $params['mode_name'] = $mode === 'sea' ? 'maritimo' : 'aereo';
+        }
+
+        if ($q !== null && trim($q) !== '') {
+            $like = '%' . $q . '%';
+            $where[] = '(p.tracking_number LIKE :q1 OR p.recipient_name LIKE :q2 OR c.name LIKE :q3)';
+            $params['q1'] = $like;
+            $params['q2'] = $like;
+            $params['q3'] = $like;
+        }
+
+        $whereClause = implode(' AND ', $where);
+        $stmt = $this->db->prepare("
+            SELECT p.id, p.tracking_number, p.tracking_token, p.client_id, c.name AS client_name,
+                   p.recipient_name, p.recipient_address, p.recipient_city, p.recipient_department,
+                   p.zone_id, z.name AS zone_name,
+                   p.description, p.weight, p.chargeable_weight,
+                   p.flete_cost, p.delivery_cost, p.shipping_cost,
+                   p.status_id, ps.name AS status_name, p.origin, p.received_at,
+                   ss.name AS shipping_service_name
+            FROM package p
+            LEFT JOIN client c ON c.id = p.client_id
+            LEFT JOIN package_status ps ON ps.id = p.status_id
+            LEFT JOIN zone z ON z.id = p.zone_id
+            {$serviceJoin}
+            WHERE {$whereClause}
+              AND NOT EXISTS (SELECT 1 FROM shipment_package sp WHERE sp.package_id = p.id)
+            ORDER BY p.created_at DESC
+            LIMIT :limit
+        ");
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 }

@@ -94,6 +94,12 @@ const router = createRouter({
           meta: { permission: 'package', action: 'read' },
         },
         {
+          path: 'embarques',
+          name: 'embarques',
+          component: () => import('../pages/ShipmentsView.vue'),
+          meta: { permission: 'shipment', action: 'read' },
+        },
+        {
           path: 'clients',
           name: 'clients',
           component: () => import('../pages/ClientsView.vue'),

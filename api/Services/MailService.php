@@ -55,8 +55,9 @@ class MailService
 
             $labels = [
                 'pending' => 'Pendiente',
-                'received' => 'Recibido en bodega',
-                'in_transit' => 'En tránsito',
+                'received' => 'Recibido en almacén Miami',
+                'in_transit' => 'En tránsito a Nicaragua',
+                'in_nicaragua' => 'Recibido en Nicaragua',
                 'out_for_delivery' => 'En ruta de entrega',
                 'delivered' => 'Entregado',
                 'returned' => 'Devuelto',

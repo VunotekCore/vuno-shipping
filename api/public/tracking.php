@@ -25,7 +25,7 @@ $stmt = $db->prepare("
            ldt.name AS local_delivery_type_name,
            ss.name AS shipping_service_name,
            dopt.name AS delivery_option_name,
-           p.received_at, p.delivered_at, p.created_at
+           p.received_at, p.delivered_at, p.created_at, p.origin
     FROM package p
     LEFT JOIN package_status ps ON ps.id = p.status_id
     LEFT JOIN delivery_type dt ON dt.id = p.delivery_type_id
