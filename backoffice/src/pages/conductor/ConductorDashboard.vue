@@ -202,17 +202,38 @@ onMounted(() => load())
 
       <!-- GPS warning -->
       <div
-        v-if="gpsWarning"
-        class="flex items-start gap-3 rounded-2xl border border-[#eab308]/30 bg-[#eab308]/10 p-4"
+        v-if="gpsWarning || geo.geoError.value"
+        class="flex items-start gap-3 rounded-2xl border p-4"
+        :class="geo.geoError.value ? 'border-[#DC2626]/40 bg-[#DC2626]/10' : 'border-[#eab308]/30 bg-[#eab308]/10'"
         role="alert"
       >
         <svg class="mt-0.5 shrink-0 text-[#eab308]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="9" />
           <path d="M12 8h.01M12 12v4" />
         </svg>
-        <div>
-          <p class="text-sm font-semibold text-[#fde68a]">GPS apagado</p>
-          <p class="text-xs text-[#ca8a04]">Activá la ubicación desde el menú inferior para registrar tu recorrido en tiempo real.</p>
+        <div class="flex-1">
+          <p class="text-sm font-semibold" :class="geo.geoError.value ? 'text-[#fca5a5]' : 'text-[#fde68a]'">
+            {{ geo.geoError.value ? 'No se pudo activar el GPS' : 'GPS apagado' }}
+          </p>
+          <p class="text-xs" :class="geo.geoError.value ? 'text-[#DC2626]' : 'text-[#ca8a04]'">
+            {{ geo.geoError.value || 'Activá tu ubicación para registrar el recorrido en tiempo real. El navegador te pedirá permiso de geolocalización.' }}
+          </p>
+          <button
+            v-if="geo.geoError.value"
+            class="mt-2 text-xs font-medium text-[#fca5a5] underline underline-offset-2"
+            @click="geo.geoError.value = ''"
+          >
+            Entendido
+          </button>
+          <button
+            v-else
+            class="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#eab308] px-3 py-1.5 text-xs font-semibold text-[#0b1326] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="!geo.supported"
+            @click="geo.start()"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>
+            Activar GPS
+          </button>
         </div>
       </div>
 

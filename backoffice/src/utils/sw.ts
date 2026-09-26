@@ -1,11 +1,9 @@
 // Registro centralizado del Service Worker.
-// En dev, Vite sirve public/ en la raiz (/sw-geolocation.js). En produccion, el SW
-// vive bajo /backoffice/ con scope restringido a esa ruta.
+// Vite tiene base: '/backoffice/', por lo que public/ se sirve bajo /backoffice/
+// tanto en dev como en produccion. Usamos siempre ese path con scope restringido.
 
-const SW_PATH = import.meta.env.DEV ? '/sw-geolocation.js' : '/backoffice/sw-geolocation.js'
-const SW_OPTIONS: RegistrationOptions = import.meta.env.DEV
-  ? {}
-  : { scope: '/backoffice/' }
+const SW_PATH = '/backoffice/sw-geolocation.js'
+const SW_OPTIONS: RegistrationOptions = { scope: '/backoffice/' }
 const SW_READY_TIMEOUT_MS = 3000
 
 let readyPromise: Promise<boolean> | null = null

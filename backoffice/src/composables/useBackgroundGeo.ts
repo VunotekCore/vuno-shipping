@@ -26,6 +26,7 @@ const swActive = ref(false)
 const lastFix = ref<GeoFix | null>(null)
 const lastSyncAt = ref<string | null>(null)
 const swReady = ref(false)
+const geoError = ref('')
 
 let watchId: number | null = null
 let postTimer: number | null = null
@@ -33,6 +34,32 @@ let csrfTimer: number | null = null
 let wakeLock: any = null
 let lastCsrf = ''
 let batteryLevel: number | null = null
+
+function clearTrackers() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId)
+    watchId = null
+  }
+  if (postTimer !== null) {
+    clearInterval(postTimer)
+    postTimer = null
+  }
+  if (csrfTimer !== null) {
+    clearInterval(csrfTimer)
+    csrfTimer = null
+  }
+  releaseWakeLock()
+}
+
+function failGeo(message: string) {
+  tracking.value = false
+  swActive.value = false
+  queueCount.value = 0
+  clearTrackers()
+  geoError.value = message
+  sendMessage({ type: 'STOP_GEO' })
+  console.debug('[geo] error:', message)
+}
 
 function readCsrfToken(): string {
   const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/)
@@ -148,11 +175,12 @@ async function registerSw(): Promise<boolean> {
 export function useBackgroundGeo() {
   async function start() {
     if (!supported || tracking.value) return
+    geoError.value = ''
     const ok = await registerSw()
-    if (!ok) return
-
-    tracking.value = true
-    queueCount.value = 0
+    if (!ok) {
+      failGeo('No se pudo registrar el Service Worker del dispositivo')
+      return
+    }
 
     initBattery()
     await requestWakeLock()
@@ -167,17 +195,28 @@ export function useBackgroundGeo() {
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
         onGeolocationUpdate(pos)
+        if (!tracking.value) {
+          tracking.value = true
+          geoError.value = ''
+          swActive.value = true
+          postTimer = window.setInterval(() => {
+            sendCurrentPosition()
+          }, POST_INTERVAL_MS)
+          csrfTimer = window.setInterval(pollCsrf, CSRF_POLL_MS)
+        }
         sendCurrentPosition()
       },
-      () => {},
+      (err) => {
+        const msg =
+          err.code === err.PERMISSION_DENIED
+            ? 'Permiso de ubicación bloqueado. Habilitalo en los ajustes del navegador (candado junto a la URL).'
+            : err.code === err.POSITION_UNAVAILABLE
+              ? 'Ubicación no disponible en este dispositivo.'
+              : 'La solicitud de ubicación excedió el tiempo de espera.'
+        failGeo(msg)
+      },
       { enableHighAccuracy: true, timeout: 30000, maximumAge: 30000 }
     )
-
-    postTimer = window.setInterval(() => {
-      sendCurrentPosition()
-    }, POST_INTERVAL_MS)
-
-    csrfTimer = window.setInterval(pollCsrf, CSRF_POLL_MS)
   }
 
   function stop() {
@@ -185,20 +224,7 @@ export function useBackgroundGeo() {
     tracking.value = false
     swActive.value = false
     queueCount.value = 0
-
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId)
-      watchId = null
-    }
-    if (postTimer !== null) {
-      clearInterval(postTimer)
-      postTimer = null
-    }
-    if (csrfTimer !== null) {
-      clearInterval(csrfTimer)
-      csrfTimer = null
-    }
-    releaseWakeLock()
+    clearTrackers()
     sendMessage({ type: 'STOP_GEO' })
 
     // Notificar inactivo al backend
@@ -219,6 +245,7 @@ export function useBackgroundGeo() {
     queueCount,
     lastFix,
     lastSyncAt,
+    geoError,
     start,
     stop,
     flush,
