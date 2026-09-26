@@ -131,6 +131,7 @@ class PermissionModel
             'permission', 'token_blacklist', 'refresh_tokens',
             'route_status', 'route_zone', 'route_run', 'route_stop_status',
             'route_stop', 'driver_location', 'location_history',
+            'push_subscription',
         ];
         $singleRecordModules = ['company'];
 

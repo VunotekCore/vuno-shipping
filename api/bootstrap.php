@@ -55,6 +55,11 @@ config([
         'from'       => $_ENV['MAIL_FROM'] ?? '',
         'from_name'  => $_ENV['MAIL_FROM_NAME'] ?? 'Vuno Web Shipping',
     ],
+    'push' => [
+        'vapid_public_key'  => $_ENV['VAPID_PUBLIC_KEY'] ?? '',
+        'vapid_private_key' => $_ENV['VAPID_PRIVATE_KEY'] ?? '',
+        'vapid_subject'     => $_ENV['VAPID_SUBJECT'] ?? 'mailto:notificaciones@vunotek.com',
+    ],
     'trusted_proxies' => array_map('trim', explode(',', $_ENV['TRUSTED_PROXIES'] ?? '')),
 ]);
 

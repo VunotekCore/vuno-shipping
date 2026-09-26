@@ -7,6 +7,8 @@ use App\Models\RouteRunModel;
 use App\Models\RouteModel;
 use App\Models\RouteStopModel;
 use App\Config\Database;
+use App\Services\PushService;
+use App\Models\PushSubscriptionModel;
 
 class RouteRunController
 {
@@ -134,6 +136,16 @@ class RouteRunController
             $run['zones'] = $routeModel->getZones($routeId);
             $run['carried_over'] = count($carriedOver['created']);
 
+            if ($assignedTo !== null) {
+                $this->notifyDriver(
+                    $assignedTo,
+                    'Nuevo despacho asignado',
+                    ($run['route_name'] ?? 'Ruta') . ' — ' . $runDate,
+                    '/backoffice/conductor',
+                    'run-assigned'
+                );
+            }
+
             jsonSuccess(['run' => $run, 'carried_over' => count($carriedOver['created'])], count($carriedOver['created']) . ' paquetes arrastrados', 201);
         } catch (\Throwable $e) {
             $db->rollBack();
@@ -181,6 +193,20 @@ class RouteRunController
 
         $this->model->update($id, $updateData);
         $run = $this->model->findById($id);
+
+        if (array_key_exists('assigned_to', $updateData)) {
+            $newDriver = $updateData['assigned_to'] !== null ? (int) $updateData['assigned_to'] : null;
+            $oldDriver = isset($existing['assigned_to']) ? (int) $existing['assigned_to'] : null;
+            if ($newDriver !== null && $newDriver !== $oldDriver) {
+                $this->notifyDriver(
+                    $newDriver,
+                    'Despacho asignado a vos',
+                    ($run['route_name'] ?? 'Ruta') . ' — ' . ($run['run_date'] ?? ''),
+                    '/backoffice/conductor',
+                    'run-assigned'
+                );
+            }
+        }
 
         jsonSuccess(['run' => $run], 'Despacho actualizado');
     }
@@ -278,6 +304,24 @@ class RouteRunController
         $this->model->update($id, $updateData);
         $run = $this->model->findById($id);
 
+        $driverId = isset($run['assigned_to']) ? (int) $run['assigned_to'] : null;
+        if ($driverId !== null && $driverId > 0) {
+            $statusMsg = match ($newStatus) {
+                'active' => 'Jornada iniciada',
+                'completed' => 'Jornada terminada',
+                'cancelled' => 'Despacho cancelado',
+                'draft' => 'Despacho reactivado',
+                default => 'Estado actualizado',
+            };
+            $this->notifyDriver(
+                $driverId,
+                $statusMsg,
+                ($run['route_name'] ?? 'Ruta') . ' — ' . ($run['run_date'] ?? ''),
+                '/backoffice/conductor',
+                'run-status'
+            );
+        }
+
         jsonSuccess(['run' => $run], 'Estado actualizado');
     }
 
@@ -362,6 +406,17 @@ class RouteRunController
             $descOut = 'Asignado al despacho ' . ($run['route_name'] ?? 'local') . ' — en ruta de entrega local';
             foreach ($notifiedPackages as $pkg) {
                 $notifier->notifyStatusChange($pkg, 'in_nicaragua', 'out_for_delivery', $descOut);
+            }
+
+            $driverId = isset($run['assigned_to']) ? (int) $run['assigned_to'] : null;
+            if ($driverId !== null && $driverId > 0) {
+                $this->notifyDriver(
+                    $driverId,
+                    'Paradas asignadas a tu ruta',
+                    'Se generaron ' . count($result['created']) . ' paradas para ' . ($run['route_name'] ?? 'tu ruta'),
+                    '/backoffice/conductor',
+                    'run-stops'
+                );
             }
 
             $updated = $stopModel->listByRun($runId);
@@ -716,5 +771,15 @@ class RouteRunController
         }
 
         return $best !== null ? $best[0] : 0.0;
+    }
+
+    private function notifyDriver(int $driverId, string $title, string $body, string $url, string $tag): void
+    {
+        try {
+            $push = new PushService(new PushSubscriptionModel(Database::getConnection()));
+            $push->sendToUser($driverId, $title, $body, $url, $tag);
+        } catch (\Throwable $e) {
+            apiLog('ERROR', 'Route run push failed: ' . $e->getMessage());
+        }
     }
 }
