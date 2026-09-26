@@ -1,20 +1,14 @@
 import { ref } from 'vue'
 import { driverLocationService } from '../services/routeService'
+import { registerAppSw } from '../utils/sw'
 
 // useBackgroundGeo — singleton para tracking de geolocalizacion del conductor.
 // La pagina mantiene watchPosition (la geolocalizacion es una API DOM, no disponible
 // en el Service Worker). El SW (sw-geolocation.js) se encarga de cola offline +
 // background sync + retry cuando la pagina pierde red o se cierra.
 
-// En dev, Vite sirve public/ en la raiz (/sw-geolocation.js). En produccion, el SW
-// vive bajo /backoffice/ con scope restringido a esa ruta.
-const SW_PATH = import.meta.env.DEV ? '/sw-geolocation.js' : '/backoffice/sw-geolocation.js'
-const SW_OPTIONS: RegistrationOptions = import.meta.env.DEV
-  ? {}
-  : { scope: '/backoffice/' }
 const POST_INTERVAL_MS = 30000
 const CSRF_POLL_MS = 60000
-const SW_READY_TIMEOUT_MS = 3000
 
 interface GeoFix {
   latitude: number
@@ -143,23 +137,12 @@ function onMessage(event: MessageEvent) {
 }
 
 async function registerSw(): Promise<boolean> {
-  if (!('serviceWorker' in navigator)) return false
+  const ok = await registerAppSw()
+  if (!ok) return false
   if (swReady.value) return true
-  try {
-    const reg = await navigator.serviceWorker.getRegistration(SW_PATH)
-    if (!reg) {
-      await navigator.serviceWorker.register(SW_PATH, SW_OPTIONS)
-    }
-    navigator.serviceWorker.addEventListener('message', onMessage)
-    await Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise((resolve) => setTimeout(resolve, SW_READY_TIMEOUT_MS)),
-    ])
-    swReady.value = true
-    return true
-  } catch (e) {
-    return false
-  }
+  navigator.serviceWorker.addEventListener('message', onMessage)
+  swReady.value = true
+  return true
 }
 
 export function useBackgroundGeo() {

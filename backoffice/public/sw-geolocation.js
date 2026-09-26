@@ -8,7 +8,20 @@ const CONFIG = {
   APP_PREFIX: '/backoffice/',
   SYNC_TAG: 'geo-sync',
   MAX_QUEUE: 200,
-  CACHE_NAME: 'geo-shell-v1',
+  CACHE_NAME: 'geo-shell-v2',
+}
+
+function isDevHost() {
+  const host = self.location.hostname
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1'
+}
+
+// En dev no cachear el app shell (vite sirve modulos .ts/.vue con HMR).
+function shouldCacheGet(url) {
+  if (isDevHost()) return false
+  if (url.pathname.endsWith('sw-geolocation.js')) return false
+  if (/\/@vite\/|\/@fs\/|\/@id\/|\.ts$|\.vue$/.test(url.pathname)) return false
+  return true
 }
 
 // --- IndexedDB helpers (kv + queue) ---
@@ -176,6 +189,60 @@ self.addEventListener('periodicsync', (e) => {
   if (e.tag === CONFIG.SYNC_TAG) e.waitUntil(flushQueue())
 })
 
+// --- Push notifications ---
+function pushUrl(url) {
+  if (!url) return '/backoffice/conductor'
+  if (url.startsWith('http')) return url
+  return url.startsWith('/') ? url : '/' + url
+}
+
+self.addEventListener('push', (e) => {
+  let payload = {}
+  try {
+    payload = e.data ? e.data.json() : {}
+  } catch (err) {
+    payload = { title: 'Notificación', body: '' }
+  }
+  const title = payload.title || 'Shipping Agency'
+  const options = {
+    body: payload.body || '',
+    icon: self.location.origin + '/favicon.svg',
+    badge: self.location.origin + '/favicon.svg',
+    data: { url: pushUrl(payload.url) },
+    tag: payload.tag || 'shipping-push',
+  }
+  e.waitUntil(self.registration.showNotification(title, options))
+})
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  const targetUrl = e.notification.data && e.notification.data.url
+    ? e.notification.data.url
+    : '/backoffice/conductor'
+
+  const fullUrl = new URL(targetUrl, self.location.origin).href
+
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        try {
+          const clientUrl = new URL(client.url)
+          if (clientUrl.origin === self.location.origin) {
+            client.navigate(fullUrl)
+            return client.focus()
+          }
+        } catch (err) { /* ignorar */ }
+      }
+      return self.clients.openWindow(fullUrl)
+    })
+  )
+})
+
+self.addEventListener('pushsubscriptionchange', () => {
+  // La pagina re-suscribe (necesita la VAPID key + CSRF desde la sesion).
+  notify({ type: 'PUSH_SUB_CHANGED' })
+})
+
 // --- Fetch ---
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url)
@@ -191,7 +258,7 @@ self.addEventListener('fetch', (e) => {
     e.request.method === 'GET' &&
     url.origin === self.location.origin &&
     url.pathname.startsWith(CONFIG.APP_PREFIX) &&
-    !url.pathname.endsWith('sw-geolocation.js')
+    shouldCacheGet(url)
   ) {
     // Navegacion: network-first (siempre HTML fresco, cache como fallback)
     if (e.request.mode === 'navigate') {
