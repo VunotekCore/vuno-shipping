@@ -2,11 +2,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { driverLocationService, routeRunService, type RouteRun, type RouteStop } from '../../services/routeService'
+import { useBackgroundGeo } from '../../composables/useBackgroundGeo'
 import { useToast } from '../../composables/useToast'
 import { statusLabel } from '../../utils/format'
 
 const router = useRouter()
 const toast = useToast()
+const geo = useBackgroundGeo()
 
 const loading = ref(true)
 const starting = ref(false)
@@ -37,6 +39,8 @@ async function load() {
 const isDraft = computed(() => routeData.value?.status_name === 'draft')
 const canOperate = computed(() => routeData.value?.status_name === 'active')
 
+const gpsWarning = computed(() => canOperate.value && !geo.tracking.value)
+
 async function startJourney() {
   const run = routeData.value
   if (!run) return
@@ -45,6 +49,7 @@ async function startJourney() {
     const res = await routeRunService.updateStatus(run.id, 'active')
     routeData.value = res.data.data.run
     toast.success('Jornada iniciada — el despacho ahora está en curso')
+    geo.start()
   } catch (e: any) {
     toast.error(e?.response?.data?.error || 'Error al iniciar la jornada')
   } finally {
@@ -70,6 +75,7 @@ async function finishJourney() {
   try {
     const res = await routeRunService.updateStatus(run.id, 'completed')
     routeData.value = res.data.data.run
+    geo.stop()
     toast.success('Jornada terminada — el despacho fue marcado como completado')
   } catch (e: any) {
     toast.error(e?.response?.data?.error || 'Error al terminar la jornada')
@@ -191,6 +197,22 @@ onMounted(() => load())
           >
             {{ finishing ? 'Terminando...' : 'Terminar jornada' }}
           </button>
+        </div>
+      </div>
+
+      <!-- GPS warning -->
+      <div
+        v-if="gpsWarning"
+        class="flex items-start gap-3 rounded-2xl border border-[#eab308]/30 bg-[#eab308]/10 p-4"
+        role="alert"
+      >
+        <svg class="mt-0.5 shrink-0 text-[#eab308]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8h.01M12 12v4" />
+        </svg>
+        <div>
+          <p class="text-sm font-semibold text-[#fde68a]">GPS apagado</p>
+          <p class="text-xs text-[#ca8a04]">Activá la ubicación desde el menú inferior para registrar tu recorrido en tiempo real.</p>
         </div>
       </div>
 
