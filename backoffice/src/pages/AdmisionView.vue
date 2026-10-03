@@ -17,6 +17,7 @@ import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS } from '../utils/map'
 import AppFormField from '../components/ui/AppFormField.vue'
 import AppPhoneInput from '../components/ui/AppPhoneInput.vue'
 import AppDropdown from '../components/ui/AppDropdown.vue'
+import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppModal from '../components/ui/AppModal.vue'
 
 const router = useRouter()
@@ -79,6 +80,10 @@ const form = reactive({
   sender_phone: '',
   recipient_name: '',
   recipient_phone: '',
+  // El destinatario es la misma persona que el remitente: se copian nombre y
+  // teléfono. NO se copia la dirección (la del remitente es la de Amazon en
+  // Miami y la entrega es en Nicaragua).
+  use_client_data: true as boolean,
   recipient_address: '',
   recipient_city: '',
   recipient_department: '',
@@ -296,6 +301,42 @@ async function loadReferenceData() {
   }
 }
 
+/**
+ * Copia nombre y teléfono del remitente al destinatario. Solo cuando el switch
+ * está activo: si el operador lo desactivó para mandar a un familiar, sus
+ * ediciones no se pisan.
+ *
+ * La dirección, ciudad, departamento y el punto en el mapa NO se copian a
+ * propósito: el remitente compra en Amazon y su dirección es en Miami, la
+ * entrega es en Nicaragua. Copiarlas metería al conductor en la casa
+ * equivocada y rompería el enrutado por zona.
+ */
+function syncRecipientFromSender() {
+  if (!form.use_client_data) return
+  form.recipient_name = form.sender_name
+  form.recipient_phone = form.sender_phone
+}
+
+/** Solo aplica si hay cliente: sin él no hay de dónde copiar. */
+const canReuseClient = computed(() => !!form.client_id)
+
+function onToggleUseClientData(value: boolean) {
+  form.use_client_data = value
+  if (value) syncRecipientFromSender()
+}
+
+// El switch se posiciona solo según el origen, porque los dos casos por defecto
+// son distintos: comprando en Amazon lo habitual es que el paquete sea para uno
+// mismo, mientras que en mostrador el cliente suele traérselo a un familiar.
+watch(() => form.origin, (val) => {
+  form.use_client_data = val === 'online'
+  syncRecipientFromSender()
+})
+
+// Si el remitente cambia (cliente distinto, quick-create, corrección manual),
+// el destinario lo sigue mientras el switch esté activo.
+watch(() => [form.sender_name, form.sender_phone], () => syncRecipientFromSender())
+
 function selectClient(client: Client | null) {
   form.client_id = client?.id ?? null
   if (client) {
@@ -307,6 +348,7 @@ function selectClient(client: Client | null) {
   }
   clientSearch.value = ''
   showClientCreate.value = false
+  syncRecipientFromSender()
 }
 
 async function createClient() {
@@ -546,6 +588,7 @@ function goToDetail() {
 function resetForm() {
   form.client_id = null
   form.origin = 'online'
+  form.use_client_data = true
   form.sender_name = ''
   form.sender_phone = ''
   form.recipient_name = ''
@@ -774,7 +817,39 @@ onMounted(() => loadReferenceData())
               Destinatario
             </p>
             <div class="space-y-3">
-              <div class="grid gap-3 sm:grid-cols-2">
+              <!-- El destinatario es el mismo cliente? Solo aplica si hay cliente -->
+              <div v-if="canReuseClient" class="rounded-lg border border-[#1e293b] bg-[#1e293b]/40 p-3">
+                <div class="flex items-start gap-3">
+                  <AppSwitch
+                    :model-value="form.use_client_data"
+                    :disabled="creating"
+                    class="mt-0.5"
+                    @update:model-value="onToggleUseClientData"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-[#dae2fd]">El destinatario es la misma persona</p>
+                    <p v-if="form.use_client_data" class="mt-0.5 truncate text-xs text-[#69dca4]">
+                      Se usará: {{ form.sender_name || '—' }}<span v-if="form.sender_phone"> · {{ form.sender_phone }}</span>
+                    </p>
+                    <p v-else class="mt-0.5 text-xs text-[#64748b]">
+                      Nombre y teléfono precargados del cliente. Edítalos si el paquete va a otra persona.
+                    </p>
+                  </div>
+                </div>
+                <!-- Sin teléfono no se puede admitir: el campo está oculto, así que
+                     el aviso tiene que vivir aquí o el operador no ve qué falta. -->
+                <p v-if="form.use_client_data && !form.sender_phone" class="mt-2 text-xs text-[#fbbf24]">
+                  El cliente no tiene teléfono. Agregalo arriba en Remitente, o desactivá el switch para escribirlo acá.
+                </p>
+                <p v-if="form.use_client_data" class="mt-2 text-xs text-[#64748b]">
+                  La dirección de entrega se escribe igual: es en Nicaragua, no la de Amazon en Miami.
+                </p>
+              </div>
+
+              <!-- Los campos se ocultan SOLO si hay cliente y el switch está
+                   activo: sin cliente no hay nada que copiar y el operador
+                   tiene que poder escribirlos. -->
+              <div v-if="!canReuseClient || !form.use_client_data" class="grid gap-3 sm:grid-cols-2">
                 <AppFormField
                   :model-value="form.recipient_name"
                   @update:model-value="(v: string | number | null) => form.recipient_name = String(v ?? '')"
