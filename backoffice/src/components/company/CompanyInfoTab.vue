@@ -5,6 +5,8 @@ import { useToast } from '../../composables/useToast'
 import { getApiUrl } from '../../services/api'
 import AppFormField from '../ui/AppFormField.vue'
 import AppPhoneInput from '../ui/AppPhoneInput.vue'
+import AppRucInput from '../ui/AppRucInput.vue'
+import { classifyNicaraguanId } from '../../utils/validation'
 
 const emit = defineEmits<{
   (e: 'saved'): void
@@ -42,7 +44,10 @@ function validateField(key: string) {
       fieldErrors.name = ''
       break
     case 'ruc':
-      if (v.length > 30) { fieldErrors.ruc = 'Máximo 30 caracteres'; return }
+      if (v) {
+        const { error } = classifyNicaraguanId(v)
+        if (error) { fieldErrors.ruc = error; return }
+      }
       fieldErrors.ruc = ''
       break
     case 'phone':
@@ -212,13 +217,13 @@ onMounted(() => load())
             @blur="validateField('name')"
             @input="clearError('name')"
           />
-          <AppFormField
+          <AppRucInput
             :model-value="fv('ruc')"
-            @update:model-value="(v: string | number | null) => { form.ruc = String(v ?? ''); clearError('ruc') }"
+            @update:model-value="(v: string) => { form.ruc = v; clearError('ruc') }"
             label="RUC"
-            placeholder="J00000001"
+            helper="Cédula (persona natural) o RUC (persona jurídica)"
+            :required="false"
             :disabled="saving"
-            :maxlength="30"
             :error="fieldErrors.ruc"
             @blur="validateField('ruc')"
           />

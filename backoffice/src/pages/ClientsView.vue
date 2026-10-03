@@ -9,8 +9,10 @@ import AppModal from '../components/ui/AppModal.vue'
 import AppFormField from '../components/ui/AppFormField.vue'
 import AppDropdown from '../components/ui/AppDropdown.vue'
 import AppPhoneInput from '../components/ui/AppPhoneInput.vue'
+import AppRucInput from '../components/ui/AppRucInput.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
+import { classifyNicaraguanId } from '../utils/validation'
 
 const {
   items: clients, loading, showModal, showDelete,
@@ -58,7 +60,10 @@ function validateField(key: string) {
       fieldErrors.phone = ''
       break
     case 'ruc':
-      if (v && v.length > 30) { fieldErrors.ruc = 'Máximo 30 caracteres'; return }
+      if (v) {
+        const { error } = classifyNicaraguanId(v)
+        if (error) { fieldErrors.ruc = error; return }
+      }
       fieldErrors.ruc = ''
       break
     case 'address':
@@ -242,18 +247,14 @@ onMounted(async () => {
               @blur="validateField('email')"
               @input="clearError('email')"
             />
-            <AppFormField
+            <AppRucInput
               :model-value="fv('ruc')"
-              @update:model-value="(v: string | number | null) => form.ruc = v"
-              label="RUC"
-              icon="hash"
-              placeholder="J00000001X (opcional)"
+              @update:model-value="(v: string) => { form.ruc = v; clearError('ruc') }"
+              label="RUC o cédula"
+              helper="Cédula (persona natural) o RUC (persona jurídica). Aparece en la factura si la configuración lo muestra"
               :disabled="saving"
-              :maxlength="30"
               :error="fieldErrors.ruc"
-              helper="Aparece en la factura si la configuración lo muestra"
               @blur="validateField('ruc')"
-              @input="clearError('ruc')"
             />
           </div>
           <div class="mt-4">

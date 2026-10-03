@@ -75,8 +75,10 @@ class CompanyController
         if (isset($data['logo'])) {
             $result['logo'] = sanitizeString($data['logo'], 255);
         }
-        if (isset($data['ruc'])) {
-            $result['ruc'] = sanitizeString($data['ruc'], 30);
+        // array_key_exists (y no isset) para que `ruc: null` explícito también borre
+        // el campo: isset() ignoraría el null y dejaría el valor anterior.
+        if (array_key_exists('ruc', $data)) {
+            $result['ruc'] = $data['ruc'] !== null ? validateRuc((string) $data['ruc']) : null;
         }
         if (isset($data['address'])) {
             $result['address'] = trim($data['address']);

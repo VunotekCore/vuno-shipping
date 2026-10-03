@@ -219,6 +219,109 @@ function validatePassword(string $password): string
     return $password;
 }
 
+/**
+ * Validacion de identificacion fiscal nicaraguense (cedula de persona natural
+ * o RUC de persona juridica). Devuelve el valor canonico: 14 caracteres, sin
+ * guiones y en mayusculas, que es lo que se persiste.
+ *
+ * La validacion es ESTRUCTURAL a proposito: el codigo de municipio, el
+ * consecutivo de inscripcion y el algoritmo de la letra (modulo 23) no son
+ * publicos, asi que no se pueden comprobar. Solo se verifica la forma, en que
+ * extremo va la letra y que la fecha de nacimiento exista de verdad.
+ *
+ * Espejo en TypeScript de `classifyNicaraguanId()`
+ * (backoffice/src/utils/validation.ts). Si cambia una regla, cambia en los dos
+ * lados: el frontend es evadible y aca esta la autoridad.
+ *
+ * @param string $value Campo opcional: '' o null se traduce a null.
+ * @param string $field Nombre del campo, para el detalle del error.
+ */
+function validateRuc(?string $value, string $field = 'ruc'): ?string
+{
+    // Guiones y espacios son solo presentacion: el valor canonico no los tiene.
+    // NO se trunca a 14: si el valor excede la longitud hay que reportarlo,
+    // porque recortar en silencio convertiria el numero de otra persona en un
+    // documento valido pero distinto al que se escribio.
+    $core = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) $value));
+    $core = substr($core, 0, 20);
+
+    if ($core === '') {
+        return null;
+    }
+
+    $fail = static function (string $message) use ($field): never {
+        jsonError('Identificación inválida', 422, [$field => $message]);
+    };
+
+    $length = strlen($core);
+
+    // El primer caracter decide la naturaleza: en la cedula la letra va al
+    // final, en el RUC de persona juridica va al principio.
+    if (preg_match('/^[A-Z]/', $core) === 1) {
+        if (preg_match('/^[A-Z]\d{13}$/', $core) !== 1) {
+            $fail('El RUC de persona jurídica debe ser una letra seguida de 13 dígitos (ej. J1234567890123)');
+        }
+        return $core;
+    }
+
+    if ($length !== 14) {
+        $fail($length > 14
+            ? "La cédula tiene {$length} caracteres y el máximo son 14"
+            : "La cédula tiene {$length} de 14 caracteres: 13 dígitos y 1 letra al final");
+    }
+    if (preg_match('/^\d{13}[A-Z]$/', $core) !== 1) {
+        $fail('La cédula debe ser 13 dígitos seguidos de una letra al final (ej. 001-291289-0042T)');
+    }
+
+    $letter = $core[13];
+    if (in_array($letter, ['I', 'O', 'Z'], true)) {
+        $fail("La letra final \"{$letter}\" no es válida: el algoritmo módulo 23 excluye I, O y Z");
+    }
+
+    $dd = (int) substr($core, 3, 2);
+    $mm = (int) substr($core, 5, 2);
+    $yy = (int) substr($core, 7, 2);
+
+    if ($mm < 1 || $mm > 12) {
+        $fail('El mes ' . substr($core, 5, 2) . ' no existe: la fecha va en formato DDMMAA');
+    }
+    if ($dd < 1 || $dd > 31) {
+        $fail('El día ' . substr($core, 3, 2) . ' no existe: la fecha va en formato DDMMAA');
+    }
+
+    // Año de 2 digitos: se asume 20xx mientras sea <= al año en curso y 19xx en
+    // el resto (pivote habitual). Un año de 2 digitos siempre cae en los
+    // ultimos 100 años.
+    $now = new DateTimeImmutable('now');
+    $year = $yy <= ((int) $now->format('y')) ? 2000 + $yy : 1900 + $yy;
+
+    // checkdate() roda al mes siguiente en vez de fallar, asi que se compara el
+    // resultado para detectar fechas como 31/02.
+    if (!checkdate($mm, $dd, $year)) {
+        $fail(sprintf(
+            'La fecha %s/%s/%s no existe',
+            substr($core, 3, 2),
+            substr($core, 5, 2),
+            substr($core, 7, 2)
+        ));
+    }
+
+    $age = (int) $now->format('Y') - $year;
+    if ($now->format('m-d') < sprintf('%02d-%02d', $mm, $dd)) {
+        $age--;
+    }
+    if ($age < 0) {
+        $fail('La fecha de nacimiento es futura');
+    }
+    // No hay un tope explicito de edad: el pivote de 2 digitos ya la acota.
+    // YY=27..99 -> 1927..1999 (0..99 anos) y YY=00..26 -> 2000..2026 (0..26
+    // anos), asi que ninguna fecha valida puede implicar 100 anos o mas. Una
+    // persona nacida en 1926 o antes simplemente no es representable con 2
+    // digitos de ano.
+
+    return $core;
+}
+
 function sanitizeString(string $value, int $maxLen = 255): string
 {
     $value = trim($value);

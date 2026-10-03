@@ -83,7 +83,7 @@ class ClientController
             $insertData['phone'] = sanitizeString($data['phone'], 50);
         }
         if (isset($data['ruc'])) {
-            $insertData['ruc'] = sanitizeString($data['ruc'], 30);
+            $insertData['ruc'] = validateRuc((string) $data['ruc']);
         }
         if (isset($data['address'])) {
             $insertData['address'] = sanitizeString($data['address'], 500);
@@ -135,7 +135,7 @@ class ClientController
             $updateData['phone'] = $data['phone'] !== null ? sanitizeString($data['phone'], 50) : null;
         }
         if (array_key_exists('ruc', $data)) {
-            $updateData['ruc'] = $data['ruc'] !== null ? sanitizeString($data['ruc'], 30) : null;
+            $updateData['ruc'] = $data['ruc'] !== null ? validateRuc((string) $data['ruc']) : null;
         }
         if (array_key_exists('address', $data)) {
             $updateData['address'] = $data['address'] !== null ? sanitizeString($data['address'], 500) : null;
