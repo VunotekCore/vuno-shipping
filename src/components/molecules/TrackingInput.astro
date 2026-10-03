@@ -164,7 +164,7 @@ import Input from '../atoms/Input.astro';
     const safeAddress = hasToken ? escapeHtml(pkg.recipient_address as string) : '';
     const safeCity = hasToken ? escapeHtml((pkg.recipient_city as string) || (pkg.recipient_department as string) || '') : '';
     const safeStatusLabel = statusLabels[status] || escapeHtml(status);
-    const safeOrigin = pkg.origin === 'local' ? 'Directo en Nicaragua' : 'Compra online en Miami';
+    const safeOrigin = pkg.origin === 'local' ? 'Recibido en Nicaragua' : 'Compra en EEUU';
 
     const detailsHtml = hasToken ? `
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-sp-sm text-body-sm mb-sp-md">

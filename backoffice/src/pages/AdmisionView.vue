@@ -761,7 +761,7 @@ onMounted(() => loadReferenceData())
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
                 </span>
                 <span>
-                  <span class="block text-sm font-semibold text-[#dae2fd]">Compra online (Miami)</span>
+                  <span class="block text-sm font-semibold text-[#dae2fd]">Compra EEUU</span>
                   <span class="mt-0.5 block text-xs text-[#64748b]">Recibido en el almacén de Miami, viaja en embarque a Nicaragua</span>
                 </span>
               </button>
@@ -777,8 +777,8 @@ onMounted(() => loadReferenceData())
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 019.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10zM2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
                 </span>
                 <span>
-                  <span class="block text-sm font-semibold text-[#dae2fd]">Directo Nicaragua</span>
-                  <span class="mt-0.5 block text-xs text-[#64748b]">Cliente llega a la oficina con el paquete, listo para entrega local</span>
+                  <span class="block text-sm font-semibold text-[#dae2fd]">Ingreso local</span>
+                  <span class="mt-0.5 block text-xs text-[#64748b]">Cliente lo entrega en la oficina, listo para distribución</span>
                 </span>
               </button>
             </div>

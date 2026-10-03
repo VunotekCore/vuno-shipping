@@ -525,7 +525,7 @@ onMounted(() => load())
               <div class="min-w-0">
                 <p class="truncate text-sm font-medium text-[#dae2fd]">{{ p.tracking_number }}</p>
                 <p class="truncate text-xs text-[#64748b]">
-                  {{ p.recipient_name }} · {{ p.chargeable_weight ? p.chargeable_weight + ' kg' : '—' }} · {{ p.origin === 'local' ? 'Directo' : 'Miami' }}
+                  {{ p.recipient_name }} · {{ p.chargeable_weight ? p.chargeable_weight + ' kg' : '—' }} · {{ p.origin === 'local' ? 'Ingreso local' : 'Compra EEUU' }}
                 </p>
               </div>
               <div class="flex shrink-0 items-center gap-2">
@@ -596,7 +596,7 @@ onMounted(() => load())
             <div class="min-w-0">
               <p class="truncate text-sm font-medium text-[#dae2fd]">{{ p.tracking_number }}</p>
               <p class="truncate text-xs text-[#64748b]">
-                {{ p.recipient_name }} · {{ p.chargeable_weight ? p.chargeable_weight + ' kg' : '—' }} · {{ p.origin === 'local' ? 'Directo' : 'Miami' }}{{ p.shipping_service_name ? ' · ' + p.shipping_service_name : '' }}
+                {{ p.recipient_name }} · {{ p.chargeable_weight ? p.chargeable_weight + ' kg' : '—' }} · {{ p.origin === 'local' ? 'Ingreso local' : 'Compra EEUU' }}{{ p.shipping_service_name ? ' · ' + p.shipping_service_name : '' }}
               </p>
             </div>
             <input type="checkbox" class="h-4 w-4 shrink-0 accent-[#69dca4]" :checked="isChecked(p.id)" @change="toggleSelect(p.id)" />
