@@ -15,11 +15,15 @@ class RouteStopModel
             SELECT rs.*, rss.name AS status_name,
                    p.tracking_number, p.recipient_phone, p.description AS package_description,
                    p.zone_id, z.name AS zone_name,
-                   CASE WHEN p.latitude IS NULL OR p.longitude IS NULL THEN 1 ELSE 0 END AS from_zone_center
+                   CASE WHEN p.latitude IS NULL OR p.longitude IS NULL THEN 1 ELSE 0 END AS from_zone_center,
+                   inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM route_stop rs
             LEFT JOIN route_stop_status rss ON rss.id = rs.status_id
             LEFT JOIN package p ON p.id = rs.package_id
             LEFT JOIN zone z ON z.id = p.zone_id
+            LEFT JOIN invoice inv ON inv.id = (
+                SELECT i2.id FROM invoice i2 WHERE i2.package_id = p.id ORDER BY i2.id DESC LIMIT 1
+            )
             WHERE rs.route_run_id = :route_run_id
             ORDER BY rs.stop_order ASC
         ");
@@ -32,10 +36,14 @@ class RouteStopModel
         $stmt = $this->db->prepare("
             SELECT rs.*, rss.name AS status_name,
                    p.tracking_number, p.recipient_name, p.recipient_phone,
-                   p.description AS package_description
+                   p.description AS package_description,
+                   inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM route_stop rs
             LEFT JOIN route_stop_status rss ON rss.id = rs.status_id
             LEFT JOIN package p ON p.id = rs.package_id
+            LEFT JOIN invoice inv ON inv.id = (
+                SELECT i2.id FROM invoice i2 WHERE i2.package_id = p.id ORDER BY i2.id DESC LIMIT 1
+            )
             WHERE rs.id = :id LIMIT 1
         ");
         $stmt->execute(['id' => $id]);

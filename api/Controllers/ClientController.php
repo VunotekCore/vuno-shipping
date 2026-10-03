@@ -82,6 +82,9 @@ class ClientController
         if (isset($data['phone'])) {
             $insertData['phone'] = sanitizeString($data['phone'], 50);
         }
+        if (isset($data['ruc'])) {
+            $insertData['ruc'] = sanitizeString($data['ruc'], 30);
+        }
         if (isset($data['address'])) {
             $insertData['address'] = sanitizeString($data['address'], 500);
         }
@@ -130,6 +133,9 @@ class ClientController
         }
         if (array_key_exists('phone', $data)) {
             $updateData['phone'] = $data['phone'] !== null ? sanitizeString($data['phone'], 50) : null;
+        }
+        if (array_key_exists('ruc', $data)) {
+            $updateData['ruc'] = $data['ruc'] !== null ? sanitizeString($data['ruc'], 30) : null;
         }
         if (array_key_exists('address', $data)) {
             $updateData['address'] = $data['address'] !== null ? sanitizeString($data['address'], 500) : null;

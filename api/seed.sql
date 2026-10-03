@@ -68,7 +68,15 @@ INSERT INTO permission (module, action, label) VALUES
 ('delivery_route', 'read', 'Ver rutas de despacho'),
 ('delivery_route', 'create', 'Crear ruta de despacho'),
 ('delivery_route', 'edit', 'Editar ruta de despacho'),
-('delivery_route', 'delete', 'Eliminar ruta de despacho')
+('delivery_route', 'delete', 'Eliminar ruta de despacho'),
+('invoice', 'read', 'Ver facturas'),
+('invoice', 'create', 'Crear factura'),
+('invoice', 'edit', 'Editar factura'),
+('invoice', 'delete', 'Eliminar factura'),
+('payment_method', 'read', 'Ver métodos de pago'),
+('payment_method', 'create', 'Crear método de pago'),
+('payment_method', 'edit', 'Editar método de pago'),
+('payment_method', 'delete', 'Eliminar método de pago')
 ON DUPLICATE KEY UPDATE label = VALUES(label);
 
 -- === Roles ===
@@ -439,5 +447,17 @@ SELECT id, 'Paiwas' FROM zone WHERE name = 'Atlántico Sur';
 -- === Document Sequences ===
 
 INSERT INTO document_sequence (document_code, description, prefix, current_number) VALUES
-('tracking', 'Código de rastreo', 'EV', 0)
+('tracking', 'Código de rastreo', 'EV', 0),
+('invoice', 'Factura de cobro', 'FAC', 0)
 ON DUPLICATE KEY UPDATE current_number = current_number;
+
+-- === Billing Module ===
+
+INSERT IGNORE INTO payment_method (name, description, is_active) VALUES
+('Efectivo', 'Pago en efectivo', 1),
+('Transferencia', 'Transferencia bancaria', 1),
+('Tarjeta', 'Pago con tarjeta (débito/crédito)', 1);
+
+INSERT INTO billing_config (id, tax_enabled, tax_rate, show_client_ruc, exchange_rate_usd, invoice_prefix)
+VALUES (1, 0, 15.00, 0, 36.00, 'FAC')
+ON DUPLICATE KEY UPDATE id = id;

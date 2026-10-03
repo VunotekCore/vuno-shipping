@@ -21,8 +21,8 @@ const {
   service: clientService,
   dataKey: 'clients',
   entityName: 'Cliente',
-  getDefaultForm: () => ({ name: '', email: '', phone: '', address: '', department: '', notes: '' }),
-  populateForm: (c) => ({ name: c.name, email: c.email ?? '', phone: c.phone ?? '', address: c.address ?? '', department: c.department ?? '', notes: c.notes ?? '' }),
+  getDefaultForm: () => ({ name: '', email: '', phone: '', ruc: '', address: '', department: '', notes: '' }),
+  populateForm: (c) => ({ name: c.name, email: c.email ?? '', phone: c.phone ?? '', ruc: c.ruc ?? '', address: c.address ?? '', department: c.department ?? '', notes: c.notes ?? '' }),
   validateForm: (f) => {
     if (!f.name) return 'El nombre es requerido'
     return null
@@ -33,7 +33,7 @@ const {
 const zones = ref<Zone[]>([])
 
 const fieldErrors = reactive<Record<string, string>>({
-  name: '', email: '', phone: '', address: '', department: '', notes: '',
+  name: '', email: '', phone: '', ruc: '', address: '', department: '', notes: '',
 })
 
 function clearError(key: string) {
@@ -56,6 +56,10 @@ function validateField(key: string) {
     case 'phone':
       if (v && v.replace(/\D/g, '').length !== 8) { fieldErrors.phone = 'Debe tener 8 dígitos'; return }
       fieldErrors.phone = ''
+      break
+    case 'ruc':
+      if (v && v.length > 30) { fieldErrors.ruc = 'Máximo 30 caracteres'; return }
+      fieldErrors.ruc = ''
       break
     case 'address':
       if (v.length > 500) { fieldErrors.address = 'Máximo 500 caracteres'; return }
@@ -91,6 +95,7 @@ const columns: TableColumn[] = [
   { key: 'name', label: 'Nombre', width: '180px' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Teléfono', width: '140px' },
+  { key: 'ruc', label: 'RUC', width: '110px' },
   { key: 'department', label: 'Departamento', width: '140px' },
   { key: 'package_count', label: 'Paquetes', width: '90px' },
   { key: 'actions', label: '', width: '100px', align: 'right' },
@@ -128,6 +133,7 @@ onMounted(async () => {
             <td class="font-medium text-[#dae2fd]">{{ c.name }}</td>
             <td class="text-[#94a3b8]">{{ c.email }}</td>
             <td class="text-[#94a3b8]">{{ c.phone || '—' }}</td>
+            <td class="text-[#94a3b8] font-mono">{{ c.ruc || '—' }}</td>
             <td class="text-[#94a3b8]">{{ c.department || '—' }}</td>
             <td class="text-[#94a3b8]">{{ c.package_count ?? 0 }}</td>
             <td class="text-right">
@@ -172,7 +178,8 @@ onMounted(async () => {
             <span class="admin-badge admin-badge-info shrink-0">{{ c.package_count ?? 0 }} paquetes</span>
           </div>
           <p class="text-sm text-[#94a3b8] truncate">{{ c.email || '—' }}</p>
-          <p class="text-xs text-[#64748b]">{{ c.phone || '—' }} · {{ c.department || '—' }}</p>
+          <p class="text-xs text-[#64748b]">{{ c.phone || '—' }} · {{ c.ruc || 'Sin RUC' }}</p>
+          <p class="text-xs text-[#64748b]">{{ c.department || '—' }}</p>
           <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(c)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -234,6 +241,19 @@ onMounted(async () => {
               :error="fieldErrors.email"
               @blur="validateField('email')"
               @input="clearError('email')"
+            />
+            <AppFormField
+              :model-value="fv('ruc')"
+              @update:model-value="(v: string | number | null) => form.ruc = v"
+              label="RUC"
+              icon="hash"
+              placeholder="J00000001X (opcional)"
+              :disabled="saving"
+              :maxlength="30"
+              :error="fieldErrors.ruc"
+              helper="Aparece en la factura si la configuración lo muestra"
+              @blur="validateField('ruc')"
+              @input="clearError('ruc')"
             />
           </div>
           <div class="mt-4">

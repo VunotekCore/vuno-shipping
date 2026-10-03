@@ -7,7 +7,7 @@ import { clientService, type Client } from '../services/clientService'
 import { zoneService, type Zone } from '../services/zoneService'
 import { subzoneService, type Subzone } from '../services/subzoneService'
 import { pricingRuleService, type PricingRule } from '../services/pricingRuleService'
-import type { DeliveryOption } from '../types'
+import type { DeliveryOption, Invoice } from '../types'
 import { useToast } from '../composables/useToast'
 import { formatCurrency } from '../utils/format'
 import QRCode from 'qrcode'
@@ -36,6 +36,7 @@ const pricingResult = ref<{
 } | null>(null)
 
 const createdPackage = ref<Package | null>(null)
+const createdInvoice = ref<Invoice | null>(null)
 const qrDataUrl = ref<string | null>(null)
 
 // Reference data
@@ -518,6 +519,7 @@ async function handleCreate() {
     const pkg = res.data.data?.package
     if (pkg) {
       createdPackage.value = pkg
+      createdInvoice.value = res.data.data?.invoice ?? null
       // Generate QR
       const baseUrl = import.meta.env.VITE_SITE_URL || window.location.origin
       const trackingUrl = `${baseUrl}/rastreo?tracking=${pkg.tracking_number}${pkg.tracking_token ? '&token=' + pkg.tracking_token : ''}`
@@ -569,6 +571,7 @@ function resetForm() {
   form.notes = ''
   clientSearch.value = ''
   createdPackage.value = null
+  createdInvoice.value = null
   qrDataUrl.value = null
   pricingResult.value = null
 }
@@ -1082,6 +1085,25 @@ onMounted(() => loadReferenceData())
         <p class="mt-1 text-sm text-[#64748b]">Tracking number asignado</p>
 
         <p class="mt-4 text-3xl font-bold tracking-wider text-[#69dca4] font-mono">{{ createdPackage.tracking_number }}</p>
+
+        <div v-if="createdInvoice" class="mt-5 rounded-xl border border-[#1e293b] bg-[#0f172a] px-4 py-3">
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-left">
+              <p class="text-xs text-[#64748b]">Factura generada</p>
+              <p class="font-mono text-sm font-medium text-[#dae2fd]">{{ createdInvoice.invoice_number }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-[#64748b]">Total</p>
+              <p class="text-sm font-semibold text-[#f59e0b]">${{ Number(createdInvoice.total_amount).toFixed(2) }}</p>
+            </div>
+          </div>
+          <button
+            class="admin-btn admin-btn-ghost admin-btn-sm mt-3 w-full"
+            @click="router.push({ name: 'invoice-detail', params: { id: createdInvoice.id } })"
+          >
+            Ver factura
+          </button>
+        </div>
 
         <div v-if="qrDataUrl" class="mt-6 flex justify-center">
           <img :src="qrDataUrl" alt="QR" class="rounded-lg border border-[#1e293b]" width="240" height="240" />

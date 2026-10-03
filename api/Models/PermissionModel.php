@@ -133,7 +133,7 @@ class PermissionModel
             'route_stop', 'driver_location', 'location_history',
             'push_subscription',
         ];
-        $singleRecordModules = ['company'];
+        $singleRecordModules = ['company', 'billing_config'];
 
         $defaultActions = ['create', 'read', 'edit', 'delete'];
         $singleRecordActions = ['read', 'edit'];

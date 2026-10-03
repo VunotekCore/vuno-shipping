@@ -105,6 +105,7 @@ export interface Client {
   address: string | null
   department: string | null
   notes: string | null
+  ruc?: string | null
   is_active: boolean
   package_count?: number
   created_at: string
@@ -237,6 +238,9 @@ export interface Package {
   origin: 'online' | 'local'
   received_at: string | null
   delivered_at: string | null
+  invoice_id?: number | null
+  invoice_number?: string | null
+  invoice_status?: 'pending' | 'paid' | 'cancelled' | null
   created_by: number | null
   created_at: string
   updated_at: string
@@ -388,6 +392,9 @@ export interface RouteStop {
   recipient_phone?: string
   package_description?: string
   from_zone_center?: number
+  invoice_id?: number | null
+  invoice_number?: string | null
+  invoice_status?: 'pending' | 'paid' | 'cancelled' | null
   created_at: string
   updated_at: string
 }
@@ -414,4 +421,62 @@ export interface DashboardStats {
   in_transit: number
   pending: number
   delivered: number
+  pending_invoices?: number
+  paid_today?: number
+}
+
+export type InvoiceStatus = 'pending' | 'paid' | 'cancelled'
+
+export interface Invoice {
+  id: number
+  invoice_number: string
+  package_id: number
+  client_id: number | null
+  client_name: string | null
+  client_name_ref: string | null
+  client_ruc: string | null
+  base_amount: number
+  tax_rate: number
+  tax_amount: number
+  total_amount: number
+  currency: 'USD'
+  exchange_rate: number | null
+  status: InvoiceStatus
+  paid_amount: number | null
+  paid_currency: 'USD' | 'CORD' | null
+  payment_method_id: number | null
+  payment_method_name: string | null
+  payment_reference: string | null
+  paid_at: string | null
+  notes: string | null
+  created_by: number | null
+  tracking_number?: string
+  recipient_name?: string | null
+  recipient_city?: string | null
+  recipient_department?: string | null
+  shipping_cost?: number | null
+  flete_cost?: number | null
+  delivery_cost?: number | null
+  created_at: string
+}
+
+export interface PaymentMethod {
+  id: number
+  name: string
+  description: string | null
+  is_active: number
+}
+
+export interface BillingConfig {
+  id?: number
+  tax_enabled: number
+  tax_rate: number
+  show_client_ruc: number
+  exchange_rate_usd: number
+  invoice_prefix: string
+}
+
+export interface InvoiceSummary {
+  pending_total: number
+  paid_today: number
 }

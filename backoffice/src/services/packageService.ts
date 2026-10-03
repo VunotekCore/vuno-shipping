@@ -1,5 +1,5 @@
 import api from './api'
-import type { Package, TrackingEvent } from '../types'
+import type { Package, TrackingEvent, Invoice } from '../types'
 
 export type { Package, TrackingEvent }
 
@@ -45,7 +45,7 @@ export const packageService = {
     declared_value?: number; delivery_type?: string; zone_id?: number; notes?: string;
     origin?: 'online' | 'local'; local_delivery_type?: string; pricing_rule_id?: number
   }) {
-    return api.post('/package/create.php', data)
+    return api.post<{ success: boolean; data: { package: Package; invoice?: Invoice } }>('/package/create.php', data)
   },
 
   update(data: { id: number; [key: string]: unknown }) {

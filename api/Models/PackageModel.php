@@ -86,7 +86,8 @@ class PackageModel
                    p.shipping_service_id, ss.name AS shipping_service_name,
                    p.delivery_option_id, dopt.name AS delivery_option_name,
                    p.assigned_to, u.name AS assigned_to_name,
-                   p.origin, p.received_at, p.delivered_at, p.created_at
+                   p.origin, p.received_at, p.delivered_at, p.created_at,
+                   inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM package p
             LEFT JOIN client c ON c.id = p.client_id
             LEFT JOIN zone z ON z.id = p.zone_id
@@ -96,6 +97,9 @@ class PackageModel
             LEFT JOIN shipping_service ss ON ss.id = p.shipping_service_id
             LEFT JOIN delivery_option dopt ON dopt.id = p.delivery_option_id
             LEFT JOIN `user` u ON u.id = p.assigned_to
+            LEFT JOIN invoice inv ON inv.id = (
+                SELECT i2.id FROM invoice i2 WHERE i2.package_id = p.id ORDER BY i2.id DESC LIMIT 1
+            )
             {$whereClause}
             ORDER BY p.created_at DESC
             LIMIT :limit OFFSET :offset
@@ -117,7 +121,8 @@ class PackageModel
                    dt.name AS delivery_type_name, ldt.name AS local_delivery_type_name,
                    ss.name AS shipping_service_name, dopt.name AS delivery_option_name,
                    u.name AS assigned_to_name,
-                   pr.name AS pricing_rule_name, z.name AS zone_name
+                   pr.name AS pricing_rule_name, z.name AS zone_name,
+                   inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM package p
             LEFT JOIN client c ON c.id = p.client_id
             LEFT JOIN package_status ps ON ps.id = p.status_id
@@ -128,6 +133,9 @@ class PackageModel
             LEFT JOIN zone z ON z.id = p.zone_id
             LEFT JOIN `user` u ON u.id = p.assigned_to
             LEFT JOIN pricing_rule pr ON pr.id = p.pricing_rule_id
+            LEFT JOIN invoice inv ON inv.id = (
+                SELECT i2.id FROM invoice i2 WHERE i2.package_id = p.id ORDER BY i2.id DESC LIMIT 1
+            )
             WHERE p.id = :id LIMIT 1
         ");
         $stmt->execute(['id' => $id]);

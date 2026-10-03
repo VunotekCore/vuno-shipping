@@ -299,6 +299,30 @@ onMounted(() => loadPackage())
               </div>
 
               <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
+                <p class="text-xs text-[#64748b] mb-2">Factura</p>
+                <div v-if="pkg.invoice_number" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <p class="text-xs text-[#64748b] mb-1">Número</p>
+                    <button
+                      v-if="pkg.invoice_id"
+                      class="admin-btn admin-btn-ghost admin-btn-sm font-mono"
+                      @click="router.push({ name: 'invoice-detail', params: { id: pkg.invoice_id } })"
+                    >
+                      {{ pkg.invoice_number }}
+                    </button>
+                    <p v-else class="text-sm font-mono text-[#94a3b8]">{{ pkg.invoice_number }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-[#64748b] mb-1">Estado</p>
+                    <span v-if="pkg.invoice_status === 'paid'" class="admin-badge admin-badge-success">Pagada</span>
+                    <span v-else-if="pkg.invoice_status === 'cancelled'" class="admin-badge admin-badge-danger">Anulada</span>
+                    <span v-else class="admin-badge admin-badge-warning">Por cobrar</span>
+                  </div>
+                </div>
+                <p v-else class="text-sm text-[#94a3b8]">Este paquete no tiene factura asociada.</p>
+              </div>
+
+              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
                 <p class="text-xs text-[#64748b] mb-2">Asignación</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>

@@ -90,6 +90,7 @@ const columns: TableColumn[] = [
   { key: 'shipping_cost', label: 'Total', width: '80px' },
   { key: 'shipping_service_name', label: 'Servicio', width: '80px' },
   { key: 'delivery_option_name', label: 'Entrega', width: '80px' },
+  { key: 'invoice_status', label: 'Pago', width: '90px' },
   { key: 'actions', label: '', width: '130px', align: 'right' },
 ]
 
@@ -153,6 +154,18 @@ onMounted(() => load())
             <td class="text-[#94a3b8] font-medium" :title="'Total = flete + delivery. Monto final que paga el cliente'">{{ formatCurrency(p.shipping_cost) }}</td>
             <td class="text-[#94a3b8]">{{ p.shipping_service_name ?? '—' }}</td>
             <td class="text-[#94a3b8]">{{ p.delivery_option_name ?? '—' }}</td>
+            <td>
+              <button
+                v-if="p.invoice_id"
+                class="admin-badge"
+                :class="p.invoice_status === 'paid' ? 'admin-badge-success' : p.invoice_status === 'cancelled' ? 'admin-badge-danger' : 'admin-badge-warning'"
+                @click="router.push({ name: 'invoice-detail', params: { id: p.invoice_id } })"
+                :title="`Ver factura ${p.invoice_number ?? ''}`"
+              >
+                {{ p.invoice_status === 'paid' ? 'Pagada' : p.invoice_status === 'cancelled' ? 'Anulada' : 'Por cobrar' }}
+              </button>
+              <span v-else class="text-[#64748b] text-xs">Sin factura</span>
+            </td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="viewDetail(p)" title="Ver detalle">
@@ -205,7 +218,15 @@ onMounted(() => load())
         <div v-for="p in packages" :key="p.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
             <p class="font-mono font-medium text-[#dae2fd] truncate">{{ p.tracking_number }}</p>
-            <span class="admin-badge shrink-0" :class="statusColor(p.status_name)">{{ statusLabel(p.status_name) }}</span>
+            <div class="flex shrink-0 items-center gap-1.5">
+              <span
+                v-if="p.invoice_id"
+                class="admin-badge"
+                :class="p.invoice_status === 'paid' ? 'admin-badge-success' : p.invoice_status === 'cancelled' ? 'admin-badge-danger' : 'admin-badge-warning'"
+                @click="router.push({ name: 'invoice-detail', params: { id: p.invoice_id } })"
+              >{{ p.invoice_status === 'paid' ? 'Pagada' : p.invoice_status === 'cancelled' ? 'Anulada' : 'Por cobrar' }}</span>
+              <span class="admin-badge" :class="statusColor(p.status_name)">{{ statusLabel(p.status_name) }}</span>
+            </div>
           </div>
           <p class="text-sm text-[#94a3b8] truncate">{{ p.recipient_name }}{{ p.recipient_department ? ' · ' + p.recipient_department : '' }}</p>
           <p class="text-xs text-[#64748b]" title="Flete (envío internacional) + Delivery (última milla)">

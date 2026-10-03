@@ -303,14 +303,27 @@ class PackageController
                 'created_by' => (int) $payload['sub'],
             ]);
 
+            $invoiceService = new \App\Services\InvoiceService($db);
+            $invoiceService->createForPackage(
+                $packageId,
+                $insertData,
+                $client ?? null,
+                $payload
+            );
+
             $db->commit();
 
             $package = $this->model->findById($packageId);
+            $invoice = (new \App\Models\InvoiceModel($db))->findByPackageId($packageId);
 
             $notifier = new PackageNotifierService($db);
             $notifier->notifyStatusChange($package, 'pending', $statusName, $statusDescription);
 
-            jsonSuccess(['package' => $package, 'pricing' => $pricing], 'Paquete creado', 201);
+            jsonSuccess(
+                ['package' => $package, 'pricing' => $pricing, 'invoice' => $invoice],
+                'Paquete creado',
+                201
+            );
         } catch (\Throwable $e) {
             $db->rollBack();
             apiLog('ERROR', 'Error creating package: ' . $e->getMessage());

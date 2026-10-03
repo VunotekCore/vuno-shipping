@@ -147,6 +147,24 @@ const router = createRouter({
           component: () => import('../pages/ShippingSettingsView.vue'),
           meta: { permission: 'shipping_service', action: 'read' },
         },
+        {
+          path: 'facturas',
+          name: 'invoices',
+          component: () => import('../pages/InvoicesView.vue'),
+          meta: { permission: 'invoice', action: 'read' },
+        },
+        {
+          path: 'facturas/:id',
+          name: 'invoice-detail',
+          component: () => import('../pages/InvoiceDetailView.vue'),
+          meta: { permission: 'invoice', action: 'read' },
+        },
+        {
+          path: 'facturacion/config',
+          name: 'billing-settings',
+          component: () => import('../pages/BillingSettingsView.vue'),
+          meta: { permission: 'billing_config', action: 'read' },
+        },
       ],
     },
     // === Conductor routes ===

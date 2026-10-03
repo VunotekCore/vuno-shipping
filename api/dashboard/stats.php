@@ -24,6 +24,10 @@ $transitCount = $packageModel->countByStatus('in_transit');
 $pendingCount = $packageModel->countByStatus('pending');
 $deliveredCount = $packageModel->countByStatus('delivered');
 
+$invoiceModel = new \App\Models\InvoiceModel($db);
+$pendingInvoices = $invoiceModel->sumByStatus('pending');
+$paidToday = $invoiceModel->sumPaidToday();
+
 jsonSuccess([
     'stats' => [
         'total_packages' => $totalPackages,
@@ -33,5 +37,7 @@ jsonSuccess([
         'in_transit' => $transitCount,
         'pending' => $pendingCount,
         'delivered' => $deliveredCount,
+        'pending_invoices' => $pendingInvoices,
+        'paid_today' => $paidToday,
     ],
 ]);

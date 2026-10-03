@@ -31,7 +31,7 @@ class ClientModel
 
     public function listAll(): array
     {
-        $stmt = $this->db->query('SELECT id, name, email, phone, is_active FROM client WHERE is_active = 1 ORDER BY name ASC');
+        $stmt = $this->db->query('SELECT id, name, email, phone, ruc, is_active FROM client WHERE is_active = 1 ORDER BY name ASC');
         return $stmt->fetchAll();
     }
 
@@ -46,13 +46,14 @@ class ClientModel
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO client (name, email, phone, address, department, notes, is_active)
-             VALUES (:name, :email, :phone, :address, :department, :notes, :is_active)'
+            'INSERT INTO client (name, email, phone, ruc, address, department, notes, is_active)
+             VALUES (:name, :email, :phone, :ruc, :address, :department, :notes, :is_active)'
         );
         $stmt->execute([
             'name' => $data['name'],
             'email' => $data['email'] ?? null,
             'phone' => $data['phone'] ?? null,
+            'ruc' => $data['ruc'] ?? null,
             'address' => $data['address'] ?? null,
             'department' => $data['department'] ?? null,
             'notes' => $data['notes'] ?? null,
@@ -66,7 +67,7 @@ class ClientModel
         $fields = [];
         $params = ['id' => $id];
 
-        foreach (['name', 'email', 'phone', 'address', 'department', 'notes', 'is_active'] as $field) {
+        foreach (['name', 'email', 'phone', 'ruc', 'address', 'department', 'notes', 'is_active'] as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = :$field";
                 $params[$field] = $data[$field];

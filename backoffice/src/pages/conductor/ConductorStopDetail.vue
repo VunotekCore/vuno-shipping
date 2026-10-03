@@ -124,6 +124,19 @@ onMounted(() => load())
           </div>
         </div>
 
+        <div v-if="stop.invoice_number" class="flex items-center justify-between rounded-lg border border-[#1e293b] px-3 py-2.5">
+          <div>
+            <p class="text-xs text-[#64748b] uppercase tracking-wide">Pago del paquete</p>
+            <p class="mt-0.5 text-xs text-[#94a3b8]">{{ stop.invoice_number }}</p>
+          </div>
+          <span
+            class="rounded-full px-2.5 py-1 text-[11px] font-medium"
+            :class="stop.invoice_status === 'paid' ? 'bg-[#22c55e]/15 text-[#22c55e]' : 'bg-[#eab308]/15 text-[#eab308]'"
+          >
+            {{ stop.invoice_status === 'paid' ? 'PAGADO' : 'COBRAR EN ENTREGA' }}
+          </span>
+        </div>
+
         <div v-if="stop.notes">
           <p class="text-xs text-[#64748b] uppercase tracking-wide">Notas</p>
           <p class="mt-0.5 text-sm">{{ stop.notes }}</p>
