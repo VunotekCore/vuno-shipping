@@ -100,6 +100,10 @@ class DocumentSequenceController
             jsonError('Secuencia no encontrada', 404);
         }
 
+        if (($existing['document_code'] ?? '') === 'invoice') {
+            jsonError('La secuencia de facturas ("invoice") no puede editarse ni renombrarse', 409);
+        }
+
         $updateData = [];
 
         if (isset($data['document_code'])) {
@@ -156,6 +160,10 @@ class DocumentSequenceController
         $existing = $this->model->findById($id);
         if ($existing === null) {
             jsonError('Secuencia no encontrada', 404);
+        }
+
+        if (($existing['document_code'] ?? '') === 'invoice') {
+            jsonError('La secuencia de facturas ("invoice") no puede eliminarse', 409);
         }
 
         $this->model->delete($id);

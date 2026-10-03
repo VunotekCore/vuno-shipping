@@ -12,7 +12,6 @@ class BillingConfigModel
         'tax_rate' => 15.00,
         'show_client_ruc' => 0,
         'exchange_rate_usd' => 36.00,
-        'invoice_prefix' => 'FAC',
     ];
 
     public function __construct(private PDO $db) {}
@@ -29,7 +28,7 @@ class BillingConfigModel
         $fields = [];
         $params = [];
 
-        foreach (['tax_enabled', 'tax_rate', 'show_client_ruc', 'exchange_rate_usd', 'invoice_prefix'] as $field) {
+        foreach (['tax_enabled', 'tax_rate', 'show_client_ruc', 'exchange_rate_usd'] as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = :$field";
                 $params[$field] = $data[$field];

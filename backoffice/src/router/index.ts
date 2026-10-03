@@ -43,7 +43,10 @@ const router = createRouter({
           path: 'company',
           name: 'company',
           component: () => import('../pages/CompanyView.vue'),
-          meta: { permission: 'company', action: 'read' },
+          // La vista fusiona "datos de empresa" y "facturación", asi que basta
+          // con uno de los dos permisos para entrar; la vista muestra solo las
+          // tabs para las que el usuario tiene acceso.
+          meta: { anyPermission: ['company.read', 'billing_config.read'] },
         },
         {
           path: 'areas',
@@ -159,12 +162,6 @@ const router = createRouter({
           component: () => import('../pages/InvoiceDetailView.vue'),
           meta: { permission: 'invoice', action: 'read' },
         },
-        {
-          path: 'facturacion/config',
-          name: 'billing-settings',
-          component: () => import('../pages/BillingSettingsView.vue'),
-          meta: { permission: 'billing_config', action: 'read' },
-        },
       ],
     },
     // === Conductor routes ===
@@ -242,7 +239,17 @@ router.beforeEach(async (to) => {
   }
 
   // Permission check for admin routes
-  if (to.meta.permission && to.meta.action) {
+  const anyPermission = to.meta.anyPermission as string[] | undefined
+  if (anyPermission?.length) {
+    // Basta con uno de los permisos listados (rutas que fusionan modulos)
+    const allowed = anyPermission.some((entry) => {
+      const [module, action] = entry.split('.')
+      return auth.hasPermission(module, action)
+    })
+    if (!allowed) {
+      return { name: 'dashboard' }
+    }
+  } else if (to.meta.permission && to.meta.action) {
     if (!auth.hasPermission(to.meta.permission as string, to.meta.action as string)) {
       return { name: 'dashboard' }
     }

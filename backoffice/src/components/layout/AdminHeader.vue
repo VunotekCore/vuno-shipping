@@ -29,6 +29,8 @@ const pageTitle = computed(() => {
     clients: 'Clientes',
     vehicles: 'Vehículos',
     zones: 'Zonas',
+    invoices: 'Facturas',
+    'invoice-detail': 'Detalle de factura',
     pricing: 'Precios',
     'shipping-settings': 'Config. Envíos',
   }

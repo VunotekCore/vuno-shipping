@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\BillingConfigModel;
+use App\Models\DocumentSequenceModel;
 use App\Config\Database;
 
 class BillingConfigController
@@ -24,7 +25,36 @@ class BillingConfigController
             jsonError('No tenés permiso para ver la configuración de facturación', 403);
         }
 
-        jsonSuccess(['config' => $this->model->get()]);
+        jsonSuccess([
+            'config'           => $this->model->get(),
+            'invoice_sequence' => $this->getInvoiceSequence(),
+        ]);
+    }
+
+    /**
+     * Secuencia que numeriza las facturas. `document_sequence` es la única
+     * fuente de verdad del prefijo; se expone aquí (en vez de pedir
+     * document_sequence.read) para poder mostrarlo en la configuración.
+     */
+    private function getInvoiceSequence(): array
+    {
+        $seq = (new DocumentSequenceModel(Database::getConnection()))->findByCode('invoice');
+
+        if ($seq === null) {
+            return ['exists' => false, 'prefix' => '', 'current_number' => 0, 'next_preview' => ''];
+        }
+
+        $prefix = (string) ($seq['prefix'] ?? '');
+        $next = ((int) $seq['current_number']) + 1;
+        $width = max(6, strlen((string) $next));
+        $preview = $prefix !== '' ? $prefix . '-' . str_pad((string) $next, $width, '0', STR_PAD_LEFT) : str_pad((string) $next, $width, '0', STR_PAD_LEFT);
+
+        return [
+            'exists'         => true,
+            'prefix'         => $prefix,
+            'current_number' => (int) $seq['current_number'],
+            'next_preview'   => $preview,
+        ];
     }
 
     public function update(): never
@@ -54,22 +84,15 @@ class BillingConfigController
             $rate = (float) $data['exchange_rate_usd'];
             $update['exchange_rate_usd'] = max(0.01, $rate);
         }
-        if (array_key_exists('invoice_prefix', $data)) {
-            $prefix = sanitizeString((string) $data['invoice_prefix'], 10);
-            $update['invoice_prefix'] = $prefix === '' ? 'FAC' : $prefix;
-
-            $db = Database::getConnection();
-            $stmt = $db->prepare(
-                "UPDATE document_sequence SET prefix = :prefix WHERE document_code = 'invoice'"
-            );
-            $stmt->execute(['prefix' => $update['invoice_prefix']]);
-        }
 
         if (empty($update)) {
             jsonError('No hay campos para actualizar', 422);
         }
 
         $this->model->update($update);
-        jsonSuccess(['config' => $this->model->get()], 'Configuración de facturación actualizada');
+        jsonSuccess([
+            'config'           => $this->model->get(),
+            'invoice_sequence' => $this->getInvoiceSequence(),
+        ], 'Configuración de facturación actualizada');
     }
 }

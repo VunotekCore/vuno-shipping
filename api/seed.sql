@@ -17,6 +17,8 @@ INSERT INTO permission (module, action, label) VALUES
 ('permission', 'delete', 'Eliminar permiso'),
 ('company', 'read', 'Ver empresa'),
 ('company', 'edit', 'Editar empresa'),
+('billing_config', 'read', 'Ver configuración de facturación'),
+('billing_config', 'edit', 'Editar configuración de facturación'),
 ('document_sequence', 'read', 'Ver secuencias'),
 ('document_sequence', 'create', 'Crear secuencia'),
 ('document_sequence', 'edit', 'Editar secuencia'),
@@ -458,6 +460,6 @@ INSERT IGNORE INTO payment_method (name, description, is_active) VALUES
 ('Transferencia', 'Transferencia bancaria', 1),
 ('Tarjeta', 'Pago con tarjeta (débito/crédito)', 1);
 
-INSERT INTO billing_config (id, tax_enabled, tax_rate, show_client_ruc, exchange_rate_usd, invoice_prefix)
-VALUES (1, 0, 15.00, 0, 36.00, 'FAC')
+INSERT INTO billing_config (id, tax_enabled, tax_rate, show_client_ruc, exchange_rate_usd)
+VALUES (1, 0, 15.00, 0, 36.00)
 ON DUPLICATE KEY UPDATE id = id;
