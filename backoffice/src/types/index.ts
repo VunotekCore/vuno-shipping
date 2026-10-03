@@ -422,7 +422,8 @@ export interface DashboardStats {
   pending: number
   delivered: number
   pending_invoices?: number
-  paid_today?: number
+  paid_today_usd?: number
+  paid_today_cord?: number
 }
 
 export type InvoiceStatus = 'pending' | 'paid' | 'cancelled'
@@ -451,9 +452,21 @@ export interface Invoice {
   notes: string | null
   created_by: number | null
   tracking_number?: string
+  /** Datos del paquete asociado (join de `InvoiceModel::findById`) */
   recipient_name?: string | null
+  recipient_phone?: string | null
+  recipient_address?: string | null
   recipient_city?: string | null
   recipient_department?: string | null
+  description?: string | null
+  /** Pesos en libras */
+  weight?: number | null
+  length?: number | null
+  width?: number | null
+  height?: number | null
+  volumetric_weight?: number | null
+  chargeable_weight?: number | null
+  declared_value?: number | null
   shipping_cost?: number | null
   flete_cost?: number | null
   delivery_cost?: number | null
@@ -467,16 +480,26 @@ export interface PaymentMethod {
   is_active: number
 }
 
+export interface InvoiceSequenceInfo {
+  exists: boolean
+  prefix: string
+  current_number: number
+  next_preview: string
+}
+
 export interface BillingConfig {
   id?: number
   tax_enabled: number
   tax_rate: number
   show_client_ruc: number
   exchange_rate_usd: number
-  invoice_prefix: string
 }
 
 export interface InvoiceSummary {
+  /** Suma de `total_amount`, que siempre esta expresado en USD */
   pending_total: number
-  paid_today: number
+  /** Suma de `paid_amount` de las facturas cobradas hoy en USD */
+  paid_today_usd: number
+  /** Suma de `paid_amount` de las facturas cobradas hoy en CORD */
+  paid_today_cord: number
 }

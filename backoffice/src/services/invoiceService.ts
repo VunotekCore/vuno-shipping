@@ -16,7 +16,15 @@ export interface InvoiceListFilters {
 export interface InvoiceListResult {
   invoices: Invoice[]
   summary: InvoiceSummary
+  /** Tasa vigente de billing_config (C$ por USD) */
+  exchange_rate_usd: number
   pagination: Pagination
+}
+
+export interface InvoiceDetailResult {
+  invoice: Invoice
+  /** Tasa vigente de billing_config (C$ por USD), la que aplicara pay() */
+  exchange_rate_usd: number
 }
 
 export const invoiceService = {
@@ -30,7 +38,7 @@ export const invoiceService = {
   },
 
   get(id: number) {
-    return api.get<{ success: boolean; data: { invoice: Invoice } }>(`/invoice/get.php?id=${id}`)
+    return api.get<{ success: boolean; data: InvoiceDetailResult }>(`/invoice/get.php?id=${id}`)
   },
 
   pay(data: {
@@ -47,7 +55,13 @@ export const invoiceService = {
     return api.put('/invoice/cancel.php', { id })
   },
 
-  printUrl(id: number) {
-    return `${api.defaults.baseURL}/invoice/print.php?id=${id}`
+  /**
+   * El backend emite en CORD por defecto: en Nicaragua la factura debe
+   * ir en cordonbas aunque el servicio este dolarizado.
+   *
+   * @param format `letter` (Carta) o `ticket` (bobina de 80 mm, termica).
+   */
+  printUrl(id: number, currency: 'USD' | 'CORD' = 'CORD', format: 'letter' | 'ticket' = 'letter') {
+    return `${api.defaults.baseURL}/invoice/print.php?id=${id}&currency=${currency}&format=${format}`
   },
 }

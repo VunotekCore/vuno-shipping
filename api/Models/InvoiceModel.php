@@ -53,11 +53,21 @@ class InvoiceModel
             SELECT i.*,
                    p.tracking_number,
                    p.recipient_name,
+                   p.recipient_phone,
+                   p.recipient_address,
+                   p.recipient_city,
+                   p.recipient_department,
+                   p.description,
+                   p.weight,
+                   p.length,
+                   p.width,
+                   p.height,
+                   p.volumetric_weight,
+                   p.chargeable_weight,
+                   p.declared_value,
                    p.shipping_cost,
                    p.delivery_cost,
                    p.flete_cost,
-                   p.recipient_city,
-                   p.recipient_department,
                    c.name AS client_name_ref,
                    pm.name AS payment_method_name
             FROM invoice i
@@ -151,13 +161,31 @@ class InvoiceModel
         return (int) $stmt->fetchColumn();
     }
 
-    public function sumPaidToday(): float
+    /**
+     * Total cobrado hoy separado por moneda. `paid_amount` esta expresado en la
+     * moneda en que se cobro (`paid_currency`), asi que sumarlo sin agrupar
+     * mezclaria dolares y cordobas en un mismo escalar. Siempre devuelve las
+     * dos claves para que el frontend no tenga que completar defaults.
+     *
+     * @return array{USD: float, CORD: float}
+     */
+    public function sumPaidTodayByCurrency(): array
     {
         $stmt = $this->db->prepare(
-            "SELECT COALESCE(SUM(paid_amount), 0) FROM invoice WHERE status = 'paid' AND DATE(paid_at) = CURDATE()"
+            "SELECT paid_currency, COALESCE(SUM(paid_amount), 0) AS total
+             FROM invoice
+             WHERE status = 'paid' AND DATE(paid_at) = CURDATE() AND paid_currency IS NOT NULL
+             GROUP BY paid_currency"
         );
         $stmt->execute();
-        return (float) $stmt->fetchColumn();
+
+        $totals = ['USD' => 0.0, 'CORD' => 0.0];
+        while ($row = $stmt->fetch()) {
+            $currency = $row['paid_currency'] === 'CORD' ? 'CORD' : 'USD';
+            $totals[$currency] += (float) $row['total'];
+        }
+
+        return $totals;
     }
 
     private function buildWhere(array $filters): array

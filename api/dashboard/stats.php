@@ -26,7 +26,9 @@ $deliveredCount = $packageModel->countByStatus('delivered');
 
 $invoiceModel = new \App\Models\InvoiceModel($db);
 $pendingInvoices = $invoiceModel->sumByStatus('pending');
-$paidToday = $invoiceModel->sumPaidToday();
+// `paid_amount` esta en la moneda cobrada: se separa por `paid_currency`
+// para no sumar dolares y cordobas en un mismo KPI.
+$paidToday = $invoiceModel->sumPaidTodayByCurrency();
 
 jsonSuccess([
     'stats' => [
@@ -38,6 +40,7 @@ jsonSuccess([
         'pending' => $pendingCount,
         'delivered' => $deliveredCount,
         'pending_invoices' => $pendingInvoices,
-        'paid_today' => $paidToday,
+        'paid_today_usd' => $paidToday['USD'],
+        'paid_today_cord' => $paidToday['CORD'],
     ],
 ]);

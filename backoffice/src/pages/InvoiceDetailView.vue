@@ -3,10 +3,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { invoiceService, type Invoice } from '../services/invoiceService'
 import { paymentMethodService, type PaymentMethod } from '../services/paymentMethodService'
+import { formatUSD, formatCord, formatRate, formatWeight, formatDimensions, usdToCord, paidCurrencyLabel } from '../utils/format'
 import { useToast } from '../composables/useToast'
 import AppModal from '../components/ui/AppModal.vue'
 import AppDropdown from '../components/ui/AppDropdown.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
+import InvoicePrintModal from '../components/ui/InvoicePrintModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,6 +17,11 @@ const toast = useToast()
 const invoice = ref<Invoice | null>(null)
 const loading = ref(true)
 const methods = ref<PaymentMethod[]>([])
+// Tasa vigente (C$ por USD) que trae invoice/get.php. Se usa solo mientras la
+// factura esta pendiente o en el preview del modal: una vez cobrada en CORD
+// manda el snapshot `invoice.exchange_rate` (la tasa realmente aplicada).
+const exchangeRateUsd = ref(36)
+const showPrint = ref(false)
 
 const payForm = ref<{ payment_method_id: number; paid_currency: 'USD' | 'CORD'; payment_reference: string }>({
   payment_method_id: 0,
@@ -34,12 +41,24 @@ const statusInfo: Record<string, { label: string; cls: string }> = {
 
 const clientName = computed(() => invoice.value?.client_name || invoice.value?.client_name_ref || '—')
 
-function fmtUSD(n: number | null | undefined): string {
-  return '$' + Number(n ?? 0).toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-function fmtCord(n: number | null | undefined): string {
-  return 'C$' + Number(n ?? 0).toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
+/** Factura cobrada en cordoba: el desglose lleva equivalente en C$. */
+const isPaidCord = computed(
+  () => invoice.value?.status === 'paid' && invoice.value?.paid_currency === 'CORD'
+)
+
+/** Snapshot aplicado si se cobro en C$, si no la tasa vigente. */
+const appliedRate = computed(() =>
+  isPaidCord.value ? invoice.value?.exchange_rate ?? exchangeRateUsd.value : exchangeRateUsd.value
+)
+
+/** Preview del modal: el importe en la moneda que el despachador eligio. */
+const payPreview = computed(() => {
+  const total = invoice.value?.total_amount ?? 0
+  return payForm.value.paid_currency === 'CORD'
+    ? { amount: usdToCord(total, exchangeRateUsd.value), currency: 'CORD' as const }
+    : { amount: total, currency: 'USD' as const }
+})
+
 function fmtDate(s: string | null | undefined): string {
   if (!s) return '—'
   const d = new Date(s.replace(' ', 'T'))
@@ -52,6 +71,8 @@ async function load() {
     const id = Number(route.params.id)
     const { data } = await invoiceService.get(id)
     invoice.value = data.data?.invoice ?? null
+    const rate = Number(data.data?.exchange_rate_usd)
+    if (Number.isFinite(rate) && rate > 0) exchangeRateUsd.value = rate
   } catch {
     toast.error('Error al cargar la factura')
   } finally {
@@ -112,10 +133,6 @@ async function confirmCancel() {
   }
 }
 
-function printInvoice() {
-  if (invoice.value) window.open(invoiceService.printUrl(invoice.value.id), '_blank')
-}
-
 onMounted(async () => {
   load()
   try {
@@ -167,8 +184,8 @@ onMounted(async () => {
             <p class="mt-1 text-sm text-[#64748b]">Factura de envío — {{ fmtDate(invoice.created_at) }}</p>
           </div>
         </div>
-        <div class="flex gap-2 sm:w-auto w-full sm:justify-end flex-wrap">
-          <button class="admin-btn admin-btn-ghost" @click="printInvoice">
+        <div class="flex gap-2 sm:w-auto w-full sm:justify-end flex-wrap items-center">
+          <button class="admin-btn admin-btn-ghost" @click="showPrint = true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
             Imprimir
           </button>
@@ -207,8 +224,21 @@ onMounted(async () => {
                 </button>
               </div>
               <div>
-                <p class="text-xs text-[#64748b] mb-1">Moneda</p>
-                <p class="text-sm text-[#94a3b8]">{{ invoice.currency }}</p>
+                <p class="text-xs text-[#64748b] mb-1">Moneda de referencia</p>
+                <p class="text-sm text-[#94a3b8]">
+                  Dólares (US$)
+                  <span class="text-xs text-[#64748b]">— precios del envío</span>
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-[#64748b] mb-1">Moneda de cobro</p>
+                <p v-if="invoice.status === 'paid'" class="text-sm text-[#94a3b8]">
+                  {{ paidCurrencyLabel(invoice.paid_currency) }}
+                </p>
+                <p v-else class="text-sm text-[#94a3b8]">
+                  Pendiente
+                  <span class="text-xs text-[#64748b]">— se define al registrar el cobro</span>
+                </p>
               </div>
               <div>
                 <p class="text-xs text-[#64748b] mb-1">Creada</p>
@@ -220,21 +250,40 @@ onMounted(async () => {
               </div>
             </div>
 
-            <!-- Cost breakdown -->
+            <!-- Cost breakdown: siempre en USD (base real del paquete) -->
             <div class="border-t border-[#1e293b] pt-4 mt-4">
-              <p class="text-xs text-[#64748b] mb-3">Desglose</p>
+              <p class="text-xs text-[#64748b] mb-3">Desglose — montos en USD</p>
               <div class="space-y-2">
                 <div class="flex justify-between text-sm">
                   <span class="text-[#94a3b8]">Envío (base)</span>
-                  <span class="text-[#dae2fd]">{{ fmtUSD(invoice.base_amount) }}</span>
+                  <span class="text-[#dae2fd]">{{ formatUSD(invoice.base_amount) }}</span>
                 </div>
                 <div v-if="invoice.tax_rate > 0" class="flex justify-between text-sm">
                   <span class="text-[#94a3b8]">IVA {{ invoice.tax_rate }}%</span>
-                  <span class="text-[#dae2fd]">{{ fmtUSD(invoice.tax_amount) }}</span>
+                  <span class="text-[#dae2fd]">{{ formatUSD(invoice.tax_amount) }}</span>
                 </div>
                 <div class="flex justify-between text-base font-bold border-t border-[#1e293b] pt-2 mt-2">
                   <span class="text-[#dae2fd]">Total</span>
-                  <span class="text-[#dae2fd]">{{ fmtUSD(invoice.total_amount) }}</span>
+                  <span class="text-[#dae2fd]">{{ formatUSD(invoice.total_amount) }}</span>
+                </div>
+
+                <!-- Equivalente en cordoba -->
+                <div v-if="isPaidCord" class="mt-4 rounded-xl border border-[#1e293b] bg-[#0f172a] p-3 space-y-2">
+                  <p class="text-xs text-[#64748b]">
+                    Equivalente en córdobas — tasa aplicada C${{ formatRate(appliedRate) }} por USD
+                  </p>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-[#94a3b8]">Envío (base)</span>
+                    <span class="text-[#dae2fd]">{{ formatCord(usdToCord(invoice.base_amount, appliedRate)) }}</span>
+                  </div>
+                  <div v-if="invoice.tax_rate > 0" class="flex justify-between text-sm">
+                    <span class="text-[#94a3b8]">IVA {{ invoice.tax_rate }}%</span>
+                    <span class="text-[#dae2fd]">{{ formatCord(usdToCord(invoice.tax_amount, appliedRate)) }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm font-bold border-t border-[#1e293b] pt-2">
+                    <span class="text-[#dae2fd]">Total</span>
+                    <span class="text-[#dae2fd]">{{ formatCord(usdToCord(invoice.total_amount, appliedRate)) }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -246,18 +295,22 @@ onMounted(async () => {
                 <div>
                   <p class="text-xs text-[#64748b] mb-1">Monto cobrado</p>
                   <p class="text-sm font-medium text-[#22c55e]">
-                    {{ invoice.paid_currency === 'CORD' ? fmtCord(invoice.paid_amount) : fmtUSD(invoice.paid_amount) }}
+                    {{ invoice.paid_currency === 'CORD' ? formatCord(invoice.paid_amount) : formatUSD(invoice.paid_amount) }}
                   </p>
                 </div>
                 <div>
-                  <p class="text-xs text-[#64748b] mb-1">Método</p>
+                  <p class="text-xs text-[#64748b] mb-1">Método de pago</p>
                   <p class="text-sm text-[#94a3b8]">{{ invoice.payment_method_name || '—' }}</p>
                 </div>
-                <div v-if="invoice.exchange_rate">
-                  <p class="text-xs text-[#64748b] mb-1">Tasa de cambio</p>
-                  <p class="text-sm text-[#94a3b8]">C${{ invoice.exchange_rate }} por USD</p>
+                <div v-if="invoice.paid_currency === 'CORD'">
+                  <p class="text-xs text-[#64748b] mb-1">Tasa de cambio aplicada (C$ por USD)</p>
+                  <p class="text-sm text-[#94a3b8]">C${{ formatRate(invoice.exchange_rate) }}</p>
                 </div>
                 <div>
+                  <p class="text-xs text-[#64748b] mb-1">Equivalente facturado en USD</p>
+                  <p class="text-sm text-[#94a3b8]">{{ formatUSD(invoice.total_amount) }}</p>
+                </div>
+                <div class="sm:col-span-2">
                   <p class="text-xs text-[#64748b] mb-1">Referencia</p>
                   <p class="text-sm text-[#94a3b8]">{{ invoice.payment_reference || '—' }}</p>
                 </div>
@@ -268,13 +321,15 @@ onMounted(async () => {
               </div>
             </div>
 
+            <!-- Aviso de anulacion: se mantiene tal cual, es independiente del
+                 bloque de moneda local de arriba (si no, se reemplaza por error) -->
             <div v-if="invoice.status === 'cancelled'" class="border-t border-[#1e293b] pt-4 mt-4">
               <p class="text-sm text-[#94a3b8]">Esta factura fue anulada.</p>
             </div>
           </div>
         </div>
 
-        <!-- Right: Delivery info -->
+        <!-- Right: Destinatario + datos del paquete -->
         <div class="lg:col-span-1 space-y-6">
           <div class="admin-card p-6">
             <h2 class="text-sm font-semibold text-[#dae2fd] mb-4">Destinatario</h2>
@@ -284,20 +339,83 @@ onMounted(async () => {
                 <p class="text-sm text-[#94a3b8]">{{ invoice.recipient_name || '—' }}</p>
               </div>
               <div>
+                <p class="text-xs text-[#64748b] mb-1">Teléfono</p>
+                <p class="text-sm text-[#94a3b8]">{{ invoice.recipient_phone || '—' }}</p>
+              </div>
+              <div>
                 <p class="text-xs text-[#64748b] mb-1">Dirección</p>
-                <p class="text-sm text-[#94a3b8]">{{ invoice.recipient_city || '—' }}{{ invoice.recipient_department ? ' / ' + invoice.recipient_department : '' }}</p>
+                <p class="text-sm text-[#94a3b8] break-words">
+                  {{ invoice.recipient_address || '—' }}
+                </p>
+                <p
+                  v-if="invoice.recipient_city || invoice.recipient_department"
+                  class="mt-1 text-xs text-[#64748b]"
+                >
+                  {{ [invoice.recipient_city, invoice.recipient_department].filter(Boolean).join(' · ') }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card p-6">
+            <h2 class="text-sm font-semibold text-[#dae2fd] mb-4">Paquete</h2>
+            <div class="space-y-4">
+              <div>
+                <p class="text-xs text-[#64748b] mb-1">Número de rastreo</p>
+                <p class="text-sm font-mono text-[#94a3b8]">{{ invoice.tracking_number || '—' }}</p>
               </div>
               <div>
-                <p class="text-xs text-[#64748b] mb-1">Envío</p>
-                <p class="text-sm text-[#94a3b8]">{{ fmtUSD(invoice.shipping_cost) }}</p>
+                <p class="text-xs text-[#64748b] mb-1">Descripción</p>
+                <p class="text-sm text-[#94a3b8] break-words">{{ invoice.description || '—' }}</p>
               </div>
-              <div>
-                <p class="text-xs text-[#64748b] mb-1">Flete</p>
-                <p class="text-sm text-[#94a3b8]">{{ fmtUSD(invoice.flete_cost) }}</p>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <p class="text-xs text-[#64748b] mb-1">Peso real</p>
+                  <p class="text-sm text-[#94a3b8]">{{ formatWeight(invoice.weight) }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-[#64748b] mb-1">Peso volumétrico</p>
+                  <p class="text-sm text-[#94a3b8]">{{ formatWeight(invoice.volumetric_weight) }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-[#64748b] mb-1">Dimensiones</p>
+                  <p class="text-sm text-[#94a3b8]">
+                    {{ formatDimensions(invoice.length, invoice.width, invoice.height) }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-xs text-[#64748b] mb-1">Valor declarado</p>
+                  <p class="text-sm text-[#94a3b8]">{{ formatUSD(invoice.declared_value) }}</p>
+                </div>
               </div>
-              <div>
-                <p class="text-xs text-[#64748b] mb-1">Delivery</p>
-                <p class="text-sm text-[#94a3b8]">{{ fmtUSD(invoice.delivery_cost) }}</p>
+
+              <!-- El peso cobrable es el que se facturo: se resalta sobre los demas -->
+              <div class="rounded-xl border border-[#1e293b] bg-[#0f172a] p-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-[#94a3b8]">Peso cobrable</span>
+                  <span class="text-sm font-semibold text-[#dae2fd]">
+                    {{ formatWeight(invoice.chargeable_weight) }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="border-t border-[#1e293b] pt-4">
+                <p class="text-xs text-[#64748b] mb-3">Desglose del envío</p>
+                <div class="space-y-2">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-[#94a3b8]">Flete</span>
+                    <span class="text-[#dae2fd]">{{ formatUSD(invoice.flete_cost) }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-[#94a3b8]">Delivery</span>
+                    <span class="text-[#dae2fd]">{{ formatUSD(invoice.delivery_cost) }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm font-medium border-t border-[#1e293b] pt-2 mt-2">
+                    <span class="text-[#94a3b8]">Total del envío</span>
+                    <span class="text-[#dae2fd]">{{ formatUSD(invoice.shipping_cost) }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -309,14 +427,24 @@ onMounted(async () => {
         <div class="space-y-4">
           <div class="rounded-xl border border-[#1e293b] bg-[#0f172a] p-4">
             <div class="flex items-center justify-between">
-              <span class="text-sm text-[#94a3b8]">Total a cobrar</span>
-              <span class="text-xl font-bold text-[#dae2fd]">{{ fmtUSD(invoice.total_amount) }}</span>
+              <span class="text-sm text-[#94a3b8]">
+                Total a cobrar ({{ paidCurrencyLabel(payForm.paid_currency) }})
+              </span>
+              <span class="text-xl font-bold text-[#dae2fd]">
+                {{ payPreview.currency === 'CORD' ? formatCord(payPreview.amount) : formatUSD(payPreview.amount) }}
+              </span>
             </div>
-            <p v-if="invoice.tax_amount" class="mt-1 text-right text-xs text-[#64748b]">Incluye IVA {{ fmtUSD(invoice.tax_amount) }}</p>
+            <p class="mt-1 text-right text-xs text-[#64748b]">
+              Equivalente facturado: {{ formatUSD(invoice.total_amount) }}
+              <template v-if="invoice.tax_amount"> · incluye IVA {{ formatUSD(invoice.tax_amount) }}</template>
+            </p>
+            <p v-if="payPreview.currency === 'CORD'" class="mt-1 text-right text-xs text-[#64748b]">
+              Tasa vigente: C${{ formatRate(exchangeRateUsd) }} por USD
+            </p>
           </div>
 
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Moneda</label>
+            <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Moneda del cobro</label>
             <div class="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -340,8 +468,11 @@ onMounted(async () => {
               placeholder="Seleccionar método"
             />
             <p class="mt-2 text-xs text-[#64748b]">
-              Total a pagar: {{ fmtUSD(invoice.total_amount) }}
-              ({{ payForm.paid_currency === 'CORD' ? 'córdobas' : 'dólares' }}).
+              Se registrará el cobro en
+              <strong class="text-[#94a3b8]">
+                {{ payPreview.currency === 'CORD' ? formatCord(payPreview.amount) : formatUSD(payPreview.amount) }}
+              </strong>.
+              La tasa queda congelada en la factura al confirmar.
             </p>
           </div>
 
@@ -374,6 +505,13 @@ onMounted(async () => {
         variant="danger"
         @confirm="confirmCancel"
         @cancel="showCancel = false"
+      />
+
+      <InvoicePrintModal
+        :visible="showPrint"
+        :invoice-id="invoice.id"
+        :invoice-number="invoice.invoice_number"
+        @close="showPrint = false"
       />
     </template>
 

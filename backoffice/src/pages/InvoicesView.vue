@@ -3,12 +3,14 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoiceService, type Invoice } from '../services/invoiceService'
 import { paymentMethodService, type PaymentMethod } from '../services/paymentMethodService'
+import { formatUSD, formatCord, formatRate, usdToCord, paidCurrencyLabel } from '../utils/format'
 import { useToast } from '../composables/useToast'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppFormField from '../components/ui/AppFormField.vue'
 import AppDropdown from '../components/ui/AppDropdown.vue'
+import InvoicePrintModal from '../components/ui/InvoicePrintModal.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 
@@ -26,7 +28,9 @@ const pages = ref(0)
 
 const filters = reactive<{ status: string }>({ status: '' })
 
-const summary = ref({ pending_total: 0, paid_today: 0 })
+const summary = ref({ pending_total: 0, paid_today_usd: 0, paid_today_cord: 0 })
+const exchangeRateUsd = ref(36)
+const printing = ref<number | null>(null)
 
 const methods = ref<PaymentMethod[]>([])
 
@@ -54,9 +58,14 @@ const statusInfo: Record<string, { label: string; cls: string }> = {
   cancelled: { label: 'Anulada', cls: 'admin-badge-danger' },
 }
 
-function fmtUSD(n: number | null | undefined): string {
-  return '$' + Number(n ?? 0).toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
+/** Preview del modal: importe en la moneda que el despachador eligio. */
+const payPreview = computed(() => {
+  const total = paying.value?.total_amount ?? 0
+  return payForm.paid_currency === 'CORD'
+    ? { amount: usdToCord(total, exchangeRateUsd.value), currency: 'CORD' as const }
+    : { amount: total, currency: 'USD' as const }
+})
+
 function fmtDate(s: string | null | undefined): string {
   if (!s) return '—'
   const d = new Date(s.replace(' ', 'T'))
@@ -85,7 +94,9 @@ async function load() {
       status: (filters.status || undefined) as never,
     })
     invoices.value = data.data.invoices ?? []
-    summary.value = data.data.summary ?? { pending_total: 0, paid_today: 0 }
+    summary.value = data.data.summary ?? { pending_total: 0, paid_today_usd: 0, paid_today_cord: 0 }
+    const rate = Number(data.data.exchange_rate_usd)
+    if (Number.isFinite(rate) && rate > 0) exchangeRateUsd.value = rate
     total.value = data.data.pagination?.total ?? 0
     pages.value = data.data.pagination?.pages ?? 0
   } catch {
@@ -161,8 +172,8 @@ async function confirmCancel() {
   }
 }
 
-function printInvoice(id: number) {
-  window.open(invoiceService.printUrl(id), '_blank')
+function openPrint(id: number) {
+  printing.value = id
 }
 
 onMounted(async () => {
@@ -186,15 +197,16 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Summary cards -->
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <!-- Summary cards: el cobrado va separado por moneda porque `paid_amount`
+         esta expresado en la moneda del cobro y sumarlos mezclaria USD con C$ -->
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div class="admin-card p-4 flex items-center gap-4">
         <div class="h-10 w-10 rounded-xl bg-[#b45309]/20 flex items-center justify-center">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
         </div>
         <div>
-          <p class="text-xs text-[#64748b]">Por cobrar (pendiente)</p>
-          <p class="text-lg font-bold text-[#f59e0b]">{{ fmtUSD(summary.pending_total) }}</p>
+          <p class="text-xs text-[#64748b]">Por cobrar (pendiente, USD)</p>
+          <p class="text-lg font-bold text-[#f59e0b]">{{ formatUSD(summary.pending_total) }}</p>
         </div>
       </div>
       <div class="admin-card p-4 flex items-center gap-4">
@@ -202,8 +214,17 @@ onMounted(async () => {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         </div>
         <div>
-          <p class="text-xs text-[#64748b]">Cobrado hoy</p>
-          <p class="text-lg font-bold text-[#22c55e]">{{ fmtUSD(summary.paid_today) }}</p>
+          <p class="text-xs text-[#64748b]">Cobrado hoy (USD)</p>
+          <p class="text-lg font-bold text-[#22c55e]">{{ formatUSD(summary.paid_today_usd) }}</p>
+        </div>
+      </div>
+      <div class="admin-card p-4 flex items-center gap-4">
+        <div class="h-10 w-10 rounded-xl bg-[#22c55e]/20 flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </div>
+        <div>
+          <p class="text-xs text-[#64748b]">Cobrado hoy (Córdobas)</p>
+          <p class="text-lg font-bold text-[#22c55e]">{{ formatCord(summary.paid_today_cord) }}</p>
         </div>
       </div>
     </div>
@@ -231,7 +252,7 @@ onMounted(async () => {
             <td class="font-medium text-[#dae2fd]">{{ iv.invoice_number }}</td>
             <td class="text-[#94a3b8]">{{ iv.tracking_number || '—' }}</td>
             <td class="text-[#94a3b8]">{{ invoiceName(iv) }}</td>
-            <td class="text-right font-medium text-[#dae2fd]">{{ fmtUSD(iv.total_amount) }}</td>
+            <td class="text-right font-medium text-[#dae2fd]">{{ formatUSD(iv.total_amount) }}</td>
             <td>
               <span class="admin-badge" :class="statusInfo[iv.status]?.cls || ''">{{ statusInfo[iv.status]?.label || iv.status }}</span>
             </td>
@@ -247,7 +268,7 @@ onMounted(async () => {
                 <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openCancel(iv)" title="Anular">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
                 </button>
-                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="printInvoice(iv.id)" title="Imprimir">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openPrint(iv.id)" title="Imprimir">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
                 </button>
               </div>
@@ -284,14 +305,14 @@ onMounted(async () => {
           </div>
           <p class="text-sm text-[#94a3b8] truncate">{{ invoiceName(iv) }} · {{ iv.tracking_number || '—' }}</p>
           <div class="flex items-center justify-between">
-            <p class="text-base font-bold text-[#dae2fd]">{{ fmtUSD(iv.total_amount) }}</p>
+            <p class="text-base font-bold text-[#dae2fd]">{{ formatUSD(iv.total_amount) }}</p>
             <p class="text-xs text-[#64748b]">{{ fmtDate(iv.created_at) }}</p>
           </div>
           <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openDetail(iv.id)">Ver</button>
             <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#22c55e]" @click="openPay(iv)">Cobrar</button>
             <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openCancel(iv)">Anular</button>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="printInvoice(iv.id)">Imprimir</button>
+            <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openPrint(iv.id)">Imprimir</button>
           </div>
         </div>
       </template>
@@ -314,14 +335,24 @@ onMounted(async () => {
       <div class="space-y-4">
         <div class="rounded-xl border border-[#1e293b] bg-[#0f172a] p-4">
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#94a3b8]">Total a cobrar</span>
-            <span class="text-xl font-bold text-[#dae2fd]">{{ fmtUSD(paying?.total_amount ?? 0) }}</span>
+            <span class="text-sm text-[#94a3b8]">
+              Total a cobrar ({{ paidCurrencyLabel(payForm.paid_currency) }})
+            </span>
+            <span class="text-xl font-bold text-[#dae2fd]">
+              {{ payPreview.currency === 'CORD' ? formatCord(payPreview.amount) : formatUSD(payPreview.amount) }}
+            </span>
           </div>
-          <p v-if="paying?.tax_amount" class="mt-1 text-right text-xs text-[#64748b]">Incluye IVA {{ fmtUSD(paying.tax_amount) }}</p>
+          <p class="mt-1 text-right text-xs text-[#64748b]">
+            Equivalente facturado: {{ formatUSD(paying?.total_amount ?? 0) }}
+            <template v-if="paying?.tax_amount"> · incluye IVA {{ formatUSD(paying.tax_amount) }}</template>
+          </p>
+          <p v-if="payPreview.currency === 'CORD'" class="mt-1 text-right text-xs text-[#64748b]">
+            Tasa vigente: C${{ formatRate(exchangeRateUsd) }} por USD
+          </p>
         </div>
 
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Moneda</label>
+          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Moneda del cobro</label>
           <div class="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -345,8 +376,11 @@ onMounted(async () => {
             placeholder="Seleccionar método"
           />
           <p class="mt-2 text-xs text-[#64748b]">
-            El pago se registra como {{ payForm.paid_currency === 'CORD' ? 'córdobas' : 'dólares' }}
-            sobre un total de {{ fmtUSD(paying?.total_amount ?? 0) }}.
+            Se registrará el cobro en
+            <strong class="text-[#94a3b8]">
+              {{ payPreview.currency === 'CORD' ? formatCord(payPreview.amount) : formatUSD(payPreview.amount) }}
+            </strong>.
+            La tasa queda congelada en la factura al confirmar.
           </p>
         </div>
 
@@ -377,6 +411,14 @@ onMounted(async () => {
       variant="danger"
       @confirm="confirmCancel"
       @cancel="cancelTarget = null"
+    />
+
+    <!-- Print -->
+    <InvoicePrintModal
+      :visible="printing !== null"
+      :invoice-id="printing"
+      :invoice-number="printing ? invoices.find(i => i.id === printing)?.invoice_number : undefined"
+      @close="printing = null"
     />
   </div>
 </template>
