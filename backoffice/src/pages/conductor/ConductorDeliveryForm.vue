@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { routeRunService, routeStopService, type RouteStop } from '../../services/routeService'
 import { useToast } from '../../composables/useToast'
@@ -53,45 +53,152 @@ async function load() {
 }
 
 // Signature canvas
-function initCanvas() {
-  if (!canvasRef.value) return setTimeout(() => initCanvas(), 100)
+//
+// El buffer del canvas se dimensiona al tamaño real en pantalla (CSS) multiplicado
+// por devicePixelRatio, y el contexto usa setTransform para trabajar en px CSS.
+// Asi el puntero y el trazo coinciden 1:1 en cualquier ancho, DPR o rotacion.
+//
+// El canvas se mantiene TRANSPARENTE a proposito: saveSignature() valida la firma
+// leyendo el canal alfa, y un fondo blanco haria que un pad vacio pase por valido.
+const MAX_DPR = 2
+const EXPORT_WIDTH = 600
+
+let canvasCtx: CanvasRenderingContext2D | null = null
+let drawing = false
+let boundCanvas: HTMLCanvasElement | null = null
+let resizeObserver: ResizeObserver | null = null
+
+function sizeCanvas() {
   const canvas = canvasRef.value
+  if (!canvas) return
+  const rect = canvas.getBoundingClientRect()
+  if (rect.width === 0 || rect.height === 0) return
+
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR)
+  const targetWidth = Math.round(rect.width * dpr)
+  const targetHeight = Math.round(rect.height * dpr)
+
   const ctx = canvas.getContext('2d')!
+  canvasCtx = ctx
   ctx.strokeStyle = '#000'
   ctx.lineWidth = 2
   ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
 
-  let drawing = false
+  if (canvas.width === targetWidth && canvas.height === targetHeight) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    return
+  }
 
-  canvas.addEventListener('pointerdown', () => { drawing = true; ctx.beginPath() })
-  canvas.addEventListener('pointerup', () => { drawing = false })
-  canvas.addEventListener('pointermove', (e) => {
-    if (!drawing) return
-    const rect = canvas.getBoundingClientRect()
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top)
-    ctx.stroke()
-  })
+  // Redimensionar el buffer borra el contenido: lo preservamos reescalando.
+  const snapshot = document.createElement('canvas')
+  snapshot.width = canvas.width
+  snapshot.height = canvas.height
+  snapshot.getContext('2d')!.drawImage(canvas, 0, 0)
+
+  canvas.width = targetWidth
+  canvas.height = targetHeight
+
+  // Tras cambiar width/height el contexto vuelve a su transform identidad.
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.drawImage(snapshot, 0, 0, rect.width, rect.height)
+}
+
+function pointerToCanvas(e: PointerEvent) {
+  const canvas = canvasRef.value
+  if (!canvas) return null
+  const rect = canvas.getBoundingClientRect()
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+}
+
+function onPointerDown(e: PointerEvent) {
+  const ctx = canvasCtx
+  const canvas = canvasRef.value
+  const point = pointerToCanvas(e)
+  if (!ctx || !canvas || !point) return
+
+  drawing = true
+  canvas.setPointerCapture(e.pointerId)
+  ctx.beginPath()
+  // moveTo + stroke hace visible el toque inicial: sin esto, un toque sin
+  // movimiento no dibuja nada.
+  ctx.moveTo(point.x, point.y)
+  ctx.stroke()
+}
+
+function onPointerMove(e: PointerEvent) {
+  if (!drawing || !canvasCtx) return
+  const point = pointerToCanvas(e)
+  if (!point) return
+  canvasCtx.lineTo(point.x, point.y)
+  canvasCtx.stroke()
+}
+
+function onPointerEnd(e: PointerEvent) {
+  drawing = false
+  const canvas = canvasRef.value
+  if (canvas?.hasPointerCapture?.(e.pointerId)) {
+    canvas.releasePointerCapture(e.pointerId)
+  }
+}
+
+function bindCanvas() {
+  const canvas = canvasRef.value
+  if (!canvas) return
+
+  // v-if recrea el canvas en cada entrada al paso: solo bindeamos el elemento nuevo.
+  if (boundCanvas === canvas) return
+  boundCanvas = canvas
+
+  canvas.addEventListener('pointerdown', onPointerDown)
+  canvas.addEventListener('pointermove', onPointerMove)
+  canvas.addEventListener('pointerup', onPointerEnd)
+  canvas.addEventListener('pointercancel', onPointerEnd)
+  canvas.addEventListener('lostpointercapture', () => { drawing = false })
+
+  sizeCanvas()
+
+  // Rotar el dispositivo o redimensionar la ventana reintroduce el desfase si no
+  // redimensionamos el buffer; sizeCanvas() preserva lo ya firmado.
+  resizeObserver?.disconnect()
+  resizeObserver = new ResizeObserver(() => sizeCanvas())
+  resizeObserver.observe(canvas)
 }
 
 function clearSignature() {
   const canvas = canvasRef.value
   if (!canvas) return
-  canvas.getContext('2d')!.clearRect(0, 0, canvas.width, canvas.height)
+  const ctx = canvas.getContext('2d')!
+  // El transform activo hace que clearRect trabaje en px CSS: hay que ir a
+  // identidad para cubrir el buffer completo.
+  ctx.save()
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.restore()
   signatureData.value = ''
 }
 
 function saveSignature() {
   const canvas = canvasRef.value
   if (!canvas) return
-  const dataUrl = canvas.toDataURL('image/png')
-  // Check if signature is empty
+
+  // Validamos sobre el canvas real: el canal alfa arranca en 0 y el trazo lo sube.
   const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data
   const hasDrawing = pixels.some((p, i) => p !== 0 && i % 4 === 3)
   if (!hasDrawing) {
     toast.error('Debe dibujar una firma')
     return
   }
-  signatureData.value = dataUrl
+
+  // Exportamos a un ancho fijo para que el PNG guardado no dependa del DPR ni del
+  // ancho de pantalla del dispositivo (signature_data es TEXT en MySQL).
+  const rect = canvas.getBoundingClientRect()
+  const out = document.createElement('canvas')
+  out.width = EXPORT_WIDTH
+  out.height = Math.max(1, Math.round(EXPORT_WIDTH * (rect.height / rect.width)))
+  out.getContext('2d')!.drawImage(canvas, 0, 0, out.width, out.height)
+
+  signatureData.value = out.toDataURL('image/png')
   step.value = 'photo'
 }
 
@@ -184,13 +291,18 @@ function goBack() {
   router.push(`/conductor/stop/${stopId.value}`)
 }
 
+watch(step, (value) => {
+  if (value !== 'signature') return
+  nextTick(() => bindCanvas())
+}, { immediate: true })
+
 onMounted(() => {
   load()
-  nextTick(() => initCanvas())
 })
 
 onUnmounted(() => {
   stopCamera()
+  resizeObserver?.disconnect()
 })
 </script>
 
@@ -239,7 +351,7 @@ onUnmounted(() => {
       <div v-if="step === 'signature'" class="admin-card p-5 space-y-4">
         <p class="text-sm font-medium">Firma del cliente</p>
         <div class="rounded-lg border-2 border-dashed border-[#334155] bg-white overflow-hidden">
-          <canvas ref="canvasRef" width="600" height="200" class="w-full touch-none" style="cursor: crosshair" />
+          <canvas ref="canvasRef" class="aspect-[3/1] w-full touch-none" style="cursor: crosshair" />
         </div>
         <div class="flex gap-3">
           <button class="flex-1 rounded-lg border border-[#334155] py-2.5 text-sm text-[#94a3b8] transition-colors hover:bg-white/[0.04]" @click="clearSignature">

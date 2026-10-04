@@ -14,6 +14,10 @@ define('IMAGEKIT_URL_ENDPOINT', getenv('IMAGEKIT_URL_ENDPOINT') ?: '');
 
 class RouteStopController
 {
+    /** signature_data es TEXT en MySQL: 65 535 bytes. Cortamos antes para
+     *  devolver un error claro en vez de un "Data too long" del servidor. */
+    private const MAX_SIGNATURE_BYTES = 60000;
+
     private RouteStopModel $model;
 
     public function __construct()
@@ -169,7 +173,7 @@ class RouteStopController
 
         $data = getJsonInput();
         $id = (int) ($data['id'] ?? 0);
-        $signatureData = sanitizeString($data['signature_data'] ?? '', 50000);
+        $signatureData = is_string($data['signature_data'] ?? null) ? trim($data['signature_data']) : '';
 
         if ($id <= 0 || $signatureData === '') {
             jsonError('ID y signature_data requeridos', 422);
@@ -177,6 +181,12 @@ class RouteStopController
 
         if (!preg_match('#^data:image/(png|jpeg|jpg|webp);base64,#i', $signatureData)) {
             jsonError('Formato de firma invalido', 422);
+        }
+
+        // El limite va en bytes: la columna es TEXT (65 535 bytes), y un base64
+        // desmedido la pasaria por alto el control de caracteres.
+        if (strlen($signatureData) > self::MAX_SIGNATURE_BYTES) {
+            jsonError('La firma es demasiado grande. Intenta de nuevo limpiando el area de firma.', 413);
         }
 
         $existing = $this->model->findById($id);
