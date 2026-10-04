@@ -341,119 +341,29 @@ class PackageController
             jsonError('No tenés permiso para editar paquetes', 403);
         }
 
-        $data = getJsonInput();
-        $id   = (int) ($data['id'] ?? 0);
-
-        if ($id <= 0) {
-            jsonError('ID de paquete inválido', 422);
-        }
-
-        $existing = $this->model->findById($id);
-        if ($existing === null) {
-            jsonError('Paquete no encontrado', 404);
-        }
-
-        $updateData = [];
-
-        if (isset($data['status_id'])) {
-            jsonError('Para cambiar el estado, usá el endpoint updateStatus', 422);
-        }
-
-        if (isset($data['client_id'])) {
-            $updateData['client_id'] = (int) $data['client_id'];
-        }
-        if (isset($data['sender_name'])) {
-            $updateData['sender_name'] = sanitizeString($data['sender_name'], 255);
-        }
-        if (isset($data['sender_phone'])) {
-            $updateData['sender_phone'] = sanitizeString($data['sender_phone'], 50);
-        }
-        if (isset($data['recipient_name'])) {
-            $updateData['recipient_name'] = sanitizeString($data['recipient_name'], 255);
-        }
-        if (isset($data['recipient_phone'])) {
-            $updateData['recipient_phone'] = sanitizeString($data['recipient_phone'], 50);
-        }
-        if (isset($data['recipient_address'])) {
-            $updateData['recipient_address'] = sanitizeString($data['recipient_address'], 500);
-        }
-        if (isset($data['recipient_city'])) {
-            $updateData['recipient_city'] = sanitizeString($data['recipient_city'], 100);
-        }
-        if (isset($data['recipient_department'])) {
-            $updateData['recipient_department'] = sanitizeString($data['recipient_department'], 100);
-        }
-        if (isset($data['latitude']) && $data['latitude'] !== null && $data['latitude'] !== '') {
-            $lat = (float) $data['latitude'];
-            if ($lat < -90 || $lat > 90) {
-                jsonError('Latitud inválida (rango -90 a 90)', 422);
-            }
-            $updateData['latitude'] = $lat;
-        }
-        if (isset($data['longitude']) && $data['longitude'] !== null && $data['longitude'] !== '') {
-            $lng = (float) $data['longitude'];
-            if ($lng < -180 || $lng > 180) {
-                jsonError('Longitud inválida (rango -180 a 180)', 422);
-            }
-            $updateData['longitude'] = $lng;
-        }
-        if (isset($data['description'])) {
-            $updateData['description'] = sanitizeString($data['description'], 500);
-        }
-        if (isset($data['weight'])) {
-            $updateData['weight'] = (float) $data['weight'];
-        }
-        if (isset($data['length'])) {
-            $updateData['length'] = (float) $data['length'];
-        }
-        if (isset($data['width'])) {
-            $updateData['width'] = (float) $data['width'];
-        }
-        if (isset($data['height'])) {
-            $updateData['height'] = (float) $data['height'];
-        }
-        if (isset($data['declared_value'])) {
-            $updateData['declared_value'] = (float) $data['declared_value'];
-        }
-        if (isset($data['notes'])) {
-            $updateData['notes'] = sanitizeString($data['notes'], 500);
-        }
-        if (isset($data['delivery_type'])) {
-            $deliveryTypeId = $this->model->getDeliveryTypeId($data['delivery_type']);
-            if ($deliveryTypeId !== null) {
-                $updateData['delivery_type_id'] = $deliveryTypeId;
-            }
-        }
-        if (isset($data['delivery_option'])) {
-            $updateData['delivery_option'] = $data['delivery_option'];
-        }
-        if (isset($data['local_delivery_type'])) {
-            $localDtId = $this->model->getDeliveryTypeId($data['local_delivery_type']);
-            if ($localDtId !== null) {
-                $updateData['local_delivery_type_id'] = $localDtId;
-            }
-        }
-        if (isset($data['shipping_service'])) {
-            $ssId = $this->model->getShippingServiceId($data['shipping_service']);
-            if ($ssId !== null) {
-                $updateData['shipping_service_id'] = $ssId;
-            }
-        }
-        if (isset($data['delivery_option'])) {
-            $doptId = $this->model->getDeliveryOptionId($data['delivery_option']);
-            if ($doptId !== null) {
-                $updateData['delivery_option_id'] = $doptId;
-            }
-        }
-
-        if (empty($updateData)) {
-            jsonError('No hay datos para actualizar', 422);
-        }
-
-        $this->model->update($id, $updateData);
-        $updated = $this->model->findById($id);
-
-        jsonSuccess(['package' => $updated], 'Paquete actualizado');
+        // Edición de datos de paquete DESHABILITADA (410 Gone).
+        //
+        // La dirección del destinatario no es un dato suelto: alimenta el punto de
+        // entrega del despacho. RouteStopModel::generateFromPackages() congela
+        // nombre, dirección y coordenadas en route_stop al generar las paradas, y
+        // el paquete además puede estar asignado a un embarque (shipment_package)
+        // o a un run. Editar sin saber en cuál de esos estados está deja dos
+        // versiones de la verdad: el stop que ve el conductor con un dato y el
+        // paquete con otro.
+        //
+        // "Borrar y readmitir" tampoco es una salida: delete() se lleva en cascada
+        // la factura y todo el historial de tracking (invoice y tracking_event son
+        // ON DELETE CASCADE en schema.sql), y además saca el paquete del embarque
+        // sin aviso.
+        //
+        // Se rehabilita cuando exista una regla de estado explícita (por ejemplo,
+        // solo mientras no tenga paradas generadas y no esté en un embarque).
+        jsonError(
+            'La edición de paquetes está deshabilitada. No hay forma segura de corregir un paquete ya admitido: '
+            . 'editarlo puede pisar el punto de entrega de un despacho, y eliminarlo borra su factura y su historial. '
+            . 'Reporta el caso para resolverlo manualmente.',
+            410
+        );
     }
 
     public function delete(): never

@@ -48,9 +48,9 @@ export const packageService = {
     return api.post<{ success: boolean; data: { package: Package; invoice?: Invoice } }>('/package/create.php', data)
   },
 
-  update(data: { id: number; [key: string]: unknown }) {
-    return api.put('/package/update.php', data)
-  },
+  // No existe update(): la edición de datos de paquete está deshabilitada en el
+  // backend (410 Gone en package/update.php). Para cambiar el estado usá
+  // updateStatus(); para corregir una errata de admisión, eliminá y readmití.
 
   delete(id: number) {
     return api.delete('/package/delete.php', { data: { id } })
