@@ -301,7 +301,7 @@ onMounted(() => load())
     </div>
 
     <!-- Create / Edit Modal -->
-    <AppModal :visible="showModal" :title="editing ? 'Editar ruta' : 'Crear ruta'" size="lg" @close="showModal = false">
+    <AppModal :visible="showModal" :title="editing ? 'Editar ruta' : 'Crear ruta'" size="lg" :close-on-backdrop="false" @close="showModal = false">
       <form class="space-y-5" @submit.prevent="save" novalidate>
         <div>
           <div class="admin-form-section">

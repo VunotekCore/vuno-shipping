@@ -1196,7 +1196,7 @@ onMounted(() => loadReferenceData())
     </template>
 
     <!-- Geo modal: ubicar punto de entrega -->
-    <AppModal :visible="showGeoModal" title="Ubicar punto de entrega" size="lg" @close="closeGeoModal">
+    <AppModal :visible="showGeoModal" title="Ubicar punto de entrega" size="lg" :close-on-backdrop="false" @close="closeGeoModal">
       <div class="space-y-3">
         <form class="flex gap-2" @submit.prevent="geoSearchSubmit">
           <input

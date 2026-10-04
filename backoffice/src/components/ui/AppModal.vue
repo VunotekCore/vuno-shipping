@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { watch, nextTick, ref } from 'vue'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   visible: boolean
   title?: string
   size?: 'sm' | 'md' | 'lg'
-}>()
+  /** Click en el fondo cierra el modal. Se desactiva en modales con mapa,
+   *  donde clickear o arrastrar sobre el canvas es parte de la interacción. */
+  closeOnBackdrop?: boolean
+}>(), {
+  closeOnBackdrop: true,
+})
 
 const emit = defineEmits<{
   close: []
@@ -14,6 +19,7 @@ const emit = defineEmits<{
 const modalRef = ref<HTMLElement | null>(null)
 
 function onBackdrop(e: MouseEvent) {
+  if (!props.closeOnBackdrop) return
   if ((e.target as HTMLElement).classList.contains('admin-modal-overlay')) {
     emit('close')
   }
