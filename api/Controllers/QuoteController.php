@@ -57,6 +57,8 @@ class QuoteController
             $filters['agent_id'] = (int) $_GET['agent_id'];
         }
 
+        $this->model->expireOverdue();
+
         $total = $this->model->count($filters);
         $quotes = $this->model->listPaginated($limit, $offset, $filters);
 
@@ -85,6 +87,8 @@ class QuoteController
         if ($id <= 0) {
             jsonError('ID de cotización inválido', 422);
         }
+
+        $this->model->expireOverdue();
 
         $quote = $this->model->findById($id);
         if ($quote === null) {
@@ -389,6 +393,8 @@ class QuoteController
         $agentId = $this->isVendor($payload)
             ? (int) $payload['sub']
             : (isset($_GET['agent_id']) && $_GET['agent_id'] !== '' ? (int) $_GET['agent_id'] : null);
+
+        $this->model->expireOverdue();
 
         jsonSuccess([
             'summary' => $this->model->countByStatus($agentId),

@@ -190,6 +190,23 @@ class QuoteModel
         return $stmt->execute(['id' => $id]);
     }
 
+    /**
+     * Marca como expiradas las cotizaciones vigentes cuya validez ya venció.
+     * Se ejecuta de forma perezosa (lazy) al listar/consultar.
+     */
+    public function expireOverdue(): int
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE quote
+             SET status = 'expired'
+             WHERE status IN ('draft', 'sent')
+               AND valid_until IS NOT NULL
+               AND valid_until < CURDATE()"
+        );
+        $stmt->execute();
+        return $stmt->rowCount();
+    }
+
     public function getAgentCommission(int $userId): ?array
     {
         $stmt = $this->db->prepare(

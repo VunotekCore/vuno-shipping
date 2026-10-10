@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { quoteService, type Quote, type QuoteSummary, type QuoteStatus, type QuoteItemInput } from '../services/quoteService'
+import type { QuoteCommissionRow } from '../types'
 import { userService, type User } from '../services/userService'
 import { clientService, type Client } from '../services/clientService'
 import { zoneService, type Zone } from '../services/zoneService'
@@ -37,6 +38,42 @@ const pages = ref(0)
 const filters = reactive<{ status: string; search: string; agent_id: string }>({ status: '', search: '', agent_id: '' })
 
 const summary = ref<QuoteSummary>({ draft: 0, sent: 0, accepted: 0, rejected: 0, expired: 0, converted: 0, cancelled: 0 })
+
+// Commission KPIs (admin only)
+function isoLocal(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+const commissions = ref<QuoteCommissionRow[]>([])
+const commissionsLoading = ref(false)
+const commissionsFrom = ref(isoLocal(new Date(new Date().getFullYear(), new Date().getMonth(), 1)))
+const commissionsTo = ref(isoLocal(new Date()))
+
+const commissionTotals = computed(() =>
+  commissions.value.reduce(
+    (acc, r) => {
+      acc.count += Number(r.converted_count) || 0
+      acc.converted += Number(r.converted_total) || 0
+      acc.commission += Number(r.commission_total) || 0
+      return acc
+    },
+    { count: 0, converted: 0, commission: 0 },
+  ),
+)
+
+async function loadCommissions() {
+  if (isVendor.value) return
+  commissionsLoading.value = true
+  try {
+    const { data } = await quoteService.stats({ from: commissionsFrom.value, to: commissionsTo.value })
+    commissions.value = data.data.commissions ?? []
+  } catch {
+    toast.error('Error al cargar comisiones')
+  } finally {
+    commissionsLoading.value = false
+  }
+}
 
 // Catalog data
 const agents = ref<User[]>([])
@@ -209,6 +246,7 @@ watch(() => filters.search, () => {
 })
 watch(() => filters.status, () => { page.value = 1; load() })
 watch(() => filters.agent_id, () => { page.value = 1; load() })
+watch([commissionsFrom, commissionsTo], () => loadCommissions())
 
 function openDetail(id: number) {
   router.push({ name: 'quote-detail', params: { id } })
@@ -381,6 +419,7 @@ onMounted(async () => {
   ]
   if (!isVendor.value) {
     tasks.push(userService.listByRole('vendedor').then((r) => { agents.value = r.data.data?.users ?? [] }).catch(() => {}))
+    tasks.push(loadCommissions())
   }
   await Promise.all(tasks)
 })
@@ -418,6 +457,56 @@ onMounted(async () => {
         <p class="text-xs text-[#64748b]">Convertidas</p>
         <p class="mt-1 text-lg font-bold text-[#69dca4]">{{ summary.converted }}</p>
       </div>
+    </div>
+
+    <!-- Commission KPIs (admin) -->
+    <div v-if="!isVendor" class="admin-card p-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-[#dae2fd]">Comisiones por vendedor</h2>
+          <p class="mt-0.5 text-xs text-[#64748b]">
+            {{ commissionTotals.count }} conversiones · {{ formatUSD(commissionTotals.converted) }} convertidos · {{ formatUSD(commissionTotals.commission) }} en comisiones
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-36"><input v-model="commissionsFrom" type="date" class="admin-input" /></div>
+          <span class="text-xs text-[#64748b]">a</span>
+          <div class="w-36"><input v-model="commissionsTo" type="date" class="admin-input" /></div>
+        </div>
+      </div>
+
+      <div v-if="commissionsLoading" class="mt-4 space-y-2">
+        <div v-for="i in 3" :key="i" class="h-9 animate-pulse rounded bg-[#1e293b]" />
+      </div>
+      <div v-else-if="commissions.length" class="mt-4 overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs uppercase tracking-wider text-[#64748b]">
+              <th class="py-2 pr-3 font-medium">Vendedor</th>
+              <th class="px-3 py-2 text-right font-medium">Conversiones</th>
+              <th class="px-3 py-2 text-right font-medium">Monto convertido</th>
+              <th class="py-2 pl-3 text-right font-medium">Comisión</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in commissions" :key="row.agent_id ?? 'none'" class="border-t border-[#1e293b]">
+              <td class="py-2 pr-3 text-[#dae2fd]">{{ row.agent_name || 'Sin vendedor' }}</td>
+              <td class="px-3 py-2 text-right text-[#94a3b8]">{{ row.converted_count }}</td>
+              <td class="px-3 py-2 text-right text-[#94a3b8]">{{ formatUSD(row.converted_total) }}</td>
+              <td class="py-2 pl-3 text-right font-medium text-[#69dca4]">{{ formatUSD(row.commission_total) }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="border-t border-[#334155]">
+              <td class="py-2 pr-3 font-medium text-[#dae2fd]">Total</td>
+              <td class="px-3 py-2 text-right text-[#dae2fd]">{{ commissionTotals.count }}</td>
+              <td class="px-3 py-2 text-right text-[#dae2fd]">{{ formatUSD(commissionTotals.converted) }}</td>
+              <td class="py-2 pl-3 text-right font-semibold text-[#69dca4]">{{ formatUSD(commissionTotals.commission) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p v-else class="mt-4 text-sm text-[#64748b]">Sin conversiones en el rango seleccionado.</p>
     </div>
 
     <!-- Filters -->
