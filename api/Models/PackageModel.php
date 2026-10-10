@@ -71,7 +71,8 @@ class PackageModel
         $total = (int) $countStmt->fetchColumn();
 
         $stmt = $this->db->prepare("
-            SELECT p.id, p.tracking_number, p.client_id, c.name AS client_name,
+            SELECT p.id, p.tracking_number, p.client_id, p.quote_id, c.name AS client_name,
+                   q.quote_number,
                    p.sender_name, p.sender_phone, p.recipient_name, p.recipient_phone,
                    p.recipient_address, p.recipient_city, p.recipient_department,
                    p.latitude, p.longitude,
@@ -90,6 +91,7 @@ class PackageModel
                    inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM package p
             LEFT JOIN client c ON c.id = p.client_id
+            LEFT JOIN quote q ON q.id = p.quote_id
             LEFT JOIN zone z ON z.id = p.zone_id
             LEFT JOIN package_status ps ON ps.id = p.status_id
             LEFT JOIN delivery_type dt ON dt.id = p.delivery_type_id
@@ -168,25 +170,28 @@ class PackageModel
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO package (tracking_number, tracking_token, client_id, sender_name, sender_phone,
+            'INSERT INTO package (tracking_number, tracking_token, client_id, quote_id, sender_name, sender_phone,
              recipient_name, recipient_phone, recipient_address, recipient_city, recipient_department,
              latitude, longitude,
              zone_id, description, weight, length, width, height,
              volumetric_weight, chargeable_weight, declared_value, flete_cost, delivery_cost, shipping_cost,
              pricing_rule_id, delivery_type_id, delivery_option, local_delivery_type_id,
-             shipping_service_id, delivery_option_id, pricing_type, status_id, assigned_to, notes, origin, created_by)
-             VALUES (:tracking_number, :tracking_token, :client_id, :sender_name, :sender_phone,
+             shipping_service_id, delivery_option_id, pricing_type, status_id, assigned_to, notes, origin,
+             pickup_required, pickup_vehicle_id, created_by)
+             VALUES (:tracking_number, :tracking_token, :client_id, :quote_id, :sender_name, :sender_phone,
              :recipient_name, :recipient_phone, :recipient_address, :recipient_city, :recipient_department,
              :latitude, :longitude,
              :zone_id, :description, :weight, :length, :width, :height,
              :volumetric_weight, :chargeable_weight, :declared_value, :flete_cost, :delivery_cost, :shipping_cost,
              :pricing_rule_id, :delivery_type_id, :delivery_option, :local_delivery_type_id,
-             :shipping_service_id, :delivery_option_id, :pricing_type, :status_id, :assigned_to, :notes, :origin, :created_by)'
+             :shipping_service_id, :delivery_option_id, :pricing_type, :status_id, :assigned_to, :notes, :origin,
+             :pickup_required, :pickup_vehicle_id, :created_by)'
         );
         $stmt->execute([
             'tracking_number' => $data['tracking_number'],
             'tracking_token' => $data['tracking_token'] ?? null,
             'client_id' => $data['client_id'] ?? null,
+            'quote_id' => $data['quote_id'] ?? null,
             'sender_name' => $data['sender_name'],
             'sender_phone' => $data['sender_phone'] ?? null,
             'recipient_name' => $data['recipient_name'],
@@ -219,6 +224,8 @@ class PackageModel
             'assigned_to' => $data['assigned_to'] ?? null,
             'notes' => $data['notes'] ?? null,
             'origin' => $data['origin'] ?? 'online',
+            'pickup_required' => !empty($data['pickup_required']) ? 1 : 0,
+            'pickup_vehicle_id' => $data['pickup_vehicle_id'] ?? null,
             'created_by' => $data['created_by'] ?? null,
         ]);
         return (int) $this->db->lastInsertId();
