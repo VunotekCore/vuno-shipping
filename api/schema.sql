@@ -292,6 +292,7 @@ CREATE TABLE IF NOT EXISTS quote (
     delivery_option VARCHAR(50) NULL,
     delivery_option_id INT NULL,
     pickup_required TINYINT(1) NOT NULL DEFAULT 0,
+    pickup_vehicle_id INT NULL,
     subtotal DECIMAL(12,2) NOT NULL DEFAULT 0.00,
     delivery_total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
     base_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
@@ -319,6 +320,7 @@ CREATE TABLE IF NOT EXISTS quote (
     FOREIGN KEY (delivery_type_id) REFERENCES delivery_type(id) ON DELETE SET NULL,
     FOREIGN KEY (shipping_service_id) REFERENCES shipping_service(id) ON DELETE SET NULL,
     FOREIGN KEY (delivery_option_id) REFERENCES delivery_option(id) ON DELETE SET NULL,
+    FOREIGN KEY (pickup_vehicle_id) REFERENCES vehicle(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES `user`(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

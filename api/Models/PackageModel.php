@@ -87,11 +87,13 @@ class PackageModel
                    p.shipping_service_id, ss.name AS shipping_service_name,
                    p.delivery_option_id, dopt.name AS delivery_option_name,
                    p.assigned_to, u.name AS assigned_to_name,
-                   p.origin, p.received_at, p.delivered_at, p.created_at,
+                   p.origin, p.pickup_required, p.pickup_vehicle_id, v.plate AS pickup_vehicle_plate,
+                   p.received_at, p.delivered_at, p.created_at,
                    inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM package p
             LEFT JOIN client c ON c.id = p.client_id
             LEFT JOIN quote q ON q.id = p.quote_id
+            LEFT JOIN vehicle v ON v.id = p.pickup_vehicle_id
             LEFT JOIN zone z ON z.id = p.zone_id
             LEFT JOIN package_status ps ON ps.id = p.status_id
             LEFT JOIN delivery_type dt ON dt.id = p.delivery_type_id
@@ -124,9 +126,11 @@ class PackageModel
                    ss.name AS shipping_service_name, dopt.name AS delivery_option_name,
                    u.name AS assigned_to_name,
                    pr.name AS pricing_rule_name, z.name AS zone_name,
+                   v.plate AS pickup_vehicle_plate,
                    inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM package p
             LEFT JOIN client c ON c.id = p.client_id
+            LEFT JOIN vehicle v ON v.id = p.pickup_vehicle_id
             LEFT JOIN package_status ps ON ps.id = p.status_id
             LEFT JOIN delivery_type dt ON dt.id = p.delivery_type_id
             LEFT JOIN delivery_type ldt ON ldt.id = p.local_delivery_type_id

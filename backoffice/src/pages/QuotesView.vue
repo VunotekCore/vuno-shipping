@@ -8,6 +8,7 @@ import { clientService, type Client } from '../services/clientService'
 import { zoneService, type Zone } from '../services/zoneService'
 import { deliveryTypeService, type DeliveryType } from '../services/deliveryTypeService'
 import { shippingSettingsService, type ShippingService, type DeliveryOption } from '../services/shippingSettingsService'
+import { vehicleService, type Vehicle } from '../services/vehicleService'
 import { formatUSD } from '../utils/format'
 import { useToast } from '../composables/useToast'
 import { useAuthStore } from '../stores/auth'
@@ -81,6 +82,7 @@ const zones = ref<Zone[]>([])
 const deliveryTypes = ref<DeliveryType[]>([])
 const shippingServices = ref<ShippingService[]>([])
 const deliveryOptions = ref<DeliveryOption[]>([])
+const vehicles = ref<Vehicle[]>([])
 
 // Create / edit
 const showModal = ref(false)
@@ -103,6 +105,7 @@ interface QuoteForm {
   shipping_service: string
   delivery_option: string
   pickup_required: boolean
+  pickup_vehicle_id: number | null
   valid_until: string
   notes: string
   items: QuoteItemInput[]
@@ -129,6 +132,7 @@ function defaultForm(): QuoteForm {
     shipping_service: '',
     delivery_option: '',
     pickup_required: false,
+    pickup_vehicle_id: null,
     valid_until: '',
     notes: '',
     items: [emptyItem()],
@@ -180,6 +184,12 @@ const columns: TableColumn[] = [
 ]
 
 const zoneOptions = computed(() => zones.value.map((z) => ({ value: z.id, label: z.name })))
+const vehicleOptions = computed(() =>
+  vehicles.value.map((v) => {
+    const desc = [v.brand, v.model].filter(Boolean).join(' ')
+    return { value: v.id, label: desc ? `${v.plate} — ${desc}` : v.plate }
+  }),
+)
 const clientOptions = computed(() => clients.value.map((c) => ({ value: c.id, label: c.name })))
 const agentOptions = computed(() => agents.value.map((a) => ({ value: a.id, label: a.name })))
 const deliveryTypeOpts = computed(() => deliveryTypes.value.map((d) => ({ value: d.name, label: d.name })))
@@ -278,6 +288,7 @@ async function openEdit(q: Quote) {
       shipping_service: quote.shipping_service_id ? (serviceName(quote.shipping_service_id) ?? '') : '',
       delivery_option: quote.delivery_option ?? '',
       pickup_required: !!quote.pickup_required,
+      pickup_vehicle_id: quote.pickup_vehicle_id ?? null,
       valid_until: quote.valid_until ?? '',
       notes: quote.notes ?? '',
       items: (data.data.items ?? []).map((it) => ({
@@ -331,6 +342,7 @@ function buildPayload() {
     shipping_service: form.shipping_service || null,
     delivery_option: form.delivery_option || undefined,
     pickup_required: form.pickup_required,
+    pickup_vehicle_id: form.pickup_required ? (form.pickup_vehicle_id ?? null) : null,
     valid_until: form.valid_until || null,
     notes: form.notes || null,
     items: form.items.map((it) => ({
@@ -415,6 +427,7 @@ onMounted(async () => {
     deliveryTypeService.list().then((r) => { deliveryTypes.value = r.data.data?.delivery_types ?? [] }).catch(() => {}),
     shippingSettingsService.listServices().then((r) => { shippingServices.value = r.data.data?.shipping_services ?? [] }).catch(() => {}),
     shippingSettingsService.listOptions().then((r) => { deliveryOptions.value = r.data.data?.delivery_options ?? [] }).catch(() => {}),
+    vehicleService.listAll().then((r) => { vehicles.value = r.data.data?.vehicles ?? [] }).catch(() => {}),
   ]
   if (!isVendor.value) {
     tasks.push(userService.listByRole('vendedor').then((r) => { agents.value = r.data.data?.users ?? [] }).catch(() => {}))
@@ -670,6 +683,16 @@ onMounted(async () => {
                 <AppSwitch :model-value="form.pickup_required" @update:model-value="(v: boolean) => form.pickup_required = v" />
                 <span class="text-sm text-[#94a3b8]">Requiere recolección</span>
               </label>
+            </div>
+            <div v-if="form.pickup_required">
+              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Vehículo de recolección</label>
+              <AppDropdown
+                :model-value="form.pickup_vehicle_id"
+                @update:model-value="(v: string | number | null) => form.pickup_vehicle_id = v == null || v === '' ? null : Number(v)"
+                :options="vehicleOptions"
+                placeholder="Sin asignar"
+                :disabled="saving"
+              />
             </div>
           </div>
           <div class="mt-4">

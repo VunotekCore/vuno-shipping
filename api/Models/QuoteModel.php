@@ -24,11 +24,13 @@ class QuoteModel
             SELECT q.*,
                    u.name AS agent_name,
                    c.name AS client_name_ref,
+                   v.plate AS pickup_vehicle_plate,
                    (SELECT COUNT(*) FROM quote_item qi WHERE qi.quote_id = q.id) AS item_count,
                    (SELECT COUNT(*) FROM package p WHERE p.quote_id = q.id) AS package_count
             FROM quote q
             LEFT JOIN `user` u ON u.id = q.agent_id
             LEFT JOIN client c ON c.id = q.client_id
+            LEFT JOIN vehicle v ON v.id = q.pickup_vehicle_id
             $where
             ORDER BY q.created_at DESC
             LIMIT :limit OFFSET :offset
@@ -49,10 +51,12 @@ class QuoteModel
                    u.name AS agent_name,
                    u.commission_type AS agent_commission_type,
                    u.commission_value AS agent_commission_value,
-                   c.name AS client_name_ref
+                   c.name AS client_name_ref,
+                   v.plate AS pickup_vehicle_plate
             FROM quote q
             LEFT JOIN `user` u ON u.id = q.agent_id
             LEFT JOIN client c ON c.id = q.client_id
+            LEFT JOIN vehicle v ON v.id = q.pickup_vehicle_id
             WHERE q.id = :id LIMIT 1
         ");
         $stmt->execute(['id' => $id]);
@@ -91,7 +95,7 @@ class QuoteModel
                  recipient_address, recipient_city, recipient_department, recipient_ruc,
                  latitude, longitude,
                  agent_id, status, origin, zone_id, delivery_type_id, shipping_service_id,
-                 delivery_option, delivery_option_id, pickup_required,
+                 delivery_option, delivery_option_id, pickup_required, pickup_vehicle_id,
                  subtotal, delivery_total, base_amount, tax_rate, tax_amount, total_amount, currency,
                  valid_until, notes, created_by)
              VALUES
@@ -99,7 +103,7 @@ class QuoteModel
                  :recipient_address, :recipient_city, :recipient_department, :recipient_ruc,
                  :latitude, :longitude,
                  :agent_id, :status, :origin, :zone_id, :delivery_type_id, :shipping_service_id,
-                 :delivery_option, :delivery_option_id, :pickup_required,
+                 :delivery_option, :delivery_option_id, :pickup_required, :pickup_vehicle_id,
                  :subtotal, :delivery_total, :base_amount, :tax_rate, :tax_amount, :total_amount, :currency,
                  :valid_until, :notes, :created_by)'
         );
@@ -124,6 +128,7 @@ class QuoteModel
             'delivery_option' => $data['delivery_option'] ?? null,
             'delivery_option_id' => $data['delivery_option_id'] ?? null,
             'pickup_required' => !empty($data['pickup_required']) ? 1 : 0,
+            'pickup_vehicle_id' => $data['pickup_vehicle_id'] ?? null,
             'subtotal' => $data['subtotal'] ?? 0,
             'delivery_total' => $data['delivery_total'] ?? 0,
             'base_amount' => $data['base_amount'] ?? 0,
@@ -148,7 +153,7 @@ class QuoteModel
             'recipient_address', 'recipient_city', 'recipient_department', 'recipient_ruc',
             'latitude', 'longitude',
             'agent_id', 'status', 'origin', 'zone_id', 'delivery_type_id', 'shipping_service_id',
-            'delivery_option', 'delivery_option_id', 'pickup_required',
+            'delivery_option', 'delivery_option_id', 'pickup_required', 'pickup_vehicle_id',
             'subtotal', 'delivery_total', 'base_amount', 'tax_rate', 'tax_amount', 'total_amount',
             'currency', 'valid_until', 'notes',
         ];

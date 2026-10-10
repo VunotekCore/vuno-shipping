@@ -336,6 +336,20 @@ onMounted(() => loadPackage())
                 </div>
               </div>
 
+              <div v-if="pkg.pickup_required" class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
+                <p class="text-xs text-[#64748b] mb-2">Recolección</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p class="text-xs text-[#64748b] mb-1">Requiere recolección</p>
+                    <span class="admin-badge admin-badge-info">Sí</span>
+                  </div>
+                  <div>
+                    <p class="text-xs text-[#64748b] mb-1">Vehículo</p>
+                    <p class="text-sm text-[#94a3b8]">{{ pkg.pickup_vehicle_plate || 'Sin asignar' }}</p>
+                  </div>
+                </div>
+              </div>
+
               <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
                 <p class="text-xs text-[#64748b] mb-2">Fechas</p>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">

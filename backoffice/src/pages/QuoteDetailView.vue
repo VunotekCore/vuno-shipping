@@ -252,7 +252,7 @@ onMounted(load)
             <h2 class="text-sm font-semibold text-[#dae2fd] mb-1">Envío</h2>
             <div class="flex justify-between"><span class="text-[#64748b]">Origen</span><span class="text-[#94a3b8]">{{ quote.origin === 'local' ? 'Directo Nicaragua' : 'Compra online (Miami)' }}</span></div>
             <div class="flex justify-between"><span class="text-[#64748b]">Opción</span><span class="text-[#94a3b8]">{{ quote.delivery_option || '—' }}</span></div>
-            <div class="flex justify-between"><span class="text-[#64748b]">Recolección</span><span class="text-[#94a3b8]">{{ quote.pickup_required ? 'Sí' : 'No' }}</span></div>
+            <div class="flex justify-between"><span class="text-[#64748b]">Recolección</span><span class="text-[#94a3b8]">{{ quote.pickup_required ? (quote.pickup_vehicle_plate ? `Sí · ${quote.pickup_vehicle_plate}` : 'Sí') : 'No' }}</span></div>
             <div class="flex justify-between"><span class="text-[#64748b]">Vendedor</span><span class="text-[#94a3b8]">{{ quote.agent_name || '—' }}</span></div>
             <div class="flex justify-between"><span class="text-[#64748b]">Válida hasta</span><span class="text-[#94a3b8]">{{ quote.valid_until ? fmtDate(quote.valid_until) : '—' }}</span></div>
           </div>

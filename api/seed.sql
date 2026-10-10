@@ -173,6 +173,7 @@ JOIN permission p ON (
    OR (p.module = 'delivery_type' AND p.action IN ('read'))
    OR (p.module = 'shipping_service' AND p.action IN ('read'))
    OR (p.module = 'delivery_option' AND p.action IN ('read'))
+   OR (p.module = 'vehicle' AND p.action IN ('read'))
 )
 WHERE r.slug = 'vendedor';
 

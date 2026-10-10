@@ -342,6 +342,7 @@ class QuoteController
                     'height' => $item['height'],
                     'declared_value' => $item['declared_value'],
                     'pickup_required' => $quote['pickup_required'],
+                    'pickup_vehicle_id' => $quote['pickup_vehicle_id'],
                     'notes' => 'Cotización ' . $quote['quote_number'],
                 ];
 
@@ -491,7 +492,18 @@ class QuoteController
             'origin' => ($data['origin'] ?? '') === 'local' ? 'local' : 'online',
             'delivery_option' => $deliveryOption,
             'pickup_required' => !empty($data['pickup_required']) ? 1 : 0,
+            'pickup_vehicle_id' => null,
         ];
+
+        if (isset($data['pickup_vehicle_id']) && $data['pickup_vehicle_id'] !== '' && $data['pickup_vehicle_id'] !== null) {
+            $vehicleId = (int) $data['pickup_vehicle_id'];
+            $vehStmt = $this->db->prepare('SELECT id FROM vehicle WHERE id = :id LIMIT 1');
+            $vehStmt->execute(['id' => $vehicleId]);
+            if ($vehStmt->fetch() === false) {
+                jsonError('El vehículo de recolección indicado no existe', 422);
+            }
+            $context['pickup_vehicle_id'] = $vehicleId;
+        }
 
         if (isset($data['zone_id']) && $data['zone_id'] !== '') {
             $context['zone_id'] = (int) $data['zone_id'];

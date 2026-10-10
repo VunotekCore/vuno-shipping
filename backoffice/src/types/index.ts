@@ -245,6 +245,9 @@ export interface Package {
   assigned_to_name: string | null
   notes: string | null
   origin: 'online' | 'local'
+  pickup_required?: number
+  pickup_vehicle_id?: number | null
+  pickup_vehicle_plate?: string | null
   received_at: string | null
   delivered_at: string | null
   invoice_id?: number | null
@@ -589,6 +592,8 @@ export interface Quote {
   delivery_option: string | null
   delivery_option_id: number | null
   pickup_required: number
+  pickup_vehicle_id: number | null
+  pickup_vehicle_plate?: string | null
   subtotal: number
   delivery_total: number
   base_amount: number
