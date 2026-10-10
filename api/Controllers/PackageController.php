@@ -5,8 +5,7 @@ namespace App\Controllers;
 
 use App\Models\PackageModel;
 use App\Models\TrackingEventModel;
-use App\Models\DocumentSequenceModel;
-use App\Services\PricingService;
+use App\Services\PackageService;
 use App\Services\PackageNotifierService;
 use App\Config\Database;
 use chillerlan\QRCode\QRCode;
@@ -96,239 +95,14 @@ class PackageController
 
         $data = getJsonInput();
 
-        $senderName = $data['sender_name'] ?? '';
-        $recipientName = $data['recipient_name'] ?? '';
-        $recipientPhone = $data['recipient_phone'] ?? '';
-        $recipientAddress = $data['recipient_address'] ?? '';
+        $service = new PackageService(Database::getConnection());
+        $result = $service->create($data, $payload);
 
-        if ($senderName === '' || $recipientName === '' || $recipientPhone === '' || $recipientAddress === '') {
-            jsonError('Nombre remitente, nombre destinatario, teléfono y dirección son requeridos', 422);
-        }
-
-        $db = Database::getConnection();
-        $db->beginTransaction();
-
-        try {
-            $seqModel = new DocumentSequenceModel($db);
-            $seq = $seqModel->findByCode('tracking');
-            if ($seq === null) {
-                $db->rollBack();
-                jsonError('Secuencia de tracking no configurada', 500);
-            }
-            $prefix = $seq['prefix'] ?? 'EV';
-
-            do {
-                $trackingNumber = self::generateRandomTrackingCode($prefix);
-            } while ($this->model->findByTrackingNumber($trackingNumber) !== null);
-
-            $trackingToken = bin2hex(random_bytes(32));
-
-            $insertData = [
-                'tracking_number' => $trackingNumber,
-                'tracking_token' => $trackingToken,
-                'sender_name' => sanitizeString($senderName, 255),
-                'sender_phone' => sanitizeString($data['sender_phone'] ?? '', 50),
-                'recipient_name' => sanitizeString($recipientName, 255),
-                'recipient_phone' => sanitizeString($recipientPhone, 50),
-                'recipient_address' => sanitizeString($recipientAddress, 500),
-                'created_by' => (int) $payload['sub'],
-            ];
-
-            if (isset($data['client_id'])) {
-                $clientModel = new \App\Models\ClientModel($db);
-                $client = $clientModel->findById((int) $data['client_id']);
-                if ($client === null) {
-                    $db->rollBack();
-                    jsonError('El cliente seleccionado no existe', 422);
-                }
-                $insertData['client_id'] = (int) $data['client_id'];
-            }
-
-            if (isset($data['recipient_city'])) {
-                $insertData['recipient_city'] = sanitizeString($data['recipient_city'], 100);
-            }
-            if (isset($data['recipient_department'])) {
-                $insertData['recipient_department'] = sanitizeString($data['recipient_department'], 100);
-            }
-            if (isset($data['latitude']) && $data['latitude'] !== null && $data['latitude'] !== '') {
-                $lat = (float) $data['latitude'];
-                if ($lat < -90 || $lat > 90) {
-                    $db->rollBack();
-                    jsonError('Latitud inválida (rango -90 a 90)', 422);
-                }
-                $insertData['latitude'] = $lat;
-            }
-            if (isset($data['longitude']) && $data['longitude'] !== null && $data['longitude'] !== '') {
-                $lng = (float) $data['longitude'];
-                if ($lng < -180 || $lng > 180) {
-                    $db->rollBack();
-                    jsonError('Longitud inválida (rango -180 a 180)', 422);
-                }
-                $insertData['longitude'] = $lng;
-            }
-            if (isset($data['zone_id'])) {
-                $insertData['zone_id'] = (int) $data['zone_id'];
-            }
-            if (isset($data['description'])) {
-                $insertData['description'] = sanitizeString($data['description'], 500);
-            }
-            if (isset($data['weight'])) {
-                $insertData['weight'] = (float) $data['weight'];
-            }
-            if (isset($data['length'])) {
-                $insertData['length'] = (float) $data['length'];
-            }
-            if (isset($data['width'])) {
-                $insertData['width'] = (float) $data['width'];
-            }
-            if (isset($data['height'])) {
-                $insertData['height'] = (float) $data['height'];
-            }
-            if (isset($data['declared_value'])) {
-                $insertData['declared_value'] = (float) $data['declared_value'];
-            }
-            if (isset($data['notes'])) {
-                $insertData['notes'] = sanitizeString($data['notes'], 500);
-            }
-
-            $deliveryType = $data['delivery_type'] ?? 'aereo';
-            $deliveryTypeId = $this->model->getDeliveryTypeId($deliveryType);
-            if ($deliveryTypeId !== null) {
-                $insertData['delivery_type_id'] = $deliveryTypeId;
-            }
-
-            $insertData['delivery_option'] = $data['delivery_option'] ?? 'branch';
-            if (isset($data['local_delivery_type'])) {
-                $localDtId = $this->model->getDeliveryTypeId($data['local_delivery_type']);
-                if ($localDtId !== null) {
-                    $insertData['local_delivery_type_id'] = $localDtId;
-                }
-            }
-
-            if (isset($data['shipping_service'])) {
-                $ssId = $this->model->getShippingServiceId($data['shipping_service']);
-                if ($ssId !== null) {
-                    $insertData['shipping_service_id'] = $ssId;
-                }
-            }
-
-            if (isset($data['delivery_option'])) {
-                $doptId = $this->model->getDeliveryOptionId($data['delivery_option']);
-                if ($doptId !== null) {
-                    $insertData['delivery_option_id'] = $doptId;
-                }
-            }
-
-            $statusId = $this->model->getStatusId('pending');
-            if ($statusId !== null) {
-                $insertData['status_id'] = $statusId;
-            }
-
-            // Origin: compra online (Miami) vs directo en Nicaragua (local).
-            // - online: al admitirlo queda 'received' (recibido en almacen Miami).
-            // - local:  nace directo en 'in_nicaragua' (listo para entrega local).
-            $origin = ($data['origin'] ?? '') === 'local' ? 'local' : 'online';
-            $insertData['origin'] = $origin;
-
-            $statusName = 'received';
-            $statusDescription = 'Paquete recibido en almacén Miami';
-            if ($origin === 'local') {
-                $statusName = 'in_nicaragua';
-                $statusDescription = 'Paquete recibido en Nicaragua, listo para entrega local';
-            }
-
-            $initialStatusId = $this->model->getStatusId($statusName);
-            if ($initialStatusId !== null) {
-                $insertData['status_id'] = $initialStatusId;
-                if ($statusName === 'received') {
-                    $insertData['received_at'] = date('Y-m-d H:i:s');
-                }
-            }
-
-            $pricingService = new PricingService();
-
-            $zoneId = isset($data['zone_id']) ? (int) $data['zone_id'] : null;
-            $zone = null;
-            if ($zoneId !== null) {
-                $zoneStmt = $db->prepare('SELECT * FROM zone WHERE id = :id LIMIT 1');
-                $zoneStmt->execute(['id' => $zoneId]);
-                $zoneRow = $zoneStmt->fetch();
-                $zone = $zoneRow ?: null;
-            }
-
-            $ruleModel = new \App\Models\PricingRuleModel($db);
-            $deliveryTypeName = $deliveryType;
-
-            // Use explicit rule if provided, otherwise auto-detect
-            $rule = null;
-            if (isset($data['pricing_rule_id'])) {
-                $rule = $ruleModel->findById((int) $data['pricing_rule_id']);
-            }
-            if ($rule === null) {
-                $rule = $ruleModel->findBestMatch($zoneId, $deliveryTypeName, null);
-            }
-
-            $pricing = [
-                'volumetric_weight' => 0,
-                'chargeable_weight' => 0,
-                'flete_cost' => 0,
-                'delivery_cost' => 0,
-                'total_amount' => 0,
-            ];
-
-            if ($rule !== null) {
-                $pricing = $pricingService->calculatePackageTotal($insertData, $rule, $zone);
-                $insertData['volumetric_weight'] = $pricing['volumetric_weight'];
-                $insertData['chargeable_weight'] = $pricing['chargeable_weight'];
-                $insertData['flete_cost'] = $pricing['flete_cost'];
-                $insertData['delivery_cost'] = $pricing['delivery_cost'];
-                $insertData['shipping_cost'] = $pricing['total_amount'];
-                $insertData['pricing_rule_id'] = (int) $rule['id'];
-            } else {
-                $insertData['volumetric_weight'] = 0;
-                $insertData['chargeable_weight'] = 0;
-                $insertData['flete_cost'] = 0;
-                $insertData['delivery_cost'] = 0;
-                $insertData['shipping_cost'] = 0;
-            }
-
-            $packageId = $this->model->create($insertData);
-
-            $trackingModel = new TrackingEventModel($db);
-            $trackingModel->create([
-                'package_id' => $packageId,
-                'status' => $statusName,
-                'description' => $statusDescription,
-                'recorded_at' => date('Y-m-d H:i:s'),
-                'created_by' => (int) $payload['sub'],
-            ]);
-
-            $invoiceService = new \App\Services\InvoiceService($db);
-            $invoiceService->createForPackage(
-                $packageId,
-                $insertData,
-                $client ?? null,
-                $payload
-            );
-
-            $db->commit();
-
-            $package = $this->model->findById($packageId);
-            $invoice = (new \App\Models\InvoiceModel($db))->findByPackageId($packageId);
-
-            $notifier = new PackageNotifierService($db);
-            $notifier->notifyStatusChange($package, 'pending', $statusName, $statusDescription);
-
-            jsonSuccess(
-                ['package' => $package, 'pricing' => $pricing, 'invoice' => $invoice],
-                'Paquete creado',
-                201
-            );
-        } catch (\Throwable $e) {
-            $db->rollBack();
-            apiLog('ERROR', 'Error creating package: ' . $e->getMessage());
-            jsonError('Error al crear el paquete', 500);
-        }
+        jsonSuccess(
+            ['package' => $result['package'], 'pricing' => $result['pricing'], 'invoice' => $result['invoice']],
+            'Paquete creado',
+            201
+        );
     }
 
     public function update(): never
@@ -655,15 +429,5 @@ class PackageController
 </html>
 HTML;
         exit;
-    }
-
-    private static function generateRandomTrackingCode(string $prefix, int $length = 8): string
-    {
-        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        $code = '';
-        for ($i = 0; $i < $length; $i++) {
-            $code .= $chars[random_int(0, strlen($chars) - 1)];
-        }
-        return "{$prefix}-{$code}";
     }
 }

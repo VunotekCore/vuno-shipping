@@ -82,7 +82,11 @@ INSERT INTO permission (module, action, label) VALUES
 ('payment_method', 'read', 'Ver métodos de pago'),
 ('payment_method', 'create', 'Crear método de pago'),
 ('payment_method', 'edit', 'Editar método de pago'),
-('payment_method', 'delete', 'Eliminar método de pago')
+('payment_method', 'delete', 'Eliminar método de pago'),
+('quote', 'read', 'Ver cotizaciones'),
+('quote', 'create', 'Crear cotización'),
+('quote', 'edit', 'Editar cotizaciones'),
+('quote', 'delete', 'Eliminar cotizaciones')
 ON DUPLICATE KEY UPDATE label = VALUES(label);
 
 -- === Roles ===
@@ -150,6 +154,27 @@ SELECT 6, id FROM permission WHERE
   (module = 'vehicle' AND action IN ('read')) OR
   (module = 'package' AND action IN ('read', 'edit'))
 ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
+
+-- === Rol Vendedor ===
+
+INSERT INTO role (name, slug) VALUES
+('Vendedor', 'vendedor')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- Vendedor: quote (create/read/edit), client (create/read/edit),
+-- zone (read), delivery_type (read), shipping_service (read), delivery_option (read)
+INSERT IGNORE INTO role_permission (role_id, permission_id)
+SELECT r.id, p.id
+FROM role r
+JOIN permission p ON (
+      (p.module = 'quote' AND p.action IN ('create', 'read', 'edit'))
+   OR (p.module = 'client' AND p.action IN ('create', 'read', 'edit'))
+   OR (p.module = 'zone' AND p.action IN ('read'))
+   OR (p.module = 'delivery_type' AND p.action IN ('read'))
+   OR (p.module = 'shipping_service' AND p.action IN ('read'))
+   OR (p.module = 'delivery_option' AND p.action IN ('read'))
+)
+WHERE r.slug = 'vendedor';
 
 -- Admin user default
 INSERT INTO `user` (email, password, name, role_id, must_change_password) VALUES
@@ -459,7 +484,8 @@ SELECT id, 'Paiwas' FROM zone WHERE name = 'Atlántico Sur';
 
 INSERT INTO document_sequence (document_code, description, prefix, current_number) VALUES
 ('tracking', 'Código de rastreo', 'EV', 0),
-('invoice', 'Factura de cobro', 'FAC', 0)
+('invoice', 'Factura de cobro', 'FAC', 0),
+('quote', 'Cotización', 'COT', 0)
 ON DUPLICATE KEY UPDATE current_number = current_number;
 
 -- === Billing Module ===

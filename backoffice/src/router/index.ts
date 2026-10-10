@@ -162,6 +162,18 @@ const router = createRouter({
           component: () => import('../pages/InvoiceDetailView.vue'),
           meta: { permission: 'invoice', action: 'read' },
         },
+        {
+          path: 'cotizaciones',
+          name: 'quotes',
+          component: () => import('../pages/QuotesView.vue'),
+          meta: { permission: 'quote', action: 'read' },
+        },
+        {
+          path: 'cotizaciones/:id',
+          name: 'quote-detail',
+          component: () => import('../pages/QuoteDetailView.vue'),
+          meta: { permission: 'quote', action: 'read' },
+        },
       ],
     },
     // === Conductor routes ===

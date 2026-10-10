@@ -32,17 +32,26 @@ const {
   service: userService,
   dataKey: 'users',
   entityName: 'Usuario',
-  getDefaultForm: () => ({ email: '', password: '', name: '', role_id: roles.value[0]?.id ?? 0 }),
-  populateForm: (u) => ({ email: u.email, password: '', name: u.name, role_id: u.role_id }),
+  getDefaultForm: () => ({ email: '', password: '', name: '', role_id: roles.value[0]?.id ?? 0, commission_type: 'none', commission_value: null }),
+  populateForm: (u) => ({ email: u.email, password: '', name: u.name, role_id: u.role_id, commission_type: u.commission_type ?? 'none', commission_value: u.commission_value ?? null }),
   validateForm: (f, isEdit) => {
     if (!f.name || !f.email || !f.role_id) return 'Nombre, email y rol son requeridos'
     if (!isEdit && !f.password) return 'La contraseña es requerida'
+    if (f.commission_type && f.commission_type !== 'none' && (f.commission_value == null || Number(f.commission_value) < 0)) {
+      return 'El valor de la comisión es requerido'
+    }
     return null
   },
   getEntityId: (u) => u.id,
-  prepareCreateData: (f) => ({ email: f.email, password: f.password, name: f.name, role_id: f.role_id }),
+  prepareCreateData: (f) => ({
+    email: f.email, password: f.password, name: f.name, role_id: f.role_id,
+    commission_type: f.commission_type, commission_value: f.commission_type === 'none' ? null : f.commission_value,
+  }),
   prepareUpdateData: (f, u) => {
-    const data: Record<string, unknown> = { id: u.id, email: f.email, name: f.name, role_id: f.role_id }
+    const data: Record<string, unknown> = {
+      id: u.id, email: f.email, name: f.name, role_id: f.role_id,
+      commission_type: f.commission_type, commission_value: f.commission_type === 'none' ? null : f.commission_value,
+    }
     if (f.password) data.password = f.password
     return data
   },
@@ -96,6 +105,16 @@ function handleSave() {
 
 const roleOptions = computed(() =>
   roles.value.map((r) => ({ value: r.id, label: r.name }))
+)
+
+const commissionTypeOptions = [
+  { value: 'none', label: 'Sin comisión' },
+  { value: 'percent', label: 'Porcentaje (%)' },
+  { value: 'fixed', label: 'Monto fijo ($)' },
+]
+
+const selectedRoleSlug = computed(
+  () => roles.value.find((r) => r.id === Number(form.value.role_id))?.slug ?? ''
 )
 
 const columns: TableColumn[] = [
@@ -342,6 +361,27 @@ onMounted(() => load())
                 :error="fieldErrors.role_id"
               />
               <p v-if="fieldErrors.role_id" class="mt-1.5 text-xs text-[#DC2626]">{{ fieldErrors.role_id }}</p>
+            </div>
+            <div v-if="selectedRoleSlug === 'vendedor'">
+              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Comisión por venta</label>
+              <div class="grid grid-cols-2 gap-3">
+                <AppDropdown
+                  :model-value="fv('commission_type') ?? 'none'"
+                  @update:model-value="(v: string | number | null) => form.commission_type = String(v ?? 'none')"
+                  :options="commissionTypeOptions"
+                  :disabled="saving"
+                />
+                <AppFormField
+                  v-if="form.commission_type && form.commission_type !== 'none'"
+                  :model-value="fv('commission_value')"
+                  @update:model-value="(v: string | number | null) => form.commission_value = v == null ? null : Number(v)"
+                  :label="form.commission_type === 'percent' ? 'Porcentaje' : 'Monto (USD)'"
+                  type="number"
+                  :step="0.01"
+                  :min="0"
+                  :disabled="saving"
+                />
+              </div>
             </div>
           </div>
         </div>

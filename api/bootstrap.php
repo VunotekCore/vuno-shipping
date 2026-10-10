@@ -14,6 +14,11 @@ set_exception_handler(function (\Throwable $e): void {
     $message = $e->getMessage();
     $trace = $e->getTraceAsString();
     error_log("[shipping-api] ERROR: {$message}\n{$trace}");
+
+    if ($e instanceof \App\Exceptions\ApiException) {
+        jsonResponse(['success' => false, 'message' => $message], $e->getStatusCode());
+    }
+
     jsonResponse(['success' => false, 'message' => 'Error interno del servidor'], 500);
 });
 

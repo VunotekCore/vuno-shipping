@@ -15,6 +15,38 @@ class ClientController
         $this->model = new ClientModel(Database::getConnection());
     }
 
+    private function isVendor(array $payload): bool
+    {
+        return ($payload['role_slug'] ?? '') === 'vendedor';
+    }
+
+    private function agentScope(array $payload): ?int
+    {
+        return $this->isVendor($payload) ? (int) $payload['sub'] : null;
+    }
+
+    private function assertOwnership(array $payload, array $client): void
+    {
+        if ($this->isVendor($payload) && (int) ($client['agent_id'] ?? 0) !== (int) $payload['sub']) {
+            jsonError('No tenés permiso sobre este cliente', 403);
+        }
+    }
+
+    private function validateAgent(array $data): ?int
+    {
+        if (!isset($data['agent_id']) || $data['agent_id'] === '' || $data['agent_id'] === null) {
+            return null;
+        }
+        $agentId = (int) $data['agent_id'];
+        $db = Database::getConnection();
+        $stmt = $db->prepare('SELECT COUNT(*) FROM `user` WHERE id = :id');
+        $stmt->execute(['id' => $agentId]);
+        if ((int) $stmt->fetchColumn() === 0) {
+            jsonError('El agente seleccionado no existe', 422);
+        }
+        return $agentId;
+    }
+
     public function list(): never
     {
         requireMethod('GET');
@@ -28,8 +60,13 @@ class ClientController
         $limit = max(1, min(100, (int) ($_GET['limit'] ?? 20)));
         $offset = ($page - 1) * $limit;
 
-        $total = $this->model->count();
-        $clients = $this->model->listPaginated($limit, $offset);
+        $agentId = $this->agentScope($payload);
+        if ($agentId === null && isset($_GET['agent_id']) && $_GET['agent_id'] !== '') {
+            $agentId = (int) $_GET['agent_id'];
+        }
+
+        $total = $this->model->count($agentId);
+        $clients = $this->model->listPaginated($limit, $offset, $agentId);
 
         jsonSuccess([
             'clients' => $clients,
@@ -51,7 +88,7 @@ class ClientController
             jsonError('No tenés permiso para ver clientes', 403);
         }
 
-        $clients = $this->model->listAll();
+        $clients = $this->model->listAll($this->agentScope($payload));
         jsonSuccess(['clients' => $clients]);
     }
 
@@ -95,6 +132,15 @@ class ClientController
             $insertData['notes'] = sanitizeString($data['notes'], 500);
         }
 
+        if ($this->isVendor($payload)) {
+            $insertData['agent_id'] = (int) $payload['sub'];
+        } else {
+            $agentId = $this->validateAgent($data);
+            if ($agentId !== null) {
+                $insertData['agent_id'] = $agentId;
+            }
+        }
+
         $id = $this->model->create($insertData);
         $client = $this->model->findById($id);
 
@@ -123,6 +169,8 @@ class ClientController
             jsonError('Cliente no encontrado', 404);
         }
 
+        $this->assertOwnership($payload, $existing);
+
         $updateData = [];
 
         if (isset($data['name'])) {
@@ -148,6 +196,10 @@ class ClientController
         }
         if (array_key_exists('is_active', $data)) {
             $updateData['is_active'] = (int) $data['is_active'];
+        }
+
+        if (!$this->isVendor($payload) && array_key_exists('agent_id', $data)) {
+            $updateData['agent_id'] = $this->validateAgent($data);
         }
 
         if (empty($updateData)) {
@@ -181,6 +233,8 @@ class ClientController
         if ($existing === null) {
             jsonError('Cliente no encontrado', 404);
         }
+
+        $this->assertOwnership($payload, $existing);
 
         $db = \App\Config\Database::getConnection();
         $stmt = $db->prepare('SELECT COUNT(*) FROM package WHERE client_id = :id');

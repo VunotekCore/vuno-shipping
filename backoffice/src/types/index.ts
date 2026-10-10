@@ -10,6 +10,8 @@ export interface User {
   role_name: string
   role_slug: string
   permissions: Record<string, string[]>
+  commission_type?: CommissionType | null
+  commission_value?: number | null
   must_change_password?: boolean
   created_at: string
 }
@@ -107,6 +109,8 @@ export interface Client {
   notes: string | null
   ruc?: string | null
   is_active: boolean
+  agent_id?: number | null
+  agent_name?: string | null
   package_count?: number
   created_at: string
   updated_at: string
@@ -521,4 +525,114 @@ export interface VehicleOdometerLog {
   user_name: string | null
   notes: string | null
   created_at: string
+}
+
+export type CommissionType = 'percent' | 'fixed'
+export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted' | 'cancelled'
+
+/** Resumen de conteo de cotizaciones por estado (KPIs). */
+export type QuoteSummary = Record<QuoteStatus, number>
+
+export interface QuoteItem {
+  id?: number
+  quote_id?: number
+  position?: number
+  description: string | null
+  quantity: number
+  /** Pesos en libras (igual que el resto del sistema) */
+  weight: number | null
+  length: number | null
+  width: number | null
+  height: number | null
+  declared_value: number | null
+  volumetric_weight?: number
+  chargeable_weight?: number
+  flete_cost?: number
+  delivery_cost?: number
+  total_amount?: number
+}
+
+export interface QuotePackage {
+  id: number
+  tracking_number: string
+  status_id: number | null
+  shipping_cost: number | null
+  created_at: string
+  invoice_id: number | null
+  invoice_number: string | null
+  invoice_status: InvoiceStatus | null
+}
+
+export interface Quote {
+  id: number
+  quote_number: string
+  client_id: number | null
+  client_name_ref: string | null
+  recipient_name: string
+  recipient_phone: string | null
+  recipient_email: string | null
+  recipient_address: string | null
+  recipient_city: string | null
+  recipient_department: string | null
+  recipient_ruc: string | null
+  latitude: number | null
+  longitude: number | null
+  agent_id: number | null
+  agent_name: string | null
+  agent_commission_type?: CommissionType | null
+  agent_commission_value?: number | null
+  status: QuoteStatus
+  origin: 'online' | 'local'
+  zone_id: number | null
+  delivery_type_id: number | null
+  shipping_service_id: number | null
+  delivery_option: string | null
+  delivery_option_id: number | null
+  pickup_required: number
+  subtotal: number
+  delivery_total: number
+  base_amount: number
+  tax_rate: number
+  tax_amount: number
+  total_amount: number
+  currency: 'USD' | 'CORD'
+  commission_type: CommissionType | null
+  commission_value: number | null
+  commission_amount: number | null
+  valid_until: string | null
+  converted_at: string | null
+  notes: string | null
+  created_by: number | null
+  /** Solo en listados */
+  item_count?: number
+  /** Solo en listados */
+  package_count?: number
+  created_at: string
+  updated_at: string
+}
+
+/** KPI de comisiones por agente (`quote/stats`). */
+export interface QuoteCommissionRow {
+  agent_id: number | null
+  agent_name: string | null
+  converted_count: number
+  converted_total: number
+  commission_total: number
+}
+
+export interface QuoteListResult {
+  quotes: Quote[]
+  pagination: Pagination
+  summary: QuoteSummary
+}
+
+export interface QuoteDetailResult {
+  quote: Quote
+  items: QuoteItem[]
+  packages: QuotePackage[]
+}
+
+export interface QuoteStatsResult {
+  summary: QuoteSummary
+  commissions: QuoteCommissionRow[]
 }

@@ -25,7 +25,8 @@ class UserModel
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare("
-            SELECT u.id, u.email, u.name, u.role_id, r.name AS role_name, r.slug AS role_slug, u.created_at
+            SELECT u.id, u.email, u.name, u.role_id, u.commission_type, u.commission_value,
+                   r.name AS role_name, r.slug AS role_slug, u.created_at
             FROM `user` u
             JOIN role r ON r.id = u.role_id
             WHERE u.id = :id LIMIT 1
@@ -119,7 +120,8 @@ class UserModel
     public function listPaginated(int $limit, int $offset): array
     {
         $stmt = $this->db->prepare("
-            SELECT u.id, u.email, u.name, u.role_id, r.name AS role_name, r.slug AS role_slug, u.created_at
+            SELECT u.id, u.email, u.name, u.role_id, u.commission_type, u.commission_value,
+                   r.name AS role_name, r.slug AS role_slug, u.created_at
             FROM `user` u
             JOIN role r ON r.id = u.role_id
             ORDER BY u.created_at DESC
@@ -131,16 +133,19 @@ class UserModel
         return $stmt->fetchAll();
     }
 
-    public function create(string $email, string $password, string $name, int $roleId): int
+    public function create(string $email, string $password, string $name, int $roleId, ?string $commissionType = null, ?float $commissionValue = null): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO `user` (email, password, name, role_id) VALUES (:email, :password, :name, :role_id)'
+            'INSERT INTO `user` (email, password, name, role_id, commission_type, commission_value)
+             VALUES (:email, :password, :name, :role_id, :commission_type, :commission_value)'
         );
         $stmt->execute([
             'email'    => $email,
             'password' => $password,
             'name'     => $name,
             'role_id'  => $roleId,
+            'commission_type'  => $commissionType,
+            'commission_value' => $commissionValue,
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -150,7 +155,7 @@ class UserModel
         $fields = [];
         $params = ['id' => $id];
 
-        foreach (['email', 'name', 'role_id'] as $field) {
+        foreach (['email', 'name', 'role_id', 'commission_type', 'commission_value'] as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = :$field";
                 $params[$field] = $data[$field];

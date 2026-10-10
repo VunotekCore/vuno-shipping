@@ -10,7 +10,10 @@ use App\Config\Database;
 requireMethod('POST');
 
 $payload = requireAuthMiddleware();
-hasPermission($payload, 'package', 'create');
+
+if (!hasPermission($payload, 'package', 'create') && !hasPermission($payload, 'quote', 'create')) {
+    jsonError('No tenés permiso para calcular precios', 403);
+}
 
 $data = getJsonInput();
 

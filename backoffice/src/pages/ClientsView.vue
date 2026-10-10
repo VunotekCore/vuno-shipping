@@ -2,6 +2,8 @@
 import { onMounted, reactive, computed, ref } from 'vue'
 import { clientService, type Client } from '../services/clientService'
 import { zoneService, type Zone } from '../services/zoneService'
+import { userService, type User } from '../services/userService'
+import { useAuthStore } from '../stores/auth'
 import { useCrudView } from '../composables/useCrudView'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
@@ -14,6 +16,9 @@ import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import { classifyNicaraguanId } from '../utils/validation'
 
+const auth = useAuthStore()
+const isVendor = computed(() => auth.user?.role_slug === 'vendedor')
+
 const {
   items: clients, loading, showModal, showDelete,
   editing, deleting, saving, form,
@@ -23,8 +28,8 @@ const {
   service: clientService,
   dataKey: 'clients',
   entityName: 'Cliente',
-  getDefaultForm: () => ({ name: '', email: '', phone: '', ruc: '', address: '', department: '', notes: '' }),
-  populateForm: (c) => ({ name: c.name, email: c.email ?? '', phone: c.phone ?? '', ruc: c.ruc ?? '', address: c.address ?? '', department: c.department ?? '', notes: c.notes ?? '' }),
+  getDefaultForm: () => ({ name: '', email: '', phone: '', ruc: '', address: '', department: '', notes: '', agent_id: null }),
+  populateForm: (c) => ({ name: c.name, email: c.email ?? '', phone: c.phone ?? '', ruc: c.ruc ?? '', address: c.address ?? '', department: c.department ?? '', notes: c.notes ?? '', agent_id: c.agent_id ?? null }),
   validateForm: (f) => {
     if (!f.name) return 'El nombre es requerido'
     return null
@@ -33,6 +38,7 @@ const {
 })
 
 const zones = ref<Zone[]>([])
+const agents = ref<User[]>([])
 
 const fieldErrors = reactive<Record<string, string>>({
   name: '', email: '', phone: '', ruc: '', address: '', department: '', notes: '',
@@ -90,6 +96,8 @@ function fv(key: string): string | number | null {
 
 const hasErrors = computed(() => Object.values(fieldErrors).some(Boolean))
 
+const agentOptions = computed(() => agents.value.map((a) => ({ value: a.id, label: a.name })))
+
 function handleSave() {
   for (const key of Object.keys(fieldErrors)) validateField(key)
   if (hasErrors.value) return
@@ -113,6 +121,14 @@ onMounted(async () => {
     zones.value = res.data.data.zones ?? []
   } catch {
     zones.value = []
+  }
+  if (!isVendor.value) {
+    try {
+      const res = await userService.listByRole('vendedor')
+      agents.value = res.data.data.users ?? []
+    } catch {
+      agents.value = []
+    }
   }
 })
 </script>
@@ -267,6 +283,16 @@ onMounted(async () => {
               :error="fieldErrors.phone"
               helper="Formato: +(505) 1234-5678"
               @blur="validateField('phone')"
+            />
+          </div>
+          <div v-if="!isVendor" class="mt-4 max-w-sm" style="overflow: visible">
+            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Vendedor asignado</label>
+            <AppDropdown
+              :model-value="fv('agent_id')"
+              @update:model-value="(v: string | number | null) => form.agent_id = v == null || v === '' ? null : Number(v)"
+              :options="agentOptions"
+              placeholder="Sin asignar"
+              :disabled="saving"
             />
           </div>
         </div>

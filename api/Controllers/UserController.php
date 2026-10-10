@@ -19,6 +19,30 @@ class UserController
         $this->authService = new AuthService();
     }
 
+    /**
+     * Normaliza la comisión de un agente. Devuelve [tipo, valor] (nulls si no aplica).
+     *
+     * @return array{0: ?string, 1: ?float}
+     */
+    private function parseCommission(array $data): array
+    {
+        $type = $data['commission_type'] ?? null;
+        if ($type === null || $type === '' || $type === 'none') {
+            return [null, null];
+        }
+        if (!in_array($type, ['percent', 'fixed'], true)) {
+            jsonError('Tipo de comisión inválido (percent o fixed)', 422);
+        }
+        $value = $data['commission_value'] ?? null;
+        if ($value === null || $value === '') {
+            jsonError('El valor de la comisión es requerido', 422);
+        }
+        if (!is_numeric($value) || (float) $value < 0) {
+            jsonError('Valor de comisión inválido', 422);
+        }
+        return [$type, (float) $value];
+    }
+
     public function list(): never
     {
         requireMethod('GET');
@@ -99,7 +123,8 @@ class UserController
         }
 
         $hash = $this->authService->hashPassword($password);
-        $id = $this->model->create($email, $hash, $name, $roleId);
+        [$commissionType, $commissionValue] = $this->parseCommission($data);
+        $id = $this->model->create($email, $hash, $name, $roleId, $commissionType, $commissionValue);
         $user = $this->model->findById($id);
 
         jsonSuccess(['user' => $user], 'Usuario creado', 201);
@@ -168,6 +193,12 @@ class UserController
         if (!empty($data['password'])) {
             validatePassword($data['password']);
             $updateData['password'] = $this->authService->hashPassword($data['password']);
+        }
+
+        if (array_key_exists('commission_type', $data) || array_key_exists('commission_value', $data)) {
+            [$commissionType, $commissionValue] = $this->parseCommission($data);
+            $updateData['commission_type'] = $commissionType;
+            $updateData['commission_value'] = $commissionValue;
         }
 
         if (empty($updateData)) {

@@ -15,11 +15,11 @@ export const userService = {
     )
   },
 
-  create(data: { email: string; password: string; name: string; role_id: number }) {
+  create(data: { email: string; password: string; name: string; role_id: number; commission_type?: string; commission_value?: number | null }) {
     return api.post('/user/create.php', data)
   },
 
-  update(data: { id: number; email?: string; name?: string; role_id?: number; password?: string }) {
+  update(data: { id: number; email?: string; name?: string; role_id?: number; password?: string; commission_type?: string; commission_value?: number | null }) {
     return api.put('/user/update.php', data)
   },
 
