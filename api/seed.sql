@@ -55,6 +55,10 @@ INSERT INTO permission (module, action, label) VALUES
 ('vehicle', 'create', 'Crear vehículo'),
 ('vehicle', 'edit', 'Editar vehículos'),
 ('vehicle', 'delete', 'Eliminar vehículos'),
+('vehicle', 'change_status', 'Cambiar estado de vehículo'),
+('vehicle', 'edit_km', 'Registrar kilometraje'),
+('vehicle', 'km_correction', 'Corregir kilometraje (hacia atrás)'),
+('vehicle', 'km_supervisor', 'Registrar km salida/llegada (supervisión)'),
 ('delivery_type', 'read', 'Ver tipos de entrega'),
 ('delivery_type', 'create', 'Crear tipo de entrega'),
 ('delivery_type', 'edit', 'Editar tipos de entrega'),
@@ -246,9 +250,14 @@ ON DUPLICATE KEY UPDATE to_status = VALUES(to_status);
 -- === Vehicle Statuses ===
 
 INSERT INTO vehicle_status (name, description) VALUES
-('active', 'Vehículo activo y operativo'),
-('inactive', 'Vehículo inactivo o dado de baja'),
-('maintenance', 'Vehículo en mantenimiento')
+('disponible', 'Listo para asignar a ruta'),
+('en_ruta', 'Asignado a despacho activo'),
+('en_espera', 'En parqueo, sin ruta'),
+('en_mantenimiento', 'En mantenimiento preventivo'),
+('en_reparacion', 'En reparación'),
+('fuera_de_servicio', 'Fuera de servicio temporal'),
+('accidentado', 'Accidentado, pendiente de inspección'),
+('dado_de_baja', 'Retirado del parque')
 ON DUPLICATE KEY UPDATE description = VALUES(description);
 
 -- === Zones (17 departamentos de Nicaragua) ===

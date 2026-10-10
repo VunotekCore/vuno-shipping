@@ -18,6 +18,17 @@ const fuelOptions = [
   { value: 'otro', label: 'Otro' },
 ]
 
+const statusOptions = [
+  { value: 'disponible', label: 'Disponible' },
+  { value: 'en_ruta', label: 'En ruta' },
+  { value: 'en_espera', label: 'En espera' },
+  { value: 'en_mantenimiento', label: 'En mantenimiento' },
+  { value: 'en_reparacion', label: 'En reparación' },
+  { value: 'fuera_de_servicio', label: 'Fuera de servicio' },
+  { value: 'accidentado', label: 'Accidentado' },
+  { value: 'dado_de_baja', label: 'Dado de baja' },
+]
+
 const {
   items: vehicles, loading, showModal, showDelete,
   editing, deleting, saving, form,
@@ -27,8 +38,8 @@ const {
   service: vehicleService,
   dataKey: 'vehicles',
   entityName: 'Vehículo',
-  getDefaultForm: () => ({ plate: '', brand: '', model: '', year: null, color: '', fuel_type: '', capacity_kg: null, capacity_m3: null, notes: '' }),
-  populateForm: (v) => ({ plate: v.plate, brand: v.brand ?? '', model: v.model ?? '', year: v.year, color: v.color ?? '', fuel_type: v.fuel_type ?? '', capacity_kg: v.capacity_kg, capacity_m3: v.capacity_m3, notes: v.notes ?? '' }),
+  getDefaultForm: () => ({ plate: '', brand: '', model: '', year: null, color: '', fuel_type: '', capacity_kg: null, capacity_m3: null, current_km: 0, status: 'disponible', notes: '' }),
+  populateForm: (v) => ({ plate: v.plate, brand: v.brand ?? '', model: v.model ?? '', year: v.year, color: v.color ?? '', fuel_type: v.fuel_type ?? '', capacity_kg: v.capacity_kg, capacity_m3: v.capacity_m3, current_km: v.current_km ?? 0, status: v.status ?? 'disponible', notes: v.notes ?? '' }),
   validateForm: (f) => {
     if (!f.plate) return 'La placa es requerida'
     return null
@@ -96,7 +107,8 @@ const columns: TableColumn[] = [
   { key: 'model', label: 'Modelo', width: '120px' },
   { key: 'year', label: 'Año', width: '80px' },
   { key: 'capacity_kg', label: 'Cap. Kg', width: '90px' },
-  { key: 'status_name', label: 'Estado', width: '110px' },
+  { key: 'current_km', label: 'Km', width: '90px' },
+  { key: 'status', label: 'Estado', width: '140px' },
   { key: 'actions', label: '', width: '100px', align: 'right' },
 ]
 
@@ -126,8 +138,9 @@ onMounted(() => load())
             <td class="text-[#94a3b8]">{{ v.model }}</td>
             <td class="text-[#64748b]">{{ v.year ?? '—' }}</td>
             <td class="text-[#64748b]">{{ v.capacity_kg ?? '—' }}</td>
+            <td class="text-[#94a3b8]">{{ v.current_km ?? 0 }}</td>
             <td>
-              <span class="admin-badge admin-badge-info">{{ statusLabel(v.status_name) }}</span>
+              <span class="admin-badge admin-badge-info">{{ statusLabel(v.status || v.status_name) }}</span>
             </td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
@@ -168,7 +181,7 @@ onMounted(() => load())
         <div v-for="v in vehicles" :key="v.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
             <p class="font-medium text-[#dae2fd] truncate">{{ v.plate }}</p>
-            <span class="admin-badge admin-badge-info shrink-0">{{ statusLabel(v.status_name) }}</span>
+            <span class="admin-badge admin-badge-info shrink-0">{{ statusLabel(v.status || v.status_name) }}</span>
           </div>
           <p class="text-sm text-[#94a3b8] truncate">{{ v.brand }} {{ v.model }}</p>
           <p class="text-xs text-[#64748b]">{{ v.year ?? '—' }} · {{ v.capacity_kg ? v.capacity_kg + ' kg' : '—' }}</p>
@@ -286,6 +299,15 @@ onMounted(() => load())
               @blur="validateField('color')"
               @input="clearError('color')"
             />
+          </div>
+          <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Estado</label>
+              <select v-model="form.status" class="admin-input" :disabled="saving">
+                <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
+
           </div>
           <div class="mt-4">
             <AppFormField

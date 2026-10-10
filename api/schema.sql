@@ -426,14 +426,17 @@ CREATE TABLE IF NOT EXISTS vehicle (
     capacity_kg DECIMAL(10,2) NULL,
     capacity_m3 DECIMAL(10,2) NULL,
     current_driver_id INT NULL,
-    status_id INT NULL,
+    status ENUM('disponible','en_ruta','en_espera','en_mantenimiento','en_reparacion','fuera_de_servicio','accidentado','dado_de_baja') NOT NULL DEFAULT 'disponible',
+    current_km DECIMAL(10,1) NOT NULL DEFAULT 0.00,
+    km_last_updated_at DATETIME NULL,
+    km_last_updated_by INT NULL,
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_vehicles_plate (plate),
     FOREIGN KEY (current_driver_id) REFERENCES `user`(id) ON DELETE SET NULL,
-    FOREIGN KEY (status_id) REFERENCES vehicle_status(id) ON DELETE SET NULL,
-    INDEX idx_vehicle_status (status_id),
+    FOREIGN KEY (km_last_updated_by) REFERENCES `user`(id) ON DELETE SET NULL,
+    INDEX idx_vehicle_status (status),
     INDEX idx_vehicle_driver (current_driver_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -630,3 +633,22 @@ CREATE TABLE IF NOT EXISTS billing_config (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS vehicle_odometer_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT NOT NULL,
+    km_reading DECIMAL(10,1) NOT NULL,
+    previous_km DECIMAL(10,1) NOT NULL,
+    delta_km DECIMAL(10,1) NOT NULL DEFAULT 0.00,
+    reading_type ENUM('manual','inicio_ruta','fin_ruta','entrega_llaves','devolucion_llaves','inspeccion','mantenimiento','reparacion','otro') NOT NULL DEFAULT 'manual',
+    route_run_id INT NULL,
+    user_id INT NOT NULL,
+    notes VARCHAR(500) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicle(id) ON DELETE CASCADE,
+    FOREIGN KEY (route_run_id) REFERENCES route_run(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES `user`(id) ON DELETE RESTRICT,
+    INDEX idx_vehicle_odometer_log_vehicle (vehicle_id),
+    INDEX idx_vehicle_odometer_log_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

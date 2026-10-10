@@ -141,8 +141,13 @@ export interface Vehicle {
   capacity_m3: number | null
   current_driver_id: number | null
   current_driver_name: string | null
-  status_id: number | null
-  status_name: string | null
+  status: string
+  status_id?: number | null
+  status_name?: string | null
+  current_km: number
+  km_last_updated_at: string | null
+  km_last_updated_by: number | null
+  km_last_updated_by_name?: string | null
   notes: string | null
   created_at: string
   updated_at: string
@@ -502,4 +507,18 @@ export interface InvoiceSummary {
   paid_today_usd: number
   /** Suma de `paid_amount` de las facturas cobradas hoy en CORD */
   paid_today_cord: number
+}
+
+export interface VehicleOdometerLog {
+  id: number
+  vehicle_id: number
+  km_reading: number
+  previous_km: number
+  delta_km: number
+  reading_type: string
+  route_run_id: number | null
+  user_id: number
+  user_name: string | null
+  notes: string | null
+  created_at: string
 }
