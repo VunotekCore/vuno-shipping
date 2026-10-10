@@ -256,4 +256,15 @@ class VehicleModel
         $r = $stmt->fetch(PDO::FETCH_ASSOC);
         return $r && $r['assigned_to'] !== null ? (int) $r['assigned_to'] : null;
     }
+
+    public function setStatus(int $vehicleId, string $status, ?int $updatedBy = null): bool
+    {
+        $this->validateStatus($status);
+        $sql = 'UPDATE vehicle SET status = :status, updated_at = NOW()';
+        $sql .= ' WHERE id = :id';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':status', $status, PDO::PARAM_STR);
+        $stmt->bindValue(':id', $vehicleId, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }

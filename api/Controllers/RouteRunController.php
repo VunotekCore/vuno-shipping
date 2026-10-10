@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Models\RouteRunModel;
 use App\Models\RouteModel;
 use App\Models\RouteStopModel;
+use App\Models\VehicleModel;
 use App\Config\Database;
 use App\Services\PushService;
 use App\Models\PushSubscriptionModel;
@@ -301,8 +302,39 @@ class RouteRunController
             $updateData['end_time'] = date('H:i:s');
         }
 
-        $this->model->update($id, $updateData);
-        $run = $this->model->findById($id);
+        $db = Database::getConnection();
+        try {
+            $db->beginTransaction();
+
+            $this->model->update($id, $updateData);
+            $run = $this->model->findById($id);
+
+            $vehicleId = isset($run['vehicle_id']) ? (int) $run['vehicle_id'] : null;
+            if ($vehicleId > 0) {
+                $vehicleModel = new VehicleModel($db);
+                if ($newStatus === 'active') {
+                    $vehicleModel->setStatus($vehicleId, 'en_ruta', (int) ($payload['sub'] ?? 0));
+                } elseif ($currentStatus === 'active' && in_array($newStatus, ['completed', 'cancelled'], true)) {
+                    $v = $vehicleModel->findById($vehicleId);
+                    if ($v && ($v['status'] === 'en_ruta' || $v['status'] === 'disponible')) {
+                        $chk = $db->prepare("SELECT 1 FROM route_run r JOIN route_status rs ON rs.id=r.status_id WHERE r.vehicle_id=? AND rs.name='active' AND r.id!=? LIMIT 1");
+                        $chk->execute([$vehicleId, $id]);
+                        if (!$chk->fetchColumn()) {
+                            if ($v['status'] === 'en_ruta') {
+                                $vehicleModel->setStatus($vehicleId, 'disponible', (int) ($payload['sub'] ?? 0));
+                            }
+                        }
+                    }
+                }
+            }
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
 
         $driverId = isset($run['assigned_to']) ? (int) $run['assigned_to'] : null;
         if ($driverId !== null && $driverId > 0) {

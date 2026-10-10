@@ -307,6 +307,17 @@ onMounted(() => load())
                 <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
             </div>
+            <AppFormField
+              :model-value="fv('current_km')"
+              @update:model-value="(v: string | number | null) => form.current_km = v"
+              label="Kilometraje actual"
+              type="number"
+              icon="clock"
+              placeholder="ej: 12500.5"
+              :min="0"
+              :step="0.1"
+              :disabled="saving"
+            />
 
           </div>
           <div class="mt-4">
