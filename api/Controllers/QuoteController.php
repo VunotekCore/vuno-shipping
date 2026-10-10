@@ -397,7 +397,7 @@ class QuoteController
         $this->model->expireOverdue();
 
         jsonSuccess([
-            'summary' => $this->model->countByStatus($agentId),
+            'summary' => $this->model->countByStatus($agentId, $from, $to),
             'commissions' => $this->model->commissionSummary($agentId, $from, $to),
         ]);
     }

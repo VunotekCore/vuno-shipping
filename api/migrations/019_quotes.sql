@@ -206,7 +206,7 @@ DEALLOCATE PREPARE stmt;
 
 -- === Secuencia de cotizaciones ===
 INSERT INTO document_sequence (document_code, description, prefix, current_number)
-SELECT 'quote', 'Cotización', 'COT', 1
+SELECT 'quote', 'Cotización', 'COT', 0
 WHERE NOT EXISTS (SELECT 1 FROM document_sequence WHERE document_code = 'quote');
 
 -- === Permisos del módulo ===

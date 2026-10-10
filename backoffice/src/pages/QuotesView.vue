@@ -63,7 +63,6 @@ const commissionTotals = computed(() =>
 )
 
 async function loadCommissions() {
-  if (isVendor.value) return
   commissionsLoading.value = true
   try {
     const { data } = await quoteService.stats({ from: commissionsFrom.value, to: commissionsTo.value })
@@ -419,8 +418,8 @@ onMounted(async () => {
   ]
   if (!isVendor.value) {
     tasks.push(userService.listByRole('vendedor').then((r) => { agents.value = r.data.data?.users ?? [] }).catch(() => {}))
-    tasks.push(loadCommissions())
   }
+  tasks.push(loadCommissions())
   await Promise.all(tasks)
 })
 </script>
@@ -459,11 +458,11 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Commission KPIs (admin) -->
-    <div v-if="!isVendor" class="admin-card p-4">
+    <!-- Commission KPIs -->
+    <div class="admin-card p-4">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 class="text-sm font-semibold text-[#dae2fd]">Comisiones por vendedor</h2>
+          <h2 class="text-sm font-semibold text-[#dae2fd]">{{ isVendor ? 'Mis comisiones' : 'Comisiones por vendedor' }}</h2>
           <p class="mt-0.5 text-xs text-[#64748b]">
             {{ commissionTotals.count }} conversiones · {{ formatUSD(commissionTotals.converted) }} convertidos · {{ formatUSD(commissionTotals.commission) }} en comisiones
           </p>

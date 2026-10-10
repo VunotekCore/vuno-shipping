@@ -249,13 +249,21 @@ class QuoteModel
         return $stmt->fetchAll();
     }
 
-    public function countByStatus(?int $agentId = null): array
+    public function countByStatus(?int $agentId = null, ?string $from = null, ?string $to = null): array
     {
         $where = [];
         $params = [];
         if ($agentId !== null) {
             $where[] = 'agent_id = :agent_id';
             $params['agent_id'] = $agentId;
+        }
+        if ($from !== null && $from !== '') {
+            $where[] = 'DATE(created_at) >= :from';
+            $params['from'] = $from;
+        }
+        if ($to !== null && $to !== '') {
+            $where[] = 'DATE(created_at) <= :to';
+            $params['to'] = $to;
         }
         $sql = 'SELECT status, COUNT(*) AS total FROM quote';
         if ($where) {
