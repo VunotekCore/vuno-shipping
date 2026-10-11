@@ -65,6 +65,22 @@ export function formatDimensions(
   return `${Number(length)} × ${Number(width)} × ${Number(height)} in`
 }
 
+export function readingTypeLabel(type: string | null | undefined): string {
+  if (!type) return '—'
+  const map: Record<string, string> = {
+    manual: 'Manual',
+    inicio_ruta: 'Inicio de ruta',
+    fin_ruta: 'Fin de ruta',
+    entrega_llaves: 'Entrega de llaves',
+    devolucion_llaves: 'Devolución de llaves',
+    inspeccion: 'Inspección',
+    mantenimiento: 'Mantenimiento',
+    reparacion: 'Reparación',
+    otro: 'Otro',
+  }
+  return map[type] || type
+}
+
 export function statusColor(status: string | null): string {
   if (!status) return 'admin-badge-info'
   const map: Record<string, string> = {

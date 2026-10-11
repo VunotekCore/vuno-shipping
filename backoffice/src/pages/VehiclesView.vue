@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { onMounted, reactive, computed } from 'vue'
+import { onMounted, reactive, computed, ref } from 'vue'
 import { vehicleService, type Vehicle } from '../services/vehicleService'
-import { statusLabel } from '../utils/format'
+import { statusLabel, readingTypeLabel } from '../utils/format'
 import { useCrudView } from '../composables/useCrudView'
+import { useAuthStore } from '../stores/auth'
+import { useToast } from '../composables/useToast'
+import type { VehicleOdometerLog } from '../types'
+import VehicleKmModal from '../components/vehicle/VehicleKmModal.vue'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
@@ -109,8 +113,49 @@ const columns: TableColumn[] = [
   { key: 'capacity_kg', label: 'Cap. Kg', width: '90px' },
   { key: 'current_km', label: 'Km', width: '90px' },
   { key: 'status', label: 'Estado', width: '140px' },
-  { key: 'actions', label: '', width: '100px', align: 'right' },
+  { key: 'actions', label: '', width: '160px', align: 'right' },
 ]
+
+const auth = useAuthStore()
+const toast = useToast()
+
+const canRegisterKm = computed(() =>
+  auth.hasPermission('vehicle', 'edit_km') || auth.hasPermission('vehicle', 'km_supervisor')
+)
+
+const showKmModal = ref(false)
+const kmVehicle = ref<Vehicle | null>(null)
+
+function openKmModal(v: Vehicle) {
+  kmVehicle.value = v
+  showKmModal.value = true
+}
+
+function onKmSaved() {
+  showKmModal.value = false
+  toast.success('Lectura de odómetro registrada')
+  load()
+}
+
+const showLogModal = ref(false)
+const logVehicle = ref<Vehicle | null>(null)
+const logLoading = ref(false)
+const logs = ref<VehicleOdometerLog[]>([])
+
+async function openLog(v: Vehicle) {
+  logVehicle.value = v
+  showLogModal.value = true
+  logLoading.value = true
+  try {
+    const { data } = await vehicleService.kmLog(v.id, { limit: 50 })
+    logs.value = data.data?.logs ?? []
+  } catch {
+    toast.error('No se pudo cargar el historial de kilometraje')
+    logs.value = []
+  } finally {
+    logLoading.value = false
+  }
+}
 
 onMounted(() => load())
 </script>
@@ -144,6 +189,12 @@ onMounted(() => load())
             </td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
+                <button v-if="canRegisterKm" class="admin-btn admin-btn-ghost admin-btn-sm" @click="openKmModal(v)" title="Registrar kilometraje">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                </button>
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openLog(v)" title="Historial de kilometraje">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+                </button>
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(v)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
@@ -185,7 +236,15 @@ onMounted(() => load())
           </div>
           <p class="text-sm text-[#94a3b8] truncate">{{ v.brand }} {{ v.model }}</p>
           <p class="text-xs text-[#64748b]">{{ v.year ?? '—' }} · {{ v.capacity_kg ? v.capacity_kg + ' kg' : '—' }}</p>
-          <div class="border-t border-[#1e293b] pt-3 flex items-center gap-2">
+          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+            <button v-if="canRegisterKm" class="admin-btn admin-btn-ghost admin-btn-sm" @click="openKmModal(v)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              Registrar km
+            </button>
+            <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openLog(v)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+              Historial
+            </button>
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(v)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Editar
@@ -415,11 +474,68 @@ onMounted(() => load())
     <AppConfirmDialog
       :visible="showDelete"
       title="Eliminar vehículo"
-      :message="`¿Seguro que querés eliminar el vehículo ${deleting?.plate}? Esta acción no se puede deshacer.`"
+      :message="`Seguro que queres eliminar a ${deleting?.plate}? Esta accion no se puede deshacer.`"
       confirm-text="Eliminar"
       variant="danger"
       @confirm="confirmDelete"
       @cancel="showDelete = false"
     />
+
+    <!-- Registrar kilometraje -->
+    <VehicleKmModal
+      :visible="showKmModal"
+      :vehicle="kmVehicle"
+      default-type="manual"
+      @close="showKmModal = false"
+      @saved="onKmSaved"
+    />
+
+    <!-- Historial de kilometraje -->
+    <AppModal
+      :visible="showLogModal"
+      :title="`Historial de kilometraje${logVehicle ? ' · ' + logVehicle.plate : ''}`"
+      size="lg"
+      @close="showLogModal = false"
+    >
+      <div v-if="logLoading" class="space-y-2">
+        <div v-for="i in 4" :key="i" class="h-12 animate-pulse rounded-lg bg-[#1e293b]" />
+      </div>
+      <div v-else-if="logs.length > 0" class="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+        <div
+          v-for="log in logs"
+          :key="log.id"
+          class="rounded-xl border border-[#1e293b] bg-[#0f172a] px-4 py-3"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-medium text-[#dae2fd]">
+              {{ log.km_reading.toLocaleString('es-NI') }} km
+            </span>
+            <span
+              class="text-sm font-medium"
+              :class="log.delta_km < 0 ? 'text-[#f59e0b]' : 'text-[#69dca4]'"
+            >
+              {{ log.delta_km > 0 ? '+' : '' }}{{ log.delta_km.toLocaleString('es-NI') }} km
+            </span>
+          </div>
+          <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748b]">
+            <span>{{ readingTypeLabel(log.reading_type) }}</span>
+            <span v-if="log.route_run_id">Despacho #{{ log.route_run_id }}</span>
+            <span>{{ log.user_name || 'Usuario #' + log.user_id }}</span>
+            <span>{{ new Date(log.created_at).toLocaleString('es-NI') }}</span>
+          </div>
+          <p v-if="log.notes" class="mt-1.5 text-xs text-[#94a3b8]">{{ log.notes }}</p>
+        </div>
+      </div>
+      <div v-else class="admin-empty-state py-12">
+        <p class="admin-empty-state-title">Sin registros</p>
+        <p class="admin-empty-state-desc">Este vehículo todavía no tiene lecturas de odómetro.</p>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end">
+          <button class="admin-btn admin-btn-ghost" @click="showLogModal = false">Cerrar</button>
+        </div>
+      </template>
+    </AppModal>
   </div>
 </template>

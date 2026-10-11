@@ -9,12 +9,14 @@ class MailService
 {
     private PHPMailer $mailer;
     private bool $configured = false;
+    private bool $enabled = true;
 
     public function __construct()
     {
         $this->mailer = new PHPMailer(true);
         try {
             $cfg = config()['mail'] ?? [];
+            $this->enabled = (bool) ($cfg['enabled'] ?? true);
             if (!empty($cfg['host'])) {
                 $this->mailer->isSMTP();
                 $this->mailer->Host = $cfg['host'];
@@ -44,8 +46,13 @@ class MailService
         string $newStatus,
         ?string $description = null
     ): bool {
+        if (!$this->enabled) {
+            apiLog('WARNING', "Mail deshabilitado (MAIL_ENABLED=false); se omite envío a {$toEmail}");
+            return false;
+        }
+
         if (!$this->configured) {
-            apiLog('WARNING', 'Mail not configured, skipping send');
+            apiLog('WARNING', 'Mail no configurado; se omite envío');
             return false;
         }
 

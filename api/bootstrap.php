@@ -52,6 +52,8 @@ config([
         'url_endpoint' => $_ENV['IMAGEKIT_URL_ENDPOINT'] ?? '',
     ],
     'mail' => [
+        // MAIL_ENABLED=false desactiva el envío real (útil en dev/pruebas).
+        'enabled'    => filter_var($_ENV['MAIL_ENABLED'] ?? 'true', FILTER_VALIDATE_BOOL),
         'host'       => $_ENV['MAIL_HOST'] ?? '',
         'port'       => $_ENV['MAIL_PORT'] ?? '587',
         'username'   => $_ENV['MAIL_USER'] ?? '',

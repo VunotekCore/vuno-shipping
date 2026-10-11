@@ -5,6 +5,8 @@ import { routeRunService, routeStopService, driverLocationService, type RouteRun
 import { userService, type User } from '../services/userService'
 import { vehicleService, type Vehicle } from '../services/vehicleService'
 import { useToast } from '../composables/useToast'
+import { useAuthStore } from '../stores/auth'
+import VehicleKmModal from '../components/vehicle/VehicleKmModal.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -14,12 +16,23 @@ import { statusLabel } from '../utils/format'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const auth = useAuthStore()
 
 const runId = computed(() => Number(route.params.id))
 const loading = ref(false)
 const runData = ref<RouteRun | null>(null)
 const stops = ref<RouteStop[]>([])
 const error = ref('')
+
+// Km de jornada (inicio/fin) — solo supervisor/admin con permiso
+const canRegisterKm = computed(() =>
+  auth.hasPermission('vehicle', 'edit_km') || auth.hasPermission('vehicle', 'km_supervisor')
+)
+const showKmModal = ref(false)
+const kmModalType = ref('inicio_ruta')
+const kmModalTitle = ref('Registrar kilometraje')
+const kmVehicle = ref<Vehicle | null>(null)
+const pendingStatus = ref<string | null>(null)
 
 // Modal states
 const showAssignModal = ref(false)
@@ -359,6 +372,52 @@ function recenterMap() {
 }
 
 async function changeStatus(newStatus: string) {
+  const current = runData.value?.status_name
+  const isStart = current === 'draft' && newStatus === 'active'
+  const isComplete = current === 'active' && newStatus === 'completed'
+  const vehicleId = runData.value?.vehicle_id
+
+  if ((isStart || isComplete) && canRegisterKm.value && vehicleId) {
+    const vehicle = await loadVehicleForRun(vehicleId)
+    if (vehicle) {
+      kmModalType.value = isStart ? 'inicio_ruta' : 'fin_ruta'
+      kmModalTitle.value = isStart ? 'Kilometraje de inicio de jornada' : 'Kilometraje de fin de jornada'
+      kmVehicle.value = vehicle
+      pendingStatus.value = newStatus
+      showKmModal.value = true
+      return
+    }
+    toast.error('No se pudo cargar el vehículo para registrar kilometraje')
+    return
+  }
+
+  await applyStatus(newStatus)
+}
+
+async function loadVehicleForRun(vehicleId: number): Promise<Vehicle | null> {
+  try {
+    const res = await vehicleService.listAll()
+    const list = res.data.data.vehicles ?? []
+    return list.find((v) => v.id === vehicleId) ?? null
+  } catch {
+    return null
+  }
+}
+
+async function onKmSaved() {
+  showKmModal.value = false
+  toast.success('Kilometraje registrado')
+  const next = pendingStatus.value
+  pendingStatus.value = null
+  if (next) await applyStatus(next)
+}
+
+function cancelKmModal() {
+  showKmModal.value = false
+  pendingStatus.value = null
+}
+
+async function applyStatus(newStatus: string) {
   statusLoading.value = true
   try {
     const res = await routeRunService.updateStatus(runId.value, newStatus)
@@ -809,5 +868,18 @@ onBeforeUnmount(() => {
         </div>
       </template>
     </AppModal>
+
+    <!-- Kilometraje de jornada (inicio/fin) -->
+    <VehicleKmModal
+      :visible="showKmModal"
+      :vehicle="kmVehicle"
+      :default-type="kmModalType"
+      :allowed-types="[kmModalType]"
+      :lock-type="true"
+      :route-run-id="runId"
+      :title="kmModalTitle"
+      @close="cancelKmModal"
+      @saved="onKmSaved"
+    />
   </div>
 </template>
