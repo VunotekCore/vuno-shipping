@@ -2,9 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { packageService, type Package, type TrackingEvent } from '../services/packageService'
+import { storageCategoryService, type StorageCategory } from '../services/storageCategoryService'
+import { storageLocationService, type StorageLocation } from '../services/storageLocationService'
 import { useToast } from '../composables/useToast'
 import { formatCurrency, statusColor, statusLabel } from '../utils/format'
 import AppModal from '../components/ui/AppModal.vue'
+import AppDropdown from '../components/ui/AppDropdown.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -35,6 +38,70 @@ const statusOptions = [
   { value: 'returned', label: 'Devuelto' },
   { value: 'cancelled', label: 'Cancelado' },
 ]
+
+// Almacenaje
+const showStorageModal = ref(false)
+const storageSaving = ref(false)
+const storageLoading = ref(false)
+const storageCategories = ref<StorageCategory[]>([])
+const storageLocations = ref<StorageLocation[]>([])
+const storageForm = ref<{ storage_category_id: number | null; storage_location_id: number | null }>({ storage_category_id: null, storage_location_id: null })
+
+const storageLocationOptions = computed(() => [
+  { value: null as number | null, label: '— Sin ubicación asignada —' },
+  ...storageLocations.value.map((l) => ({ value: l.id, label: `${l.code}${l.category_name ? ' · ' + l.category_name : ''}` })),
+])
+
+async function loadStorageLocations() {
+  const warehouseId = pkg.value?.storage_warehouse_id
+  if (!warehouseId) { storageLocations.value = []; return }
+  storageLoading.value = true
+  try {
+    const res = await storageLocationService.available(warehouseId, storageForm.value.storage_category_id)
+    storageLocations.value = res.data.data?.locations ?? []
+    storageForm.value.storage_location_id = res.data.data?.suggested_location_id ?? null
+  } catch {
+    storageLocations.value = []
+  } finally {
+    storageLoading.value = false
+  }
+}
+
+async function openStorageModal() {
+  if (!pkg.value) return
+  storageForm.value = {
+    storage_category_id: pkg.value.storage_category_id ?? null,
+    storage_location_id: pkg.value.storage_location_id ?? null,
+  }
+  showStorageModal.value = true
+  if (storageCategories.value.length === 0) {
+    try {
+      const res = await storageCategoryService.listAll()
+      storageCategories.value = res.data.data?.storage_categories ?? []
+    } catch { /* noop */ }
+  }
+  await loadStorageLocations()
+  if (pkg.value.storage_location_id) storageForm.value.storage_location_id = pkg.value.storage_location_id
+}
+
+async function saveStorage() {
+  if (!pkg.value) return
+  storageSaving.value = true
+  try {
+    await packageService.updateStorage({
+      package_id: pkg.value.id,
+      storage_category_id: storageForm.value.storage_category_id,
+      storage_location_id: storageForm.value.storage_location_id,
+    })
+    toast.success('Almacenaje actualizado')
+    showStorageModal.value = false
+    await loadPackage()
+  } catch (e: any) {
+    toast.error(e?.response?.data?.error || 'Error al actualizar almacenaje')
+  } finally {
+    storageSaving.value = false
+  }
+}
 
 async function loadPackage() {
   loading.value = true
@@ -351,6 +418,32 @@ onMounted(() => loadPackage())
               </div>
 
               <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
+                <div class="mb-2 flex items-center justify-between">
+                  <p class="text-xs text-[#64748b]">Almacenaje</p>
+                  <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openStorageModal">Gestionar</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <p class="text-xs text-[#64748b] mb-1">Clasificación</p>
+                    <span v-if="pkg.storage_category_name" class="inline-flex items-center gap-1.5 text-sm text-[#94a3b8]">
+                      <span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: pkg.storage_category_color || '#3b82f6' }" />
+                      {{ pkg.storage_category_name }}
+                    </span>
+                    <p v-else class="text-sm text-[#94a3b8]">—</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-[#64748b] mb-1">Ubicación</p>
+                    <p v-if="pkg.storage_location_code" class="font-mono text-sm text-[#dae2fd]">{{ pkg.storage_location_code }}</p>
+                    <p v-else class="text-sm text-[#94a3b8]">Sin ubicación</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-[#64748b] mb-1">Almacenado</p>
+                    <p class="text-sm text-[#94a3b8]">{{ pkg.stored_at ? formatDate(pkg.stored_at) : '—' }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
                 <p class="text-xs text-[#64748b] mb-2">Fechas</p>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
@@ -509,6 +602,41 @@ onMounted(() => loadPackage())
             :disabled="savingStatus || !statusForm.status"
           >
             {{ savingStatus ? 'Guardando...' : 'Actualizar' }}
+          </button>
+        </div>
+      </template>
+    </AppModal>
+
+    <!-- Storage modal -->
+    <AppModal :visible="showStorageModal" title="Gestionar almacenaje" @close="showStorageModal = false">
+      <div class="space-y-4">
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Clasificación</label>
+          <AppDropdown
+            :model-value="storageForm.storage_category_id"
+            :options="storageCategories.map((c) => ({ value: c.id, label: c.name }))"
+            placeholder="Sin clasificación"
+            :disabled="storageSaving"
+            @update:model-value="(v: string | number | null) => { storageForm.storage_category_id = v as number | null; loadStorageLocations() }"
+          />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Ubicación</label>
+          <AppDropdown
+            :model-value="storageForm.storage_location_id"
+            :options="storageLocationOptions"
+            :placeholder="storageLoading ? 'Buscando ubicación...' : 'Sin ubicación'"
+            :disabled="storageSaving || storageLoading"
+            @update:model-value="(v: string | number | null) => storageForm.storage_location_id = v as number | null"
+          />
+          <p class="mt-1 text-xs text-[#64748b]">Se sugiere automáticamente según la clasificación; podés cambiarla o dejarla vacía.</p>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button class="admin-btn admin-btn-ghost" @click="showStorageModal = false" :disabled="storageSaving">Cancelar</button>
+          <button class="admin-btn admin-btn-primary" @click="saveStorage" :disabled="storageSaving">
+            {{ storageSaving ? 'Guardando...' : 'Guardar' }}
           </button>
         </div>
       </template>

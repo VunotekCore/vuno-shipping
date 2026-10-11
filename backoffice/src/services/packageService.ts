@@ -75,4 +75,21 @@ export const packageService = {
   getLabelUrl(id: number): string {
     return `${getApiBase()}/package/label.php?id=${id}`
   },
+
+  getStorage(packageId: number) {
+    return api.get<{ success: boolean; data: { package: import('../types').PackageStorageInfo; history: import('../types').PackageStorageMovement[] } }>(
+      '/package/storage.php',
+      { params: { package_id: packageId } }
+    )
+  },
+
+  updateStorage(data: {
+    package_id: number;
+    storage_category_id?: number | null;
+    storage_location_id?: number | null;
+    warehouse_id?: number | null;
+    notes?: string;
+  }) {
+    return api.put<{ success: boolean; data: { package: Package; history: import('../types').PackageStorageMovement[] } }>('/package/storage.php', data)
+  },
 }

@@ -110,6 +110,11 @@ export const routeRunService = {
   optimize(runId: number) {
     return api.post('/route_run/optimize.php', { run_id: runId })
   },
+
+  getPickingUrl(runId: number): string {
+    const base = import.meta.env.VITE_API_URL || '/api'
+    return `${base}/route_run/picking.php?id=${runId}`
+  },
 }
 
 export const routeStopService = {

@@ -510,6 +510,10 @@ async function generateStops() {
   }
 }
 
+function openPicking() {
+  window.open(routeRunService.getPickingUrl(runId.value), '_blank')
+}
+
 async function optimizeStops() {
   optimizing.value = true
   try {
@@ -529,8 +533,7 @@ async function optimizeStops() {
   }
 }
 
-function openStopAction(stop: RouteStop, status: string) {
-  stopActionTarget.value = stop
+function openStopAction(stop: RouteStop, status: string) {  stopActionTarget.value = stop
   stopActionStatus.value = status
   stopActionNotes.value = stop.notes ?? ''
   showStopActionModal.value = true
@@ -703,6 +706,10 @@ onBeforeUnmount(() => {
         >
           {{ optimizing ? 'Optimizando...' : 'Optimizar ruta (OSRM)' }}
         </button>
+        <button class="admin-btn admin-btn-ghost" @click="openPicking" :disabled="stops.length === 0" :title="stops.length === 0 ? 'Sin paradas para preparar' : 'Abrir hoja de picking para imprimir'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+          Hoja de picking
+        </button>
         <p v-if="!canOptimize" class="basis-full text-xs text-[#64748b]">
           {{ stops.length > 0 ? 'Se necesitan al menos 2 paradas pendientes con coordenadas para optimizar.' : 'Sin paradas pendientes para optimizar.' }}
         </p>
@@ -727,6 +734,7 @@ onBeforeUnmount(() => {
                 <th class="px-5 py-3 font-medium">Cliente</th>
                 <th class="px-5 py-3 font-medium">Dirección</th>
                 <th class="px-5 py-3 font-medium">Tracking</th>
+                <th class="px-5 py-3 font-medium">Ubicación</th>
                 <th class="px-5 py-3 font-medium">Estado</th>
                 <th class="px-5 py-3 font-medium">Observación</th>
                 <th class="px-5 py-3 font-medium">Acciones</th>
@@ -741,6 +749,13 @@ onBeforeUnmount(() => {
                 <td class="px-5 py-3 font-medium text-[#dae2fd]">{{ s.client_name || '—' }}</td>
                 <td class="px-5 py-3 text-[#94a3b8] max-w-[200px] truncate" :title="s.address || ''">{{ s.address || '—' }}</td>
                 <td class="px-5 py-3 text-[#94a3b8]">{{ s.tracking_number || '—' }}</td>
+                <td class="px-5 py-3">
+                  <span v-if="s.storage_location_code" class="inline-flex items-center gap-1.5 font-mono text-xs text-[#94a3b8]">
+                    <span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: s.storage_category_color || '#3b82f6' }" />
+                    {{ s.storage_location_code }}
+                  </span>
+                  <span v-else class="text-xs text-[#64748b]">—</span>
+                </td>
                 <td class="px-5 py-3">
                   <span :class="['admin-badge', stopStatusBadge(s.status_name)]">{{ statusLabel(s.status_name) }}</span>
                 </td>

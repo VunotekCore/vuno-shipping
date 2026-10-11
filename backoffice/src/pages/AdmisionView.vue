@@ -7,6 +7,9 @@ import { clientService, type Client } from '../services/clientService'
 import { zoneService, type Zone } from '../services/zoneService'
 import { subzoneService, type Subzone } from '../services/subzoneService'
 import { pricingRuleService, type PricingRule } from '../services/pricingRuleService'
+import { warehouseService, type Warehouse } from '../services/warehouseService'
+import { storageCategoryService, type StorageCategory } from '../services/storageCategoryService'
+import { storageLocationService, type StorageLocation } from '../services/storageLocationService'
 import type { DeliveryOption, Invoice } from '../types'
 import { useToast } from '../composables/useToast'
 import { formatCurrency } from '../utils/format'
@@ -47,6 +50,12 @@ const subzones = ref<Subzone[]>([])
 const subzonesLoading = ref(false)
 const pricingRules = ref<PricingRule[]>([])
 const currentShippingService = ref<{ id: number; name: string; description: string | null } | null>(null)
+
+// Almacenaje: clasificación obligatoria + ubicación auto/editable
+const warehouses = ref<Warehouse[]>([])
+const storageCategories = ref<StorageCategory[]>([])
+const storageLocations = ref<StorageLocation[]>([])
+const storageLoading = ref(false)
 
 const filteredDeliveryOptions = ref<DeliveryOption[]>([])
 
@@ -100,6 +109,8 @@ const form = reactive({
   delivery_option: 'branch',
   delivery_option_id: null as number | null,
   pricing_rule_id: null as number | null,
+  storage_category_id: null as number | null,
+  storage_location_id: null as number | null,
   notes: '',
 })
 
@@ -124,6 +135,40 @@ const selectedClient = computed(() => {
   if (!form.client_id) return null
   return clients.value.find((c) => c.id === form.client_id) || null
 })
+
+// Almacenaje: bodega destino según origen (online→Miami, local→Nicaragua)
+const originWarehouseId = computed(() => {
+  return warehouses.value.find((w) => w.origin === form.origin)?.id ?? null
+})
+
+const storageLocationOptions = computed(() => {
+  return [{ value: null as number | null, label: '— Sin ubicación asignada —' }, ...storageLocations.value.map((l) => ({ value: l.id, label: `${l.code}${l.category_name ? ' · ' + l.category_name : ''}` }))]
+})
+
+async function loadStorageLocations() {
+  const warehouseId = originWarehouseId.value
+  if (!warehouseId) {
+    storageLocations.value = []
+    form.storage_location_id = null
+    return
+  }
+  storageLoading.value = true
+  try {
+    const res = await storageLocationService.available(warehouseId, form.storage_category_id)
+    storageLocations.value = res.data.data?.locations ?? []
+    form.storage_location_id = res.data.data?.suggested_location_id ?? null
+  } catch {
+    storageLocations.value = []
+    form.storage_location_id = null
+  } finally {
+    storageLoading.value = false
+  }
+}
+
+// Recargar ubicaciones al cambiar origen o clasificación (la ubicación sugerida
+// prioriza la clasificación seleccionada).
+watch(() => form.origin, () => { loadStorageLocations() })
+watch(() => form.storage_category_id, () => { loadStorageLocations() })
 
 // Geo modal: ubicar el punto de entrega en el mapa
 const showGeoModal = ref(false)
@@ -285,17 +330,22 @@ async function loadReferenceData() {
       return []
     }
   }
-  const [clientsData, zonesData, rulesData] = await Promise.all([
+  const [clientsData, zonesData, rulesData, warehousesData, categoriesData] = await Promise.all([
     load(clientService.listAll, 'clients'),
     load(zoneService.listAll, 'zones'),
     load(pricingRuleService.listAll, 'pricing_rules'),
+    load(warehouseService.listAll, 'warehouses'),
+    load(storageCategoryService.listAll, 'storage_categories'),
   ])
   clients.value = clientsData
   zones.value = zonesData
   pricingRules.value = rulesData.map(normalizePricingRule)
+  warehouses.value = warehousesData
+  storageCategories.value = categoriesData
   filteredDeliveryOptions.value = []
   loadingReferences.value = false
   await nextTick()
+  await loadStorageLocations()
   if (clienteRef.value) {
     pricingOffset.value = clienteRef.value.getBoundingClientRect().top
   }
@@ -385,6 +435,7 @@ const canCreate = computed(() => {
     form.recipient_name &&
     form.recipient_phone &&
     form.recipient_address &&
+    form.storage_category_id &&
     pricingResult.value
   )
 })
@@ -525,6 +576,10 @@ async function handleCreate() {
     toast.error('Completá los campos obligatorios')
     return
   }
+  if (!form.storage_category_id) {
+    toast.error('Seleccioná una clasificación de almacenaje')
+    return
+  }
 
   creating.value = true
   try {
@@ -555,6 +610,8 @@ async function handleCreate() {
     if (form.height) payload.height = form.height
     if (form.declared_value) payload.declared_value = form.declared_value
     if (form.pricing_rule_id) payload.pricing_rule_id = form.pricing_rule_id
+    if (form.storage_category_id) payload.storage_category_id = form.storage_category_id
+    if (form.storage_location_id) payload.storage_location_id = form.storage_location_id
     if (form.notes) payload.notes = form.notes
 
     const res = await packageService.create(payload as any)
@@ -611,12 +668,15 @@ function resetForm() {
   form.delivery_option_id = null
   filteredDeliveryOptions.value = []
   form.pricing_rule_id = null
+  form.storage_category_id = null
+  form.storage_location_id = null
   form.notes = ''
   clientSearch.value = ''
   createdPackage.value = null
   createdInvoice.value = null
   qrDataUrl.value = null
   pricingResult.value = null
+  loadStorageLocations()
 }
 
 onMounted(() => loadReferenceData())
@@ -1013,6 +1073,37 @@ onMounted(() => loadReferenceData())
                 :step="0.01"
                 class="max-w-xs"
               />
+            </div>
+          </div>
+
+          <!-- Almacenaje -->
+          <div class="admin-card p-5 space-y-4">
+            <p class="admin-form-section mb-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l9-5 9 5v13M9 21v-8h6v8M3 21h18"/></svg>
+              Almacenaje
+            </p>
+            <div>
+              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Clasificación <span class="text-[#DC2626]">*</span></label>
+              <AppDropdown
+                :model-value="form.storage_category_id"
+                @update:model-value="(v: string | number | null) => form.storage_category_id = v as number | null"
+                :options="storageCategories.map(c => ({ value: c.id, label: c.name + (c.description ? ' — ' + c.description : '') }))"
+                :placeholder="storageCategories.length === 0 ? 'Sin clasificaciones (creá una en Almacenaje)' : 'Seleccionar clasificación...'"
+                :disabled="creating"
+              />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">
+                Ubicación · {{ form.origin === 'local' ? 'Bodega Nicaragua' : 'Bodega Miami' }}
+              </label>
+              <AppDropdown
+                :model-value="form.storage_location_id"
+                @update:model-value="(v: string | number | null) => form.storage_location_id = v as number | null"
+                :options="storageLocationOptions"
+                :placeholder="storageLoading ? 'Buscando ubicación...' : 'Sin ubicación'"
+                :disabled="creating || storageLoading || storageLocations.length === 0"
+              />
+              <p class="mt-1 text-xs text-[#64748b]">Se sugiere automáticamente según la clasificación; podés cambiarla.</p>
             </div>
           </div>
 
