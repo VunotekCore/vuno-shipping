@@ -64,6 +64,7 @@ interface NavItem {
 interface NavGroup {
   key: string
   label: string
+  icon: string
   items: NavItem[]
 }
 
@@ -89,54 +90,60 @@ const navGroups = computed<NavGroup[]>(() => {
     {
       key: 'operaciones',
       label: 'Operaciones',
+      icon: 'M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35ZM6 18h12M6 14h12M6 10h12',
       items: [
         { label: 'Admisión de Envíos', route: '/admision', icon: 'M12 4v16m8-8H4', permission: 'package.create' },
         { label: 'Escáner', route: '/scan', icon: 'M3 9V7a2 2 0 012-2h2M3 15v2a2 2 0 002 2h2M21 9V7a2 2 0 00-2-2h-2M21 15v2a2 2 0 01-2 2h-2M7 12h.01M12 12h.01M17 12h.01', permission: 'package.read' },
         { label: 'Paquetes', route: '/packages', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', permission: 'package.read' },
-        { label: 'Embarques', route: '/embarques', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', permission: 'shipment.read' },
-        { label: 'Clientes', route: '/clients', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', permission: 'client.read' },
+        { label: 'Embarques', route: '/embarques', icon: 'M22 2 11 13M22 2l-7 20-4-9-9-4Z', permission: 'shipment.read' },
+      ],
+    },
+    {
+      key: 'despacho',
+      label: 'Despacho',
+      icon: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z',
+      items: [
         { label: 'Rutas maestras', route: '/routes', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7', permission: 'delivery_route.read' },
         { label: 'Despachos', route: '/runs', icon: 'M8 17h.01M16 17h.01M3 11l1.5-5A2 2 0 016.4 4h11.2a2 2 0 011.9 1.4L21 11M3 11h18M3 11v6a1 1 0 001 1h1m16-7v6a1 1 0 01-1 1h-1M3 11v-1m18 0v1', permission: 'delivery_route.read' },
-        { label: 'Vehículos', route: '/vehicles', icon: 'M8 17h.01M16 17h.01M3 11l1.5-5A2 2 0 016.4 4h11.2a2 2 0 011.9 1.4L21 11M3 11h18M3 11v6a1 1 0 001 1h1m16-7v6a1 1 0 01-1 1h-1M3 11v-1m18 0v1', permission: 'vehicle.read' },
+        { label: 'Vehículos', route: '/vehicles', icon: 'M6 17H5a2 2 0 0 1-2-2v-3l2-5a2 2 0 0 1 1.8-1.2h8.4A2 2 0 0 1 17 7l2 5v3a2 2 0 0 1-2 2h-1M4 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0M16 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0', permission: 'vehicle.read' },
       ],
     },
     {
-      key: 'ventas',
-      label: 'Ventas',
+      key: 'comercial',
+      label: 'Comercial',
+      icon: 'M8 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM19 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6',
       items: [
         { label: 'Cotizaciones', route: '/cotizaciones', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', permission: 'quote.read' },
-      ],
-    },
-    {
-      key: 'config-envios',
-      label: 'Config. Envíos',
-      items: [
-        { label: 'Zonas', route: '/zones', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7', permission: 'zone.read' },
-        { label: 'Reglas de pricing', route: '/pricing', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', permission: 'pricing_rule.read' },
-        { label: 'Servicios y opciones', route: '/settings/shipping', icon: 'M5 12h14M12 5l7 7-7 7', permission: 'shipping_service.read' },
-      ],
-    },
-        {
-      key: 'facturacion',
-      label: 'Facturación',
-      items: [
         { label: 'Facturas', route: '/facturas', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', permission: 'invoice.read' },
+        { label: 'Clientes', route: '/clients', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', permission: 'client.read' },
       ],
     },
     {
       key: 'configuracion',
       label: 'Configuración',
+      icon: 'M21 4H14M10 4H3M21 12H12M8 12H3M21 20H16M12 20H3M14 2v4M8 10v4M16 18v4',
       items: [
+        { label: 'Zonas', route: '/zones', icon: 'M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0zM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z', permission: 'zone.read' },
+        { label: 'Reglas de pricing', route: '/pricing', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', permission: 'pricing_rule.read' },
+        { label: 'Servicios y opciones', route: '/settings/shipping', icon: 'M5 12h14M12 5l7 7-7 7', permission: 'shipping_service.read' },
         { label: 'Empresa', route: '/company', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', permission: ['company.read', 'billing_config.read'] },
-        { label: 'Áreas', route: '/areas', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', permission: 'area.read' },
-        { label: 'Puestos', route: '/puestos', icon: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', permission: 'puesto.read' },
-        { label: 'Empleados', route: '/empleados', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', permission: 'empleado.read' },
         { label: 'Secuencias', route: '/document-sequences', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01', permission: 'document_sequence.read' },
+      ],
+    },
+    {
+      key: 'organizacion',
+      label: 'Organización',
+      icon: 'M3 21h18M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16M9 7h1m-1 4h1m4-4h1m-1 4h1M9 21v-4h6v4',
+      items: [
+        { label: 'Áreas', route: '/areas', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z', permission: 'area.read' },
+        { label: 'Puestos', route: '/puestos', icon: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', permission: 'puesto.read' },
+        { label: 'Empleados', route: '/empleados', icon: 'M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z', permission: 'empleado.read' },
       ],
     },
     {
       key: 'seguridad',
       label: 'Seguridad',
+      icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
       items: [
         { label: 'Usuarios', route: '/users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', permission: 'user.read' },
         { label: 'Roles', route: '/roles', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', permission: 'role.read' },
@@ -152,12 +159,19 @@ const navGroups = computed<NavGroup[]>(() => {
 
 // --- Accordion state ---
 
+const EXPANDED_STORAGE_KEY = 'sidebar_expanded_v2'
+const DEFAULT_EXPANDED = ['operaciones', 'despacho']
+
 function loadExpanded(): Set<string> {
+  const validKeys = ['operaciones', 'despacho', 'comercial', 'configuracion', 'organizacion', 'seguridad']
   try {
-    const raw = localStorage.getItem('sidebar_expanded')
-    if (raw) return new Set(JSON.parse(raw))
+    const raw = localStorage.getItem(EXPANDED_STORAGE_KEY)
+    if (raw) {
+      const saved = (JSON.parse(raw) as string[]).filter((k) => validKeys.includes(k))
+      if (saved.length > 0) return new Set(saved)
+    }
   } catch {}
-  return new Set(['operaciones', 'config-envios'])
+  return new Set(DEFAULT_EXPANDED)
 }
 
 const expandedGroups = ref<Set<string>>(loadExpanded())
@@ -172,7 +186,7 @@ function toggleGroup(key: string) {
   } else {
     expandedGroups.value.add(key)
   }
-  localStorage.setItem('sidebar_expanded', JSON.stringify([...expandedGroups.value]))
+  localStorage.setItem(EXPANDED_STORAGE_KEY, JSON.stringify([...expandedGroups.value]))
 }
 
 // --- Navigation ---
@@ -250,7 +264,17 @@ function handleLogout() {
             :class="{ 'sidebar-group-active': isGroupActive(group.items) && !isExpanded(group.key) }"
             @click="toggleGroup(group.key)"
           >
-            <span>{{ group.label }}</span>
+            <span class="flex items-center gap-3">
+              <svg
+                v-if="group.icon"
+                width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                class="shrink-0"
+              >
+                <path :d="group.icon" />
+              </svg>
+              <span>{{ group.label }}</span>
+            </span>
             <svg
               width="14" height="14" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
