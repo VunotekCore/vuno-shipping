@@ -42,6 +42,12 @@ class PackageDeliveryService
             'delivered_at' => date('Y-m-d H:i:s'),
         ]);
 
+        try {
+            (new PackageStorageService($this->db))->free($packageId, $createdBy, 'released', 'Entregado al cliente');
+        } catch (\Throwable $e) {
+            apiLog('ERROR', 'Error liberando almacen del paquete ' . $packageId . ': ' . $e->getMessage());
+        }
+
         $trackingModel = new TrackingEventModel($this->db);
         $trackingModel->create([
             'package_id' => $packageId,

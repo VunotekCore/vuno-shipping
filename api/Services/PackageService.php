@@ -146,11 +146,31 @@ class PackageService
                 $insertData['notes'] = sanitizeString($data['notes'], 500);
             }
 
-            $deliveryType = $data['delivery_type'] ?? 'aereo';
-            $deliveryTypeId = $model->getDeliveryTypeId($deliveryType);
+            $shippingServiceName = isset($data['shipping_service']) ? trim((string) $data['shipping_service']) : '';
+            $explicitDeliveryType = isset($data['delivery_type']) && $data['delivery_type'] !== '' ? (string) $data['delivery_type'] : '';
+
+            // delivery_type_id se deriva del servicio de envio (ej: Marítimo ->
+            // maritimo), luego del tipo explicito y por ultimo de la regla de
+            // pricing. Sin fallback fijo a 'aereo' (evita el desajuste previo).
+            $deliveryTypeId = null;
+            if ($shippingServiceName !== '') {
+                $deliveryTypeId = $model->getDeliveryTypeIdByServiceName($shippingServiceName);
+            }
+            if ($deliveryTypeId === null && $explicitDeliveryType !== '') {
+                $deliveryTypeId = $model->getDeliveryTypeId($explicitDeliveryType);
+            }
+            if ($deliveryTypeId === null && isset($data['pricing_rule_id'])) {
+                $ruleRow = (new PricingRuleModel($this->db))->findById((int) $data['pricing_rule_id']);
+                if ($ruleRow !== null && !empty($ruleRow['delivery_type_id'])) {
+                    $deliveryTypeId = (int) $ruleRow['delivery_type_id'];
+                }
+            }
             if ($deliveryTypeId !== null) {
                 $insertData['delivery_type_id'] = $deliveryTypeId;
             }
+
+            // Nombre usado solo para el matching de pricing (compatibilidad).
+            $deliveryType = $explicitDeliveryType !== '' ? $explicitDeliveryType : 'aereo';
 
             $insertData['delivery_option'] = $data['delivery_option'] ?? 'branch';
             if (isset($data['local_delivery_type'])) {
@@ -259,7 +279,26 @@ class PackageService
                 }
             }
 
+            if (isset($data['storage_category_id']) && $data['storage_category_id'] !== '' && $data['storage_category_id'] !== null) {
+                $insertData['storage_category_id'] = (int) $data['storage_category_id'];
+            }
+
             $packageId = $model->create($insertData);
+
+            try {
+                $storageService = new PackageStorageService($this->db);
+                $storageService->assign(
+                    $packageId,
+                    $origin,
+                    $insertData['storage_category_id'] ?? null,
+                    isset($data['storage_location_id']) && $data['storage_location_id'] !== '' ? (int) $data['storage_location_id'] : null,
+                    (int) $payload['sub'],
+                    'stored',
+                    'Ubicado al recibir el paquete'
+                );
+            } catch (\Throwable $e) {
+                apiLog('ERROR', 'Error asignando almacen al paquete ' . $packageId . ': ' . $e->getMessage());
+            }
 
             $trackingModel = new TrackingEventModel($this->db);
             $trackingModel->create([

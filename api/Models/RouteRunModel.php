@@ -177,11 +177,15 @@ class RouteRunModel
                    p.recipient_phone, p.recipient_city, p.recipient_department,
                    p.latitude, p.longitude,
                    p.zone_id, z.name AS zone_name, p.description, p.weight,
+                   p.storage_category_id, sc.name AS storage_category_name, sc.color AS storage_category_color,
+                   p.storage_location_id, sl.code AS storage_location_code,
                    p.status_id, ps.name AS status_name,
                    p.assigned_to, u.name AS assigned_to_name
             FROM package p
             LEFT JOIN zone z ON z.id = p.zone_id
             LEFT JOIN package_status ps ON ps.id = p.status_id
+            LEFT JOIN storage_category sc ON sc.id = p.storage_category_id
+            LEFT JOIN storage_location sl ON sl.id = p.storage_location_id
             LEFT JOIN `user` u ON u.id = p.assigned_to
             WHERE p.zone_id IN (SELECT zone_id FROM route_zone WHERE route_id = :route_id)
               AND p.status_id = (SELECT id FROM package_status WHERE name = 'in_nicaragua')

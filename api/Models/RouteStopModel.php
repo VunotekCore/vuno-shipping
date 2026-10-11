@@ -15,12 +15,16 @@ class RouteStopModel
             SELECT rs.*, rss.name AS status_name,
                    p.tracking_number, p.recipient_phone, p.description AS package_description,
                    p.zone_id, z.name AS zone_name,
+                   p.storage_category_id, sc.name AS storage_category_name, sc.color AS storage_category_color,
+                   sl.code AS storage_location_code,
                    CASE WHEN p.latitude IS NULL OR p.longitude IS NULL THEN 1 ELSE 0 END AS from_zone_center,
                    inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM route_stop rs
             LEFT JOIN route_stop_status rss ON rss.id = rs.status_id
             LEFT JOIN package p ON p.id = rs.package_id
             LEFT JOIN zone z ON z.id = p.zone_id
+            LEFT JOIN storage_category sc ON sc.id = p.storage_category_id
+            LEFT JOIN storage_location sl ON sl.id = rs.storage_location_id
             LEFT JOIN invoice inv ON inv.id = (
                 SELECT i2.id FROM invoice i2 WHERE i2.package_id = p.id ORDER BY i2.id DESC LIMIT 1
             )
@@ -37,10 +41,14 @@ class RouteStopModel
             SELECT rs.*, rss.name AS status_name,
                    p.tracking_number, p.recipient_name, p.recipient_phone,
                    p.description AS package_description,
+                   p.storage_category_id, sc.name AS storage_category_name, sc.color AS storage_category_color,
+                   sl.code AS storage_location_code,
                    inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM route_stop rs
             LEFT JOIN route_stop_status rss ON rss.id = rs.status_id
             LEFT JOIN package p ON p.id = rs.package_id
+            LEFT JOIN storage_category sc ON sc.id = p.storage_category_id
+            LEFT JOIN storage_location sl ON sl.id = rs.storage_location_id
             LEFT JOIN invoice inv ON inv.id = (
                 SELECT i2.id FROM invoice i2 WHERE i2.package_id = p.id ORDER BY i2.id DESC LIMIT 1
             )
@@ -49,6 +57,30 @@ class RouteStopModel
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
         return $row ?: null;
+    }
+
+    /**
+     * Paradas de un despacho ordenadas por ubicacion fisica en bodega
+     * (pasillo, estante, nivel, posicion) para la lista de picking.
+     */
+    public function listForPicking(int $runId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT rs.id, rs.stop_order, rs.client_name, rs.address,
+                   p.tracking_number, p.recipient_phone, p.description AS package_description,
+                   z.name AS zone_name,
+                   sc.name AS storage_category_name, sc.color AS storage_category_color,
+                   sl.code AS storage_location_code
+            FROM route_stop rs
+            LEFT JOIN package p ON p.id = rs.package_id
+            LEFT JOIN zone z ON z.id = p.zone_id
+            LEFT JOIN storage_category sc ON sc.id = p.storage_category_id
+            LEFT JOIN storage_location sl ON sl.id = rs.storage_location_id
+            WHERE rs.route_run_id = :route_run_id
+            ORDER BY sl.warehouse_id ASC, sl.aisle ASC, sl.rack ASC, sl.level ASC, sl.position ASC, rs.stop_order ASC
+        ");
+        $stmt->execute(['route_run_id' => $runId]);
+        return $stmt->fetchAll();
     }
 
     public function create(array $data): int
@@ -170,7 +202,7 @@ class RouteStopModel
         $placeholders = implode(',', array_fill(0, count($packageIds), '?'));
         $stmt = $this->db->prepare("
             SELECT p.id, p.recipient_name, p.recipient_address,
-                   p.latitude, p.longitude, z.lat, z.lng, p.zone_id
+                   p.latitude, p.longitude, z.lat, z.lng, p.zone_id, p.storage_location_id
             FROM package p
             LEFT JOIN zone z ON z.id = p.zone_id
             WHERE p.id IN ({$placeholders})
@@ -195,9 +227,9 @@ class RouteStopModel
 
         $insertStmt = $this->db->prepare("
             INSERT INTO route_stop (route_run_id, package_id, stop_order, client_name, address,
-             latitude, longitude, status_id)
+             latitude, longitude, status_id, storage_location_id)
             VALUES (:route_run_id, :package_id, :stop_order, :client_name, :address,
-             :latitude, :longitude, :status_id)
+             :latitude, :longitude, :status_id, :storage_location_id)
         ");
 
         foreach ($packages as $pkg) {
@@ -213,6 +245,7 @@ class RouteStopModel
                 'latitude' => $lat,
                 'longitude' => $lng,
                 'status_id' => $pendingStatusId,
+                'storage_location_id' => $pkg['storage_location_id'] ?? null,
             ]);
             $created[] = [
                 'id' => (int) $this->db->lastInsertId(),

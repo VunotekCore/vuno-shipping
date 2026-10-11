@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Models\ShipmentModel;
 use App\Models\PackageModel;
 use App\Models\TrackingEventModel;
+use App\Services\PackageStorageService;
 use App\Config\Database;
 
 class ShipmentController
@@ -430,6 +431,7 @@ class ShipmentController
 
         $db->beginTransaction();
         try {
+            $storageService = new PackageStorageService($db);
             foreach ($packages as $pkg) {
                 $packageModel->update((int) $pkg['id'], ['status_id' => $inNicaraguaStatusId]);
                 $trackingModel->create([
@@ -439,6 +441,21 @@ class ShipmentController
                     'recorded_at' => $now,
                     'created_by' => (int) $payload['sub'],
                 ]);
+
+                try {
+                    $storageService->free((int) $pkg['id'], (int) $payload['sub'], 'released', 'Despachado de bodega Miami');
+                    $storageService->assign(
+                        (int) $pkg['id'],
+                        'local',
+                        null,
+                        null,
+                        (int) $payload['sub'],
+                        'stored',
+                        'Ubicado en bodega Nicaragua — embarque ' . $shipment['code']
+                    );
+                } catch (\Throwable $storageError) {
+                    apiLog('ERROR', 'Error reubicando paquete ' . $pkg['id'] . ' al llegar embarque: ' . $storageError->getMessage());
+                }
             }
 
             $updateData = ['status' => 'arrived'];

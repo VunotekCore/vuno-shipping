@@ -7,6 +7,7 @@ use App\Models\PackageModel;
 use App\Models\TrackingEventModel;
 use App\Services\PackageService;
 use App\Services\PackageNotifierService;
+use App\Services\PackageStorageService;
 use App\Config\Database;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
@@ -253,6 +254,18 @@ class PackageController
 
             $this->model->update($id, $updateData);
 
+            try {
+                $storageService = new PackageStorageService($db);
+                if ($newStatus === 'in_nicaragua') {
+                    $storageService->free($id, (int) $payload['sub'], 'released', 'Despachado de bodega Miami');
+                    $storageService->assign($id, 'local', null, null, (int) $payload['sub'], 'stored', 'Ubicado en bodega Nicaragua');
+                } elseif (in_array($newStatus, ['returned', 'cancelled', 'delivered'], true)) {
+                    $storageService->free($id, (int) $payload['sub'], 'released', 'Salida de bodega (' . $newStatus . ')');
+                }
+            } catch (\Throwable $storageError) {
+                apiLog('ERROR', 'Error gestionando almacen del paquete ' . $id . ': ' . $storageError->getMessage());
+            }
+
             $trackingModel = new TrackingEventModel($db);
             $trackingModel->create([
                 'package_id' => $id,
@@ -356,8 +369,12 @@ class PackageController
             'scale' => 6,
             'outputBase64' => true,
             'bgColor' => [255, 255, 255],
-            'imageTransparent' => false,
         ]);
+
+        $locationCode = htmlspecialchars((string) ($package['storage_location_code'] ?? '—'), ENT_QUOTES, 'UTF-8');
+        $storageCategory = htmlspecialchars((string) ($package['storage_category_name'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $storageLabel = $locationCode !== '—' ? ($storageCategory !== '' ? $locationCode . ' · ' . $storageCategory : $locationCode) : '—';
+
 
         $qrcode = new QRCode($options);
         $qrDataUri = $qrcode->render($trackingUrl);
@@ -413,6 +430,7 @@ class PackageController
     <div class="info">
       <div class="info-row"><span class="label-tag">Peso:</span><span>{$weight}</span></div>
       <div class="info-row"><span class="label-tag">Contenido:</span><span>{$description}</span></div>
+      <div class="info-row"><span class="label-tag">Ubicación:</span><span>{$storageLabel}</span></div>
     </div>
   </div>
   <div>

@@ -431,6 +431,18 @@ class RouteRunController
                 }
             }
 
+            // El paquete sale de bodega al asignarse a la ruta (queda su ubicacion
+            // como snapshot en route_stop.storage_location_id).
+            $storageService = new \App\Services\PackageStorageService($db);
+            foreach ($result['created'] as $stop) {
+                $packageId = (int) $stop['package_id'];
+                try {
+                    $storageService->free($packageId, (int) $payload['sub'], 'released', 'Asignado al despacho ' . ($run['route_name'] ?? 'local'));
+                } catch (\Throwable $storageError) {
+                    apiLog('ERROR', 'Error liberando almacen del paquete ' . $packageId . ': ' . $storageError->getMessage());
+                }
+            }
+
             $this->model->update($runId, ['optimized_geometry' => null]);
             $db->commit();
 
@@ -813,5 +825,94 @@ class RouteRunController
         } catch (\Throwable $e) {
             apiLog('ERROR', 'Route run push failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Lista de picking imprimible: paradas del despacho ordenadas por ubicacion
+     * fisica en bodega (pasillo, estante, nivel, posicion).
+     */
+    public function picking(): never
+    {
+        requireMethod('GET');
+        $payload = requireAuthMiddleware();
+
+        if (!hasPermission($payload, 'delivery_route', 'read')) {
+            jsonError('No tenes permiso para ver despachos', 403);
+        }
+
+        $id = (int) ($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            jsonError('ID de despacho invalido', 422);
+        }
+
+        $run = $this->model->findById($id);
+        if ($run === null) {
+            jsonError('Despacho no encontrado', 404);
+        }
+
+        $stops = (new RouteStopModel(Database::getConnection()))->listForPicking($id);
+
+        $routeName = htmlspecialchars((string) ($run['route_name'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $runDate = htmlspecialchars((string) ($run['run_date'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $driverName = htmlspecialchars((string) ($run['driver_name'] ?? 'Sin asignar'), ENT_QUOTES, 'UTF-8');
+        $total = count($stops);
+
+        $rows = '';
+        $n = 1;
+        foreach ($stops as $stop) {
+            $esc = fn ($v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
+            $category = $stop['storage_category_name'] ?? '';
+            $categoryHtml = $category !== ''
+                ? ' <span class="cat" style="background:' . $esc($stop['storage_category_color'] ?? '#ccc') . '">' . $esc($category) . '</span>'
+                : '';
+            $rows .= '<tr>'
+                . '<td class="ord">' . $n . '</td>'
+                . '<td><span class="loc">' . $esc($stop['storage_location_code'] ?? '—') . '</span>' . $categoryHtml . '</td>'
+                . '<td>' . $esc($stop['tracking_number']) . '</td>'
+                . '<td>' . $esc($stop['client_name']) . '</td>'
+                . '<td>' . $esc($stop['zone_name']) . '</td>'
+                . '<td class="check">&#9744;</td>'
+                . '</tr>';
+            $n++;
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        echo <<<HTML
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Picking - {$routeName} {$runDate}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #111; }
+  h1 { font-size: 18px; text-transform: uppercase; }
+  .meta { font-size: 12px; color: #555; margin: 4px 0 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #999; padding: 8px; font-size: 12px; text-align: left; }
+  th { background: #eee; text-transform: uppercase; font-size: 11px; }
+  .loc { font-weight: bold; font-family: monospace; font-size: 13px; }
+  .cat { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 8px; font-size: 10px; color: #111; }
+  .ord { text-align: center; width: 40px; }
+  .check { text-align: center; width: 60px; font-size: 18px; }
+  @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+  <h1>Lista de Picking</h1>
+  <div class="meta">Ruta: {$routeName} | Fecha: {$runDate} | Conductor: {$driverName} | Total: {$total} paquetes</div>
+  <table>
+    <thead>
+      <tr><th class="ord">#</th><th>Ubicacion</th><th>Tracking</th><th>Cliente</th><th>Zona</th><th class="check">OK</th></tr>
+    </thead>
+    <tbody>
+      {$rows}
+    </tbody>
+  </table>
+  <script>window.print()</script>
+</body>
+</html>
+HTML;
+        exit;
     }
 }

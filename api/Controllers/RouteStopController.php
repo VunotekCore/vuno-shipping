@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Models\RouteStopModel;
 use App\Services\PackageDeliveryService;
+use App\Services\PackageStorageService;
 use App\Config\Database;
 
 // ImageKit config
@@ -79,6 +80,19 @@ class RouteStopController
         }
 
         $this->model->update($id, $updateData);
+
+        if (in_array($newStatus, ['skipped', 'failed'], true) && !empty($existing['package_id'])) {
+            try {
+                (new PackageStorageService(Database::getConnection()))->restore(
+                    (int) $existing['package_id'],
+                    (int) $payload['sub'],
+                    'Retorno a bodega (' . $newStatus . ')'
+                );
+            } catch (\Throwable $e) {
+                apiLog('ERROR', 'Error restaurando almacen del paquete ' . $existing['package_id'] . ': ' . $e->getMessage());
+            }
+        }
+
         $stop = $this->model->findById($id);
 
         jsonSuccess(['stop' => $stop], 'Estado actualizado');

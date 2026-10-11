@@ -88,6 +88,9 @@ class PackageModel
                    p.delivery_option_id, dopt.name AS delivery_option_name,
                    p.assigned_to, u.name AS assigned_to_name,
                    p.origin, p.pickup_required, p.pickup_vehicle_id, v.plate AS pickup_vehicle_plate,
+                   p.storage_category_id, sc.name AS storage_category_name, sc.color AS storage_category_color,
+                   p.storage_location_id, sl.code AS storage_location_code, sl.warehouse_id AS storage_warehouse_id,
+                   p.stored_at,
                    p.received_at, p.delivered_at, p.created_at,
                    inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM package p
@@ -101,6 +104,8 @@ class PackageModel
             LEFT JOIN shipping_service ss ON ss.id = p.shipping_service_id
             LEFT JOIN delivery_option dopt ON dopt.id = p.delivery_option_id
             LEFT JOIN `user` u ON u.id = p.assigned_to
+            LEFT JOIN storage_category sc ON sc.id = p.storage_category_id
+            LEFT JOIN storage_location sl ON sl.id = p.storage_location_id
             LEFT JOIN invoice inv ON inv.id = (
                 SELECT i2.id FROM invoice i2 WHERE i2.package_id = p.id ORDER BY i2.id DESC LIMIT 1
             )
@@ -126,6 +131,8 @@ class PackageModel
                    ss.name AS shipping_service_name, dopt.name AS delivery_option_name,
                    u.name AS assigned_to_name,
                    pr.name AS pricing_rule_name, z.name AS zone_name,
+                   sc.name AS storage_category_name, sc.color AS storage_category_color,
+                   sl.code AS storage_location_code, sl.warehouse_id AS storage_warehouse_id,
                    v.plate AS pickup_vehicle_plate,
                    inv.id AS invoice_id, inv.invoice_number, inv.status AS invoice_status
             FROM package p
@@ -139,6 +146,8 @@ class PackageModel
             LEFT JOIN zone z ON z.id = p.zone_id
             LEFT JOIN `user` u ON u.id = p.assigned_to
             LEFT JOIN pricing_rule pr ON pr.id = p.pricing_rule_id
+            LEFT JOIN storage_category sc ON sc.id = p.storage_category_id
+            LEFT JOIN storage_location sl ON sl.id = p.storage_location_id
             LEFT JOIN invoice inv ON inv.id = (
                 SELECT i2.id FROM invoice i2 WHERE i2.package_id = p.id ORDER BY i2.id DESC LIMIT 1
             )
@@ -181,6 +190,7 @@ class PackageModel
              volumetric_weight, chargeable_weight, declared_value, flete_cost, delivery_cost, shipping_cost,
              pricing_rule_id, delivery_type_id, delivery_option, local_delivery_type_id,
              shipping_service_id, delivery_option_id, pricing_type, status_id, assigned_to, notes, origin,
+             storage_category_id, storage_location_id,
              pickup_required, pickup_vehicle_id, created_by)
              VALUES (:tracking_number, :tracking_token, :client_id, :quote_id, :sender_name, :sender_phone,
              :recipient_name, :recipient_phone, :recipient_address, :recipient_city, :recipient_department,
@@ -189,6 +199,7 @@ class PackageModel
              :volumetric_weight, :chargeable_weight, :declared_value, :flete_cost, :delivery_cost, :shipping_cost,
              :pricing_rule_id, :delivery_type_id, :delivery_option, :local_delivery_type_id,
              :shipping_service_id, :delivery_option_id, :pricing_type, :status_id, :assigned_to, :notes, :origin,
+             :storage_category_id, :storage_location_id,
              :pickup_required, :pickup_vehicle_id, :created_by)'
         );
         $stmt->execute([
@@ -228,6 +239,8 @@ class PackageModel
             'assigned_to' => $data['assigned_to'] ?? null,
             'notes' => $data['notes'] ?? null,
             'origin' => $data['origin'] ?? 'online',
+            'storage_category_id' => $data['storage_category_id'] ?? null,
+            'storage_location_id' => $data['storage_location_id'] ?? null,
             'pickup_required' => !empty($data['pickup_required']) ? 1 : 0,
             'pickup_vehicle_id' => $data['pickup_vehicle_id'] ?? null,
             'created_by' => $data['created_by'] ?? null,
@@ -249,6 +262,7 @@ class PackageModel
                    'flete_cost', 'delivery_cost', 'shipping_cost',
 'pricing_rule_id', 'delivery_type_id', 'delivery_option', 'local_delivery_type_id',
                     'shipping_service_id', 'delivery_option_id', 'pricing_type', 'status_id', 'assigned_to',
+                    'storage_category_id', 'storage_location_id', 'stored_at',
                     'notes', 'origin', 'received_at', 'delivered_at'] as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = :$field";
@@ -290,6 +304,20 @@ class PackageModel
     public function getShippingServiceId(string $name): ?int
     {
         $stmt = $this->db->prepare('SELECT id FROM shipping_service WHERE name = :name LIMIT 1');
+        $stmt->execute(['name' => $name]);
+        $id = $stmt->fetchColumn();
+        return $id ? (int) $id : null;
+    }
+
+    /**
+     * Tipo de entrega asociado a un servicio de envio (ej: "Marítimo" -> maritimo).
+     * Se usa para derivar correctamente delivery_type_id a partir del servicio.
+     */
+    public function getDeliveryTypeIdByServiceName(string $name): ?int
+    {
+        $stmt = $this->db->prepare(
+            'SELECT delivery_type_id FROM shipping_service WHERE name = :name LIMIT 1'
+        );
         $stmt->execute(['name' => $name]);
         $id = $stmt->fetchColumn();
         return $id ? (int) $id : null;
