@@ -1,9 +1,9 @@
 # Plan de Pruebas — Módulos Fase 3.6 / 4
 
-> **Rama:** `feature/cobros-facturacion` (base `develop` = `84de6ad`, +16 commits)
+> **Rama:** `feature/cobros-facturacion` (base `develop` = `84de6ad`)
 > **Entorno de prueba:** local (`localhost`) — nunca producción.
-> **Objetivo:** validar los 8 módulos antes de integrar a `develop`.
-> **Criterio de salida:** suites API A–H en verde **y** checklist UI aprobado. Recién entonces merge/PR a `develop`.
+> **Objetivo:** validar los 9 módulos antes de integrar a `develop`.
+> **Criterio de salida:** suites API A–I en verde **y** checklist UI aprobado. Recién entonces merge/PR a `develop`.
 
 ---
 
@@ -19,6 +19,7 @@
 | **F** | Transversal: RBAC, CSRF, rate-limit, endpoints deprecados | ✅ | — |
 | **G** | Embarques: transferencia internacional Miami → Nicaragua (draft → in_transit → arrived) | ✅ | — |
 | **H** | Despacho local: admisión local → candidatos por zona → paradas → entrega → completar | ✅ | — |
+| **I** | Almacenaje: bodegas, clasificaciones, ubicaciones, asignación/liberación automática, picking | ✅ | ✅ |
 
 ---
 
@@ -27,6 +28,7 @@
 ```bash
 # 1. Base de datos (usar credenciales de api/.env)
 mysql -h127.0.0.1 -udail -p vuno_db_shipping < api/migrations/018_vehicle_status_km.sql  # idempotente
+mysql -h127.0.0.1 -udail -p vuno_db_shipping < api/migrations/021_warehouse_storage.sql   # idempotente
 
 # 2. Backend
 php -S localhost:8000 -t api        # http://localhost:8000
@@ -55,10 +57,10 @@ cd backoffice && npm install && npm run dev   # http://localhost:5173/backoffice
 
 ## 3. Suites API automatizadas
 
-Script: `scripts/test-api.sh` (helpers `req`, `login`, suites A/C/D/E/F/G/H). Limpia el store de rate-limit al arrancar y, al terminar, corre **self-cleanup** (`scripts/cleanup-test-data.sql`) con las credenciales de `api/.env`.
+Script: `scripts/test-api.sh` (helpers `req`, `login`, suites A/C/D/E/F/G/H/I). Limpia el store de rate-limit al arrancar y, al terminar, corre **self-cleanup** (`scripts/cleanup-test-data.sql`) con las credenciales de `api/.env`.
 
 ```bash
-scripts/test-api.sh            # todas (A,C,D,E,F,G,H)
+scripts/test-api.sh            # todas (A,C,D,E,F,G,H,I)
 scripts/test-api.sh A          # solo facturación
 scripts/test-api.sh G H        # varias suites
 SKIP_CLEANUP=1 scripts/test-api.sh   # conservar los datos de prueba
@@ -81,7 +83,8 @@ SKIP_CLEANUP=1 scripts/test-api.sh   # conservar los datos de prueba
 | F — Transversal | 6 | ✅ |
 | G — Embarques | 20 | ✅ |
 | H — Despacho local | 15 | ✅ |
-| **Total** | **128** | **✅ 128 PASS / 0 FAIL** |
+| I — Almacenaje | 37 | ✅ |
+| **Total** | **165** | **✅ 165 PASS / 0 FAIL** |
 
 <details>
 <summary><strong>Cobertura por suite</strong></summary>
@@ -130,6 +133,16 @@ SKIP_CLEANUP=1 scripts/test-api.sh   # conservar los datos de prueba
 - `generate-stops` en run no-draft → 409.
 - Entregar la parada → paquete `delivered` → completar el despacho (libera el vehículo).
 
+**I — Almacenaje**
+- CRUD de bodegas (crear/editar/borrar); borrar bodega con ubicaciones → 409.
+- CRUD de clasificaciones y ubicaciones; `generate` crea ubicaciones por pasillo/estante/niveles/posiciones.
+- `storage_location/available` filtra por bodega y (opcional) clasificación, devuelve `suggested_location_id` y `occupied`.
+- Asignación automática al admitir (`origin=online` → bodega Miami, `origin=local` → bodega Managua); clasificación obligatoria.
+- `generate-stops` libera la ubicación y crea snapshot en `route_stop.storage_location_id` + movimiento `package_storage_movement`.
+- `skip`/`failed` restauran la ubicación; `deliver`/`returned`/`cancelled` la liberan.
+- `route_run/picking.php?id=` devuelve HTML ordenado por pasillo/estante/nivel/posición.
+- RBAC negativo (operador → 403); POST sin CSRF → 403.
+
 </details>
 
 ---
@@ -177,9 +190,85 @@ SKIP_CLEANUP=1 scripts/test-api.sh   # conservar los datos de prueba
 - [ ] Rate-limit de login (varios intentos fallidos → 429).
 - [ ] CSRF: peticiones mutating sin token → bloqueadas (403).
 
+### G — Almacenaje
+- [ ] **Almacenaje** (`/almacenaje`): tabs **Bodegas / Clasificaciones / Ubicaciones**; crear/editar/borrar.
+- [ ] Generar ubicaciones por pasillo/estante/niveles/posiciones; ver ocupación.
+- [ ] **Admisión** (`/admision`): card "Almacenaje" con clasificación **obligatoria** y ubicación **auto-sugerida** (editable); bloquea crear sin clasificación.
+- [ ] **Detalle de paquete** (`/packages/:id`): card "Almacenaje" con clasificación, ubicación, fecha; botón **"Gestionar"** para asignar/mover/liberar.
+- [ ] **Detalle de despacho** (`/runs/:id`): columna **Ubicación** en paradas + botón **"Hoja de picking"** (abre HTML imprimible por pasillo/estante).
+
 ---
 
-## 5. Hallazgos y correcciones
+## 5. Flujo de trabajo — Revisión manual (UI)
+
+> La revisión manual valida la UI que las suites API no cubren. Se hace **por
+> módulo**, con backend y backoffice levantados, y se cierra con una corrida de
+> regresión de las suites.
+
+### Paso 0 — Preparar la sesión
+
+```bash
+# 1. Backend
+php -S localhost:8000 -t api                  # http://localhost:8000
+
+# 2. Backoffice
+cd backoffice && npm install && npm run dev   # http://localhost:5173/backoffice/
+
+# 3. Estado limpio (crea y luego auto-limpia los datos de prueba)
+./scripts/test-api.sh
+```
+
+- Abrir el backoffice en un navegador con **sesión limpia** (o hard-refresh) y
+  loguearse con el rol indicado por cada checklist (§4).
+- Si un módulo depende de datos concretos, crearlos primero desde la UI siguiendo
+  el orden del checklist.
+
+### Paso 1 — Recorrer el checklist
+
+Para **cada ítem** de §4, en orden:
+
+1. **Ejecutar** el caso en la pantalla/rol indicados.
+2. **Marcar** el resultado en el propio archivo:
+   - `- [x]` si pasa.
+   - Dejar `- [ ]` si falla.
+3. Si falla, **registrar** una fila en §6 (Hallazgos) con: síntoma → causa raíz →
+   fix aplicado, y corregir en la rama.
+4. **Re-verificar** el ítem tras el fix (volver a 1).
+
+### Paso 2 — Regresión tras cada tanda de fixes
+
+```bash
+./scripts/test-api.sh            # debe seguir en 0 FAIL
+```
+
+Si un fix toca backend/lógica compartida, correr también:
+
+```bash
+cd backoffice && npm run build   # vue-tsc + vite build sin errores
+php -l api/Controllers/<afectado>.php
+```
+
+### Paso 3 — Roles por módulo
+
+| Módulo | Rol a usar | Motivo |
+|--------|-----------|--------|
+| A — Facturación y cobros | admin | `invoice.*`, `payment_method.*`, `billing_config` |
+| B — Fixes UI / Admisión | admin | — |
+| C — Vehículos | admin (+ conductor `jdoe`) | permisos `edit_km`/`km_correction` y segregación del conductor |
+| D — Cotizaciones / comisiones | vendedor | solo ve las suyas; sin `invoice.*`/`quote.delete` |
+| E — Recolección | vendedor | selector de vehículo en cotización |
+| F — Transversal | admin / operador | RBAC negativo y rate-limit |
+| G — Almacenaje | admin | `warehouse.*`, `storage_category.*`, `storage_location.*` |
+
+### Paso 4 — Cierre
+
+- Aprobar el módulo cuando **todos** sus ítems quedan en `- [x]`.
+- Al terminar la sesión, correr la limpieza (§7) para no dejar datos de prueba.
+- El módulo queda aprobado para integrar solo si además §3 (suites) está en 0 FAIL.
+
+---
+
+## 6. Hallazgos y correcciones
 
 | # | Hallazgo | Resolución |
 |---|----------|------------|
@@ -188,10 +277,12 @@ SKIP_CLEANUP=1 scripts/test-api.sh   # conservar los datos de prueba
 | 3 | Corrección de km hacia abajo sin justificación. | Requiere `km_correction` + `notes` (422 si falta). |
 | 4 | Las suites enviaban **correos reales** por SMTP de producción al admitir paquetes/disparar notificaciones (clientes 2 y 6 → `dflores2t@gmail.com`). | Flag `MAIL_ENABLED` (default `true`); `false` en dev → `MailService` solo loguea WARNING y no envía. |
 | 5 | Las corridas dejaban **datos de prueba** (paquetes, facturas, cotizaciones, despachos) que contaminaban el entorno. | `scripts/cleanup-test-data.sql` + self-cleanup automático al final de `test-api.sh`. |
+| 6 | `StorageLocationModel::findByWarehouse` sin clasificación generaba `ORDER BY 0` (columna posicional inexistente) → **500** en `storage_location/available.php`. | Orden por preferencia solo cuando hay `category_id`; sin filtro ordena por `occupied` y `code`. |
+| 7 | `routeService.getPickingUrl` enviaba `?run_id=` pero el endpoint espera `?id=` → **422**. | Corregido el query param del servicio. |
 
 ---
 
-## 6. Limpieza de datos de prueba
+## 7. Limpieza de datos de prueba
 
 `scripts/cleanup-test-data.sql` (solo dev, idempotente) borra los artefactos de
 las suites y restaura el estado base:
@@ -199,6 +290,7 @@ las suites y restaura el estado base:
 - Paquetes y cotizaciones de los **clientes de prueba (2 y 6)** creados hoy
   (las cascadas eliminan facturas y eventos de tracking).
 - Embarques con código `QATEST-*` y despachos con `run_date >= '2027-01-01'`.
+- Artefactos de almacenaje `QATEST-*` (bodegas + ubicaciones en cascada, clasificaciones) y movimientos asociados.
 - Lecturas de odómetro y notificaciones in-app de hoy; vehículo id 2 vuelve a
   `current_km=45000` y `status='disponible'`.
 - Re-sincroniza `document_sequence` (`invoice`, `quote`) con las filas restantes.
@@ -210,7 +302,7 @@ mysql -h<host> -u<user> -p<pass> <db> < scripts/cleanup-test-data.sql
 
 ---
 
-## 7. Comandos de verificación
+## 8. Comandos de verificación
 
 ```bash
 # Backend — sintaxis PHP
@@ -229,9 +321,9 @@ mysql -h127.0.0.1 -udail -p vuno_db_shipping < scripts/cleanup-test-data.sql
 
 ---
 
-## 8. Criterio de integración
+## 9. Criterio de integración
 
 1. `./scripts/test-api.sh` → **0 FAIL**.
-2. Checklist UI (§4) aprobado por el responsable.
+2. Checklist UI (§4) recorrido según el flujo de §5 y **aprobado** por el responsable.
 3. Revisión de `git diff develop..HEAD` y commits atómicos.
 4. **Con aprobación explícita** → merge/PR a `develop`.
