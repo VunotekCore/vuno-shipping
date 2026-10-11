@@ -3,7 +3,7 @@
 # test-api.sh — Pruebas de API por curl para feature/cobros-facturacion.
 #
 # USO:
-#   scripts/test-api.sh            # corre todas las suites (A,C,D,E,F,G,H)
+#   scripts/test-api.sh            # corre todas las suites (A,C,D,E,F,G,H,I)
 #   scripts/test-api.sh A          # solo la suite A
 #   scripts/test-api.sh C F        # varias suites
 #   SKIP_CLEANUP=1 scripts/test-api.sh   # no ejecuta la limpieza final
@@ -34,6 +34,9 @@ VEHICLE_ID=2        # M-10001
 VEHICLE2_ID=3       # M-10002
 ROUTE_ID=4
 PASSWD="Test1234!"
+# admin@vunotek.com y jdoe@vunotek.com (conductor) fueron reseteados a admin123
+PASSWD_ADMIN="${PASSWD_ADMIN:-admin123}"
+PASSWD_CONDUCTOR="${PASSWD_CONDUCTOR:-admin123}"
 
 mkdir -p "$TMP"
 
@@ -87,7 +90,7 @@ CSRF_ADMIN=""; CSRF_VEND=""; CSRF_OPER=""; CSRF_COND=""
 
 login_all() {
   section "0. Autenticación"
-  do_login "$JAR_ADMIN" admin@vunotek.com "$PASSWD"; CSRF_ADMIN="$LOGIN_CSRF"
+  do_login "$JAR_ADMIN" admin@vunotek.com "$PASSWD_ADMIN"; CSRF_ADMIN="$LOGIN_CSRF"
   [ "$LOGIN_CODE" = "200" ] && ok "login admin (200)" || no "login admin (HTTP $LOGIN_CODE)"
   [ -n "$CSRF_ADMIN" ] && ok "login devuelve csrf_token" || no "login sin csrf_token"
   # permisos de vehículo en el JWT
@@ -101,7 +104,7 @@ login_all() {
   do_login "$JAR_OPER" operador@vunotek.com "$PASSWD"; CSRF_OPER="$LOGIN_CSRF"
   [ "$LOGIN_CODE" = "200" ] && ok "login operador (200)" || no "login operador (HTTP $LOGIN_CODE)"
 
-  do_login "$JAR_COND" jdoe@vunotek.com "$PASSWD"; CSRF_COND="$LOGIN_CSRF"
+  do_login "$JAR_COND" jdoe@vunotek.com "$PASSWD_CONDUCTOR"; CSRF_COND="$LOGIN_CSRF"
   [ "$LOGIN_CODE" = "200" ] && ok "login conductor (200)" || no "login conductor (HTTP $LOGIN_CODE)"
 
   do_login "$TMP/bad.jar" admin@vunotek.com "clave-mala"
@@ -513,6 +516,111 @@ suite_H() {
 }
 
 # =====================================================================
+# SUITE I — Almacenaje (bodegas / clasificaciones / ubicaciones / movimientos)
+# =====================================================================
+suite_I() {
+  section "I. Almacenaje"
+
+  # I1 — catálogos base
+  code=$(req GET "/warehouse/list.php?all=1" "$JAR_ADMIN")
+  expect_eq 200 "$code" "I1.1 warehouse/list (200)"
+  expect_eq "true" "$(jq '[.data.warehouses[].code] | index("MIAMI") != null' "$TMP/body.json" 2>/dev/null)" "I1.2 incluye bodega MIAMI"
+
+  code=$(req GET "/storage_category/list.php?all=1" "$JAR_ADMIN")
+  expect_eq 200 "$code" "I1.3 storage_category/list (200)"
+  expect_eq "true" "$(jq '[.data.storage_categories[].name] | index("Normal") != null' "$TMP/body.json" 2>/dev/null)" "I1.4 incluye clasificación Normal"
+
+  code=$(req GET "/storage_location/available.php?warehouse_id=2&category_id=1" "$JAR_ADMIN")
+  expect_eq 200 "$code" "I1.5 storage_location/available (200)"
+  expect_gt "$(jqv '.data.locations | length')" 0 "I1.6 devuelve ubicaciones"
+  expect_gt "$(jqv '.data.suggested_location_id')" 0 "I1.7 sugiere ubicación"
+
+  # I2 — RBAC / CSRF
+  code=$(req GET /warehouse/list.php "$JAR_VEND"); expect_eq 403 "$code" "I2.1 vendedor warehouse -> 403"
+  code=$(req POST /warehouse/create.php "$JAR_ADMIN" '{"name":"x","code":"y"}' ""); expect_eq 403 "$code" "I2.2 crear bodega sin CSRF -> 403"
+
+  # I3 — CRUD bodega + clasificación + ubicación (artefactos QATEST)
+  code=$(req POST /warehouse/create.php "$JAR_ADMIN" '{"name":"QA Bodega","code":"QATEST-WH","origin":"local"}' "$CSRF_ADMIN")
+  expect_eq 201 "$code" "I3.1 crear bodega (201)"
+  local wh; wh=$(jqv '.data.warehouse.id')
+  code=$(req POST /storage_category/create.php "$JAR_ADMIN" '{"name":"QATEST Cat","color":"#123456"}' "$CSRF_ADMIN")
+  expect_eq 201 "$code" "I3.2 crear clasificación (201)"
+  local cat; cat=$(jqv '.data.storage_category.id')
+  code=$(req POST /storage_location/create.php "$JAR_ADMIN" "$(jq -n --argjson w "$wh" '{warehouse_id:$w,aisle:"Z",rack:"09",level:"1",position:"1",capacity:5}')" "$CSRF_ADMIN")
+  expect_eq 201 "$code" "I3.3 crear ubicación (201)"
+  expect_eq "Z-09-01-01" "$(jqv '.data.storage_location.code')" "I3.4 código generado"
+  code=$(req POST /storage_location/generate.php "$JAR_ADMIN" "$(jq -n --argjson w "$wh" '{warehouse_id:$w,aisle:"Y",rack:"01",levels:2,positions:2,capacity:10}')" "$CSRF_ADMIN")
+  expect_eq 200 "$code" "I3.5 generar ubicaciones (200)"
+  expect_eq "4" "$(jqv '.data.created')" "I3.6 generó 4 ubicaciones"
+
+  # I4 — admisión con clasificación + auto-ubicación (online -> bodega Miami)
+  local payload
+  payload=$(jq -n '{sender_name:"QA Almacen",sender_phone:"88880000",recipient_name:"QA Cliente Alm",recipient_phone:"88889999",recipient_address:"QA Dir Alm",client_id:6,zone_id:1,delivery_type:"aereo",delivery_option:"branch",shipping_service:"Aéreo",origin:"online",weight:2,length:0,width:0,height:0,declared_value:15,storage_category_id:1}')
+  code=$(req POST /package/create.php "$JAR_ADMIN" "$payload" "$CSRF_ADMIN")
+  expect_eq 201 "$code" "I4.1 admisión con clasificación (201)"
+  local pkg; pkg=$(jqv '.data.package.id')
+  expect_eq "1" "$(jqv '.data.package.storage_category_id')" "I4.2 clasificación guardada"
+  expect_gt "$(jqv '.data.package.storage_location_id')" 0 "I4.3 ubicación auto-asignada"
+
+  code=$(req GET "/package/storage.php?package_id=$pkg" "$JAR_ADMIN")
+  expect_eq 200 "$code" "I4.4 package/storage (200)"
+  expect_eq "stored" "$(jqv '.data.history[0].action')" "I4.5 movimiento 'stored' registrado"
+  local loccode; loccode=$(jqv '.data.package.storage_location_code')
+  curl -s -b "$JAR_ADMIN" "$BASE/package/label.php?id=$pkg" > "$TMP/label.html"
+  if grep -q "$loccode" "$TMP/label.html" 2>/dev/null; then ok "I4.6 etiqueta incluye ubicación ($loccode)"; else no "I4.6 etiqueta incluye ubicación"; fi
+
+  # I5 — fix delivery_type: servicio Marítimo -> tipo maritimo (id 4), no aereo
+  payload=$(jq -n '{sender_name:"QA Mar",sender_phone:"88880000",recipient_name:"QA Mar Cliente",recipient_phone:"88889999",recipient_address:"QA Dir Mar",client_id:6,zone_id:1,delivery_option:"branch",shipping_service:"Marítimo",origin:"online",weight:5,length:0,width:0,height:0,declared_value:40}')
+  code=$(req POST /package/create.php "$JAR_ADMIN" "$payload" "$CSRF_ADMIN")
+  expect_eq 201 "$code" "I5.1 admisión servicio Marítimo (201)"
+  expect_eq "4" "$(jqv '.data.package.delivery_type_id')" "I5.2 delivery_type = maritimo (fix)"
+  expect_eq "2" "$(jqv '.data.package.shipping_service_id')" "I5.3 shipping_service = Marítimo"
+
+  # I6 — generate-stops libera ubicación y deja snapshot en la parada
+  code=$(req POST /route_run/create.php "$JAR_ADMIN" "$(jq -n --argjson r "$ROUTE_ID" --argjson a "$DRIVER_ID" --argjson v "$VEHICLE_ID" '{route_id:$r,run_date:"2027-04-10",assigned_to:$a,vehicle_id:$v}')" "$CSRF_ADMIN")
+  expect_eq 201 "$code" "I6.1 crear despacho (201)"
+  local run_id; run_id=$(jqv '.data.run.id')
+  code=$(req POST /route_run/generate-stops.php "$JAR_ADMIN" "$(jq -n --argjson r "$run_id" --argjson p "$pkg" '{run_id:$r,package_ids:[$p]}')" "$CSRF_ADMIN")
+  expect_eq 200 "$code" "I6.2 generate-stops (200)"
+  code=$(req GET "/package/storage.php?package_id=$pkg" "$JAR_ADMIN")
+  expect_eq "null" "$(jqv '.data.package.storage_location_id')" "I6.3 paquete fuera de bodega (null)"
+  expect_eq "released" "$(jqv '.data.history[0].action')" "I6.4 movimiento 'released' registrado"
+  code=$(req GET "/route_stop/list.php?run_id=$run_id" "$JAR_ADMIN")
+  expect_gt "$(jqv '.data.stops[0].storage_location_id')" 0 "I6.5 parada conserva snapshot de ubicación"
+  local stop_id; stop_id=$(jqv '.data.stops[0].id')
+
+  # I7 — picking imprimible
+  curl -s -b "$JAR_ADMIN" "$BASE/route_run/picking.php?id=$run_id" > "$TMP/picking.html"
+  if grep -q "Lista de Picking" "$TMP/picking.html" 2>/dev/null && grep -q "$loccode" "$TMP/picking.html" 2>/dev/null; then
+    ok "I7.1 picking imprimible (HTML + ubicación)"
+  else
+    no "I7.1 picking imprimible (HTML + ubicación)"
+  fi
+
+  # I8 — skip restaura el paquete a bodega (requiere despacho activo)
+  code=$(req PUT /route_run/status.php "$JAR_ADMIN" "$(jq -n --argjson id "$run_id" '{id:$id,status:"active"}')" "$CSRF_ADMIN")
+  expect_eq 200 "$code" "I8.1 activar despacho (200)"
+  code=$(req PUT /route_stop/status.php "$JAR_ADMIN" "$(jq -n --argjson id "$stop_id" '{id:$id,status:"skipped",notes:"Cliente ausente QA"}')" "$CSRF_ADMIN")
+  expect_eq 200 "$code" "I8.2 omitir parada (200)"
+  code=$(req GET "/package/storage.php?package_id=$pkg" "$JAR_ADMIN")
+  expect_gt "$(jqv '.data.package.storage_location_id')" 0 "I8.3 paquete restaurado a bodega"
+  expect_eq "restored" "$(jqv '.data.history[0].action')" "I8.4 movimiento 'restored' registrado"
+
+  # I9 — borrado: con ubicaciones la bodega queda bloqueada; sin ellas se elimina
+  code=$(req DELETE /warehouse/delete.php "$JAR_ADMIN" "$(jq -n --argjson id "$wh" '{id:$id}')" "$CSRF_ADMIN")
+  expect_eq 409 "$code" "I9.1 bodega con ubicaciones -> 409"
+  code=$(req GET "/storage_location/list.php?warehouse_id=$wh&all=1" "$JAR_ADMIN")
+  local loc_ids; loc_ids=$(jq -r '.data.storage_locations[].id' "$TMP/body.json" 2>/dev/null)
+  for lid in $loc_ids; do
+    req DELETE /storage_location/delete.php "$JAR_ADMIN" "$(jq -n --argjson id "$lid" '{id:$id}')" "$CSRF_ADMIN" > /dev/null
+  done
+  code=$(req DELETE /warehouse/delete.php "$JAR_ADMIN" "$(jq -n --argjson id "$wh" '{id:$id}')" "$CSRF_ADMIN")
+  expect_eq 200 "$code" "I9.2 eliminar bodega QA sin ubicaciones (200)"
+  code=$(req DELETE /storage_category/delete.php "$JAR_ADMIN" "$(jq -n --argjson id "$cat" '{id:$id}')" "$CSRF_ADMIN")
+  expect_eq 200 "$code" "I9.3 eliminar clasificación QA (200)"
+}
+
+# =====================================================================
 # SUITE F — Transversal (RBAC / CSRF / 410 / rate-limit)
 # =====================================================================
 suite_F() {
@@ -563,7 +671,7 @@ login_all
 login_done=1
 
 SUITES=("$@")
-[ ${#SUITES[@]} -eq 0 ] && SUITES=(A C D E F G H)
+[ ${#SUITES[@]} -eq 0 ] && SUITES=(A C D E F G H I)
 
 for s in "${SUITES[@]}"; do
   case "$s" in
@@ -574,6 +682,7 @@ for s in "${SUITES[@]}"; do
     F) suite_F ;;
     G) suite_G ;;
     H) suite_H ;;
+    I) suite_I ;;
     *) echo "Suite desconocida: $s" ;;
   esac
 done

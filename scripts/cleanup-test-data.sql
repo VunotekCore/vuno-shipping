@@ -34,9 +34,17 @@ UNION ALL
 SELECT 'vehicle_odometer_log', COUNT(*)
   FROM vehicle_odometer_log WHERE vehicle_id = 2 AND DATE(created_at) = @today
 UNION ALL
+SELECT 'storage_locations_QA', COUNT(*)
+  FROM storage_location WHERE warehouse_id IN (SELECT id FROM warehouse WHERE code LIKE 'QATEST-%')
+UNION ALL
+SELECT 'warehouse_qa', COUNT(*)
+  FROM warehouse WHERE code LIKE 'QATEST-%'
+UNION ALL
+SELECT 'storage_category QA', COUNT(*)
+  FROM storage_category WHERE name LIKE 'QATEST%'
+UNION ALL
 SELECT 'notification', COUNT(*)
   FROM notification WHERE DATE(created_at) = @today;
-
 -- ---------------------------------------------------------------------------
 -- Borrado (cascadas: package -> invoice/tracking_event/shipment_package)
 -- ---------------------------------------------------------------------------
@@ -48,6 +56,11 @@ DELETE FROM shipment  WHERE code LIKE 'QATEST-%';
 DELETE FROM route_run WHERE run_date >= '2027-01-01';
 DELETE FROM vehicle_odometer_log WHERE vehicle_id = 2 AND DATE(created_at) = @today;
 DELETE FROM notification WHERE DATE(created_at) = @today;
+
+-- Artefactos de almacenaje (Suite I). package.storage_location_id -> SET NULL.
+DELETE FROM storage_location WHERE warehouse_id IN (SELECT id FROM warehouse WHERE code LIKE 'QATEST-%');
+DELETE FROM warehouse WHERE code LIKE 'QATEST-%';
+DELETE FROM storage_category WHERE name LIKE 'QATEST%';
 
 -- Restaurar estado base del vehiculo de prueba
 UPDATE vehicle
