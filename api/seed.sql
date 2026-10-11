@@ -86,7 +86,19 @@ INSERT INTO permission (module, action, label) VALUES
 ('quote', 'read', 'Ver cotizaciones'),
 ('quote', 'create', 'Crear cotización'),
 ('quote', 'edit', 'Editar cotizaciones'),
-('quote', 'delete', 'Eliminar cotizaciones')
+('quote', 'delete', 'Eliminar cotizaciones'),
+('warehouse', 'read', 'Ver bodegas'),
+('warehouse', 'create', 'Crear bodega'),
+('warehouse', 'edit', 'Editar bodegas'),
+('warehouse', 'delete', 'Eliminar bodegas'),
+('storage_category', 'read', 'Ver clasificaciones de almacen'),
+('storage_category', 'create', 'Crear clasificacion de almacen'),
+('storage_category', 'edit', 'Editar clasificaciones de almacen'),
+('storage_category', 'delete', 'Eliminar clasificaciones de almacen'),
+('storage_location', 'read', 'Ver ubicaciones de almacen'),
+('storage_location', 'create', 'Crear ubicacion de almacen'),
+('storage_location', 'edit', 'Editar ubicaciones de almacen'),
+('storage_location', 'delete', 'Eliminar ubicaciones de almacen')
 ON DUPLICATE KEY UPDATE label = VALUES(label);
 
 -- === Roles ===
@@ -129,7 +141,8 @@ SELECT 4, id FROM permission WHERE
   (module = 'pricing_rule' AND action IN ('read')) OR
   (module = 'delivery_type' AND action IN ('read')) OR
   (module = 'shipping_service' AND action IN ('read')) OR
-  (module = 'delivery_option' AND action IN ('read'))
+  (module = 'delivery_option' AND action IN ('read')) OR
+  (module IN ('warehouse', 'storage_category', 'storage_location') AND action = 'read')
 ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
 
 -- Operador Escáner: package (read/edit), delivery_type (read), shipping_service (read), delivery_option (read)
@@ -499,3 +512,38 @@ INSERT IGNORE INTO payment_method (name, description, is_active) VALUES
 INSERT INTO billing_config (id, tax_enabled, tax_rate, show_client_ruc, exchange_rate_usd)
 VALUES (1, 0, 15.00, 0, 36.00)
 ON DUPLICATE KEY UPDATE id = id;
+
+-- === Almacenaje (Warehouse Storage) ===
+
+INSERT IGNORE INTO storage_category (name, color, description) VALUES
+    ('Normal', '#3b82f6', 'Paquete estandar, sin manejo especial'),
+    ('Frágil', '#f59e0b', 'Requiere manejo cuidadoso'),
+    ('Alto valor', '#ef4444', 'Paquete de alto valor, resguardo');
+
+INSERT INTO warehouse (name, code, origin, address)
+SELECT 'Bodega Miami', 'MIAMI', 'online', 'Miami, FL, USA'
+WHERE NOT EXISTS (SELECT 1 FROM warehouse WHERE code = 'MIAMI');
+
+INSERT INTO warehouse (name, code, origin, address)
+SELECT 'Bodega Managua', 'MGUA', 'local', 'Managua, Nicaragua'
+WHERE NOT EXISTS (SELECT 1 FROM warehouse WHERE code = 'MGUA');
+
+INSERT INTO storage_location (warehouse_id, aisle, rack, level, position, code, capacity)
+SELECT w.id, 'A', '01', '01', '01', 'A-01-01-01', 1000
+FROM warehouse w WHERE w.code = 'MIAMI'
+  AND NOT EXISTS (SELECT 1 FROM storage_location sl WHERE sl.warehouse_id = w.id AND sl.code = 'A-01-01-01');
+
+INSERT INTO storage_location (warehouse_id, aisle, rack, level, position, code, capacity)
+SELECT w.id, 'A', '01', '02', '01', 'A-01-02-01', 1000
+FROM warehouse w WHERE w.code = 'MIAMI'
+  AND NOT EXISTS (SELECT 1 FROM storage_location sl WHERE sl.warehouse_id = w.id AND sl.code = 'A-01-02-01');
+
+INSERT INTO storage_location (warehouse_id, aisle, rack, level, position, code, capacity)
+SELECT w.id, 'A', '01', '01', '01', 'A-01-01-01', 1000
+FROM warehouse w WHERE w.code = 'MGUA'
+  AND NOT EXISTS (SELECT 1 FROM storage_location sl WHERE sl.warehouse_id = w.id AND sl.code = 'A-01-01-01');
+
+INSERT INTO storage_location (warehouse_id, aisle, rack, level, position, code, capacity)
+SELECT w.id, 'A', '01', '02', '01', 'A-01-02-01', 1000
+FROM warehouse w WHERE w.code = 'MGUA'
+  AND NOT EXISTS (SELECT 1 FROM storage_location sl WHERE sl.warehouse_id = w.id AND sl.code = 'A-01-02-01');

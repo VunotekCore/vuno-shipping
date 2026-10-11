@@ -345,6 +345,51 @@ CREATE TABLE IF NOT EXISTS quote_item (
     INDEX idx_quote_item_quote (quote_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- === Almacenaje en bodega ===
+
+CREATE TABLE IF NOT EXISTS warehouse (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    code VARCHAR(20) NOT NULL,
+    origin ENUM('online','local') NOT NULL DEFAULT 'online',
+    address VARCHAR(500) NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_warehouse_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS storage_category (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    color VARCHAR(7) NULL,
+    description VARCHAR(255) NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_storage_category_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS storage_location (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    warehouse_id INT NOT NULL,
+    category_id INT NULL,
+    aisle VARCHAR(20) NULL,
+    rack VARCHAR(20) NULL,
+    level VARCHAR(20) NULL,
+    position VARCHAR(20) NULL,
+    code VARCHAR(50) NOT NULL,
+    capacity INT NOT NULL DEFAULT 1,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_storage_location_code (warehouse_id, code),
+    FOREIGN KEY (warehouse_id) REFERENCES warehouse(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES storage_category(id) ON DELETE SET NULL,
+    INDEX idx_storage_location_warehouse (warehouse_id),
+    INDEX idx_storage_location_category (category_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS package (
     id INT AUTO_INCREMENT,
     tracking_number VARCHAR(50) NOT NULL,
@@ -384,8 +429,12 @@ CREATE TABLE IF NOT EXISTS package (
     route_id INT NULL,
     notes TEXT NULL,
     origin ENUM('online','local') DEFAULT 'online',
+    origin ENUM('online','local') DEFAULT 'online',
     pickup_required TINYINT(1) NOT NULL DEFAULT 0,
     pickup_vehicle_id INT NULL,
+    storage_category_id INT NULL,
+    storage_location_id INT NULL,
+    stored_at TIMESTAMP NULL,
     received_at TIMESTAMP NULL,
     delivered_at TIMESTAMP NULL,
     created_by INT NULL,
@@ -400,6 +449,8 @@ CREATE TABLE IF NOT EXISTS package (
     FOREIGN KEY (delivery_type_id) REFERENCES delivery_type(id) ON DELETE SET NULL,
     FOREIGN KEY (shipping_service_id) REFERENCES shipping_service(id) ON DELETE SET NULL,
     FOREIGN KEY (local_delivery_type_id) REFERENCES delivery_type(id) ON DELETE SET NULL,
+    FOREIGN KEY (storage_category_id) REFERENCES storage_category(id) ON DELETE SET NULL,
+    FOREIGN KEY (storage_location_id) REFERENCES storage_location(id) ON DELETE SET NULL,
     FOREIGN KEY (delivery_option_id) REFERENCES delivery_option(id) ON DELETE SET NULL,
     FOREIGN KEY (status_id) REFERENCES package_status(id) ON DELETE SET NULL,
     FOREIGN KEY (quote_id) REFERENCES quote(id) ON DELETE SET NULL,
@@ -412,6 +463,25 @@ CREATE TABLE IF NOT EXISTS package (
     INDEX idx_package_delivery_type (delivery_type_id),
     INDEX idx_package_shipping_service (shipping_service_id),
     INDEX idx_package_assigned (assigned_to)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS package_storage_movement (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    package_id INT NOT NULL,
+    warehouse_id INT NULL,
+    location_id INT NULL,
+    category_id INT NULL,
+    action ENUM('stored','moved','released','restored') NOT NULL,
+    notes VARCHAR(255) NULL,
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (package_id) REFERENCES package(id) ON DELETE CASCADE,
+    FOREIGN KEY (warehouse_id) REFERENCES warehouse(id) ON DELETE SET NULL,
+    FOREIGN KEY (location_id) REFERENCES storage_location(id) ON DELETE SET NULL,
+    FOREIGN KEY (category_id) REFERENCES storage_category(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES `user`(id) ON DELETE SET NULL,
+    INDEX idx_psm_package (package_id),
+    INDEX idx_psm_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS tracking_event (
@@ -606,6 +676,7 @@ CREATE TABLE IF NOT EXISTS route_stop (
     id INT AUTO_INCREMENT PRIMARY KEY,
     route_run_id INT NOT NULL,
     package_id INT NULL,
+    storage_location_id INT NULL,
     stop_order INT NOT NULL,
     client_name VARCHAR(255) NULL,
     address TEXT NOT NULL,
@@ -622,6 +693,7 @@ CREATE TABLE IF NOT EXISTS route_stop (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (route_run_id) REFERENCES route_run(id) ON DELETE CASCADE,
     FOREIGN KEY (package_id) REFERENCES package(id) ON DELETE SET NULL,
+    FOREIGN KEY (storage_location_id) REFERENCES storage_location(id) ON DELETE SET NULL,
     FOREIGN KEY (status_id) REFERENCES route_stop_status(id) ON DELETE SET NULL,
     INDEX idx_stop_run (route_run_id),
     INDEX idx_stop_package (package_id),
