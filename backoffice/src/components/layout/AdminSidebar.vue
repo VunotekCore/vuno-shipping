@@ -126,6 +126,7 @@ const navGroups = computed<NavGroup[]>(() => {
         { label: 'Zonas', route: '/zones', icon: 'M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0zM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z', permission: 'zone.read' },
         { label: 'Reglas de pricing', route: '/pricing', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', permission: 'pricing_rule.read' },
         { label: 'Servicios y opciones', route: '/settings/shipping', icon: 'M5 12h14M12 5l7 7-7 7', permission: 'shipping_service.read' },
+        { label: 'Almacenaje', route: '/almacenaje', icon: 'M3 21V8l9-5 9 5v13M9 21v-8h6v8M3 21h18', permission: ['warehouse.read', 'storage_location.read', 'storage_category.read'] },
         { label: 'Empresa', route: '/company', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', permission: ['company.read', 'billing_config.read'] },
         { label: 'Secuencias', route: '/document-sequences', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01', permission: 'document_sequence.read' },
       ],

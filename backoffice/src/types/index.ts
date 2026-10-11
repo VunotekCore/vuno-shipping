@@ -116,6 +116,75 @@ export interface Client {
   updated_at: string
 }
 
+export interface Warehouse {
+  id: number
+  name: string
+  code: string
+  origin: 'online' | 'local'
+  address: string | null
+  notes: string | null
+  is_active: boolean
+  location_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface StorageCategory {
+  id: number
+  name: string
+  color: string | null
+  description: string | null
+  is_active: boolean
+  package_count?: number
+  created_at: string
+}
+
+export interface StorageLocation {
+  id: number
+  warehouse_id: number
+  warehouse_name?: string | null
+  warehouse_code?: string | null
+  code: string
+  aisle: string | null
+  rack: string | null
+  level: string | null
+  position: string | null
+  category_id: number | null
+  category_name: string | null
+  category_color?: string | null
+  capacity: number | null
+  occupied: number
+  is_active: number
+}
+
+export interface PackageStorageMovement {
+  id: number
+  package_id: number
+  action: string
+  from_location_id: number | null
+  to_location_id: number | null
+  from_location_code: string | null
+  to_location_code: string | null
+  user_id: number | null
+  user_name: string | null
+  notes: string | null
+  created_at: string
+}
+
+export interface PackageStorageInfo {
+  id: number
+  tracking_number: string
+  origin: 'online' | 'local'
+  storage_category_id: number | null
+  storage_category_name: string | null
+  storage_category_color: string | null
+  storage_location_id: number | null
+  storage_location_code: string | null
+  storage_warehouse_id: number | null
+  stored_at: string | null
+  history: PackageStorageMovement[]
+}
+
 export interface Zone {
   id: number
   name: string
@@ -253,6 +322,13 @@ export interface Package {
   invoice_id?: number | null
   invoice_number?: string | null
   invoice_status?: 'pending' | 'paid' | 'cancelled' | null
+  storage_category_id?: number | null
+  storage_category_name?: string | null
+  storage_category_color?: string | null
+  storage_location_id?: number | null
+  storage_location_code?: string | null
+  storage_warehouse_id?: number | null
+  stored_at?: string | null
   created_by: number | null
   created_at: string
   updated_at: string
@@ -407,6 +483,10 @@ export interface RouteStop {
   invoice_id?: number | null
   invoice_number?: string | null
   invoice_status?: 'pending' | 'paid' | 'cancelled' | null
+  storage_location_id?: number | null
+  storage_location_code?: string | null
+  storage_category_name?: string | null
+  storage_category_color?: string | null
   created_at: string
   updated_at: string
 }

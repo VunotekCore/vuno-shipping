@@ -151,6 +151,12 @@ const router = createRouter({
           meta: { permission: 'shipping_service', action: 'read' },
         },
         {
+          path: 'almacenaje',
+          name: 'storage-config',
+          component: () => import('../pages/StorageConfigView.vue'),
+          meta: { permission: 'warehouse', action: 'read' },
+        },
+        {
           path: 'facturas',
           name: 'invoices',
           component: () => import('../pages/InvoicesView.vue'),
