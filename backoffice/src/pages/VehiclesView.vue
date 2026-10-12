@@ -13,6 +13,7 @@ import AppModal from '../components/ui/AppModal.vue'
 import AppFormField from '../components/ui/AppFormField.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const fuelOptions = [
   { value: 'gasolina', label: 'Gasolina' },
@@ -162,28 +163,26 @@ onMounted(() => load())
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Vehículos</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Gestionar vehículos del sistema</p>
-      </div>
-      <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Crear vehículo
-      </button>
-    </div>
+    <PageHeader title="Vehículos" subtitle="Gestionar vehículos del sistema">
+      <template #actions>
+        <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Crear vehículo
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Desktop: Table view (lg+) -->
     <div class="hidden lg:block">
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading" :is-empty="vehicles.length === 0" empty-title="Sin vehículos" empty-desc="Creá el primer vehículo del sistema.">
           <tr v-for="v in vehicles" :key="v.id">
-            <td class="font-medium text-[#dae2fd]">{{ v.plate }}</td>
-            <td class="text-[#94a3b8]">{{ v.brand }}</td>
-            <td class="text-[#94a3b8]">{{ v.model }}</td>
-            <td class="text-[#64748b]">{{ v.year ?? '—' }}</td>
-            <td class="text-[#64748b]">{{ v.capacity_kg ?? '—' }}</td>
-            <td class="text-[#94a3b8]">{{ v.current_km ?? 0 }}</td>
+            <td class="font-medium text-content">{{ v.plate }}</td>
+            <td class="text-muted">{{ v.brand }}</td>
+            <td class="text-muted">{{ v.model }}</td>
+            <td class="text-subtle">{{ v.year ?? '—' }}</td>
+            <td class="text-subtle">{{ v.capacity_kg ?? '—' }}</td>
+            <td class="text-muted">{{ v.current_km ?? 0 }}</td>
             <td>
               <span class="admin-badge admin-badge-info">{{ statusLabel(v.status || v.status_name) }}</span>
             </td>
@@ -198,7 +197,7 @@ onMounted(() => load())
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(v)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(v)" title="Eliminar">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(v)" title="Eliminar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -214,15 +213,15 @@ onMounted(() => load())
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
+            <div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" />
+            <div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" />
           </div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="h-3 w-1/4 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="h-3 w-1/4 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3">
             <div class="flex gap-2">
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
             </div>
           </div>
         </div>
@@ -231,12 +230,12 @@ onMounted(() => load())
       <template v-else-if="vehicles.length > 0">
         <div v-for="v in vehicles" :key="v.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <p class="font-medium text-[#dae2fd] truncate">{{ v.plate }}</p>
+            <p class="font-medium text-content truncate">{{ v.plate }}</p>
             <span class="admin-badge admin-badge-info shrink-0">{{ statusLabel(v.status || v.status_name) }}</span>
           </div>
-          <p class="text-sm text-[#94a3b8] truncate">{{ v.brand }} {{ v.model }}</p>
-          <p class="text-xs text-[#64748b]">{{ v.year ?? '—' }} · {{ v.capacity_kg ? v.capacity_kg + ' kg' : '—' }}</p>
-          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+          <p class="text-sm text-muted truncate">{{ v.brand }} {{ v.model }}</p>
+          <p class="text-xs text-subtle">{{ v.year ?? '—' }} · {{ v.capacity_kg ? v.capacity_kg + ' kg' : '—' }}</p>
+          <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">
             <button v-if="canRegisterKm" class="admin-btn admin-btn-ghost admin-btn-sm" @click="openKmModal(v)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
               Registrar km
@@ -249,7 +248,7 @@ onMounted(() => load())
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Editar
             </button>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(v)">
+            <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(v)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               Eliminar
             </button>
@@ -361,7 +360,7 @@ onMounted(() => load())
           </div>
           <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Estado</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Estado</label>
               <select v-model="form.status" class="admin-input" :disabled="saving">
                 <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
@@ -498,32 +497,32 @@ onMounted(() => load())
       @close="showLogModal = false"
     >
       <div v-if="logLoading" class="space-y-2">
-        <div v-for="i in 4" :key="i" class="h-12 animate-pulse rounded-lg bg-[#1e293b]" />
+        <div v-for="i in 4" :key="i" class="h-12 animate-pulse rounded-lg bg-surface-raised" />
       </div>
       <div v-else-if="logs.length > 0" class="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
         <div
           v-for="log in logs"
           :key="log.id"
-          class="rounded-xl border border-[#1e293b] bg-[#0f172a] px-4 py-3"
+          class="rounded-xl border border-line bg-surface-sunken px-4 py-3"
         >
           <div class="flex items-center justify-between gap-2">
-            <span class="text-sm font-medium text-[#dae2fd]">
+            <span class="text-sm font-medium text-content">
               {{ log.km_reading.toLocaleString('es-NI') }} km
             </span>
             <span
               class="text-sm font-medium"
-              :class="log.delta_km < 0 ? 'text-[#f59e0b]' : 'text-[#69dca4]'"
+              :class="log.delta_km < 0 ? 'text-warning' : 'text-primary'"
             >
               {{ log.delta_km > 0 ? '+' : '' }}{{ log.delta_km.toLocaleString('es-NI') }} km
             </span>
           </div>
-          <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748b]">
+          <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-subtle">
             <span>{{ readingTypeLabel(log.reading_type) }}</span>
             <span v-if="log.route_run_id">Despacho #{{ log.route_run_id }}</span>
             <span>{{ log.user_name || 'Usuario #' + log.user_id }}</span>
             <span>{{ new Date(log.created_at).toLocaleString('es-NI') }}</span>
           </div>
-          <p v-if="log.notes" class="mt-1.5 text-xs text-[#94a3b8]">{{ log.notes }}</p>
+          <p v-if="log.notes" class="mt-1.5 text-xs text-muted">{{ log.notes }}</p>
         </div>
       </div>
       <div v-else class="admin-empty-state py-12">

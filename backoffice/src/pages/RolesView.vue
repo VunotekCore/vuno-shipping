@@ -11,6 +11,7 @@ import AppFormField from '../components/ui/AppFormField.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const allPermissions = ref<Permission[]>([])
 const showPermsModal = ref(false)
@@ -152,26 +153,24 @@ onMounted(() => load())
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Roles</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Gestionar roles y sus permisos asignados</p>
-      </div>
-      <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Crear rol
-      </button>
-    </div>
+    <PageHeader title="Roles" subtitle="Gestionar roles y sus permisos asignados">
+      <template #actions>
+        <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Crear rol
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Desktop: Table view (lg+) -->
     <div class="hidden lg:block">
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading" :is-empty="roles.length === 0" empty-title="Sin roles" empty-desc="Creá el primer rol del sistema.">
           <tr v-for="r in roles" :key="r.id">
-            <td class="font-medium text-[#dae2fd]">{{ r.name }}</td>
+            <td class="font-medium text-content">{{ r.name }}</td>
             <td><span class="admin-badge admin-badge-info">{{ r.slug }}</span></td>
-            <td class="text-center text-[#94a3b8]">{{ r.permission_count }}</td>
-            <td class="text-center text-[#94a3b8]">{{ r.user_count }}</td>
+            <td class="text-center text-muted">{{ r.permission_count }}</td>
+            <td class="text-center text-muted">{{ r.user_count }}</td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openPerms(r)" title="Permisos">
@@ -180,7 +179,7 @@ onMounted(() => load())
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(r)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(r)" title="Eliminar" :disabled="r.user_count > 0">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(r)" title="Eliminar" :disabled="r.user_count > 0">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -195,19 +194,19 @@ onMounted(() => load())
     <div class="lg:hidden space-y-3">
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
-          <div class="flex items-center justify-between"><div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" /><div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" /></div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3"><div class="flex gap-2"><div class="h-7 w-20 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /></div></div>
+          <div class="flex items-center justify-between"><div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" /><div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" /></div>
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3"><div class="flex gap-2"><div class="h-7 w-20 animate-pulse rounded bg-surface-raised" /><div class="h-7 w-16 animate-pulse rounded bg-surface-raised" /><div class="h-7 w-16 animate-pulse rounded bg-surface-raised" /></div></div>
         </div>
       </template>
       <template v-else-if="roles.length > 0">
         <div v-for="r in roles" :key="r.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <p class="font-medium text-[#dae2fd] truncate">{{ r.name }}</p>
+            <p class="font-medium text-content truncate">{{ r.name }}</p>
             <span class="admin-badge admin-badge-info shrink-0">{{ r.slug }}</span>
           </div>
-          <p class="text-sm text-[#94a3b8]">P: {{ r.permission_count }} · U: {{ r.user_count }}</p>
-          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+          <p class="text-sm text-muted">P: {{ r.permission_count }} · U: {{ r.user_count }}</p>
+          <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openPerms(r)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
               Permisos
@@ -216,7 +215,7 @@ onMounted(() => load())
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Editar
             </button>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(r)" :disabled="r.user_count > 0">
+            <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(r)" :disabled="r.user_count > 0">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               Eliminar
             </button>
@@ -280,14 +279,14 @@ onMounted(() => load())
     <!-- Permissions Matrix Modal -->
     <AppModal :visible="showPermsModal" :title="`Permisos — ${permRole?.name}`" size="lg" @close="showPermsModal = false">
       <div class="space-y-4">
-        <div v-for="(perms, module) in groupedPerms" :key="module" class="rounded-lg border border-[#1e293b] bg-[#0a1022]/50 p-4">
+        <div v-for="(perms, module) in groupedPerms" :key="module" class="rounded-lg border border-line bg-canvas/50 p-4">
           <div class="mb-3 flex items-center gap-3">
             <AppSwitch :model-value="isModuleChecked(module, perms)" @update:model-value="toggleModule(module, perms)" />
-            <span class="text-sm font-semibold text-[#dae2fd] uppercase tracking-wide">{{ module }}</span>
+            <span class="text-sm font-semibold text-content uppercase tracking-wide">{{ module }}</span>
           </div>
           <div class="grid grid-cols-2 gap-2 pl-8 sm:grid-cols-3 md:grid-cols-4">
-            <label v-for="p in perms" :key="p.id" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#94a3b8] transition-colors hover:bg-white/[0.04]">
-              <input type="checkbox" :checked="selectedPerms.has(p.id)" @change="togglePerm(p.id)" class="h-4 w-4 rounded border-[#404944] bg-[#1e293b] text-[#69dca4] focus:ring-[#69dca4]/50" />
+            <label v-for="p in perms" :key="p.id" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-raised">
+              <input type="checkbox" :checked="selectedPerms.has(p.id)" @change="togglePerm(p.id)" class="h-4 w-4 rounded border-line-strong bg-surface-raised text-primary focus:ring-primary/50" />
               {{ p.action }}
             </label>
           </div>

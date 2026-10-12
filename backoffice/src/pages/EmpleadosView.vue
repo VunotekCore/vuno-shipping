@@ -12,6 +12,7 @@ import AppDropdown from '../components/ui/AppDropdown.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const puestos = ref<Pick<Puesto, 'id' | 'name' | 'area_name'>[]>([])
 const usuarios = ref<Pick<User, 'id' | 'name' | 'email'>[]>([])
@@ -132,27 +133,25 @@ onMounted(() => load())
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Empleados</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Gestionar empleados y su acceso al sistema</p>
-      </div>
-      <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Crear empleado
-      </button>
-    </div>
+    <PageHeader title="Empleados" subtitle="Gestionar empleados y su acceso al sistema">
+      <template #actions>
+        <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Crear empleado
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Desktop: Table view (lg+) -->
     <div class="hidden lg:block">
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading" :is-empty="empleados.length === 0" empty-title="Sin empleados" empty-desc="Creá el primer empleado.">
           <tr v-for="e in empleados" :key="e.id">
-            <td><div><p class="font-medium text-[#dae2fd]">{{ e.name }}</p><p v-if="e.email" class="text-xs text-[#64748b]">{{ e.email }}</p></div></td>
-            <td class="text-[#94a3b8]">{{ e.cedula || '—' }}</td>
+            <td><div><p class="font-medium text-content">{{ e.name }}</p><p v-if="e.email" class="text-xs text-subtle">{{ e.email }}</p></div></td>
+            <td class="text-muted">{{ e.cedula || '—' }}</td>
             <td><span class="admin-badge admin-badge-info">{{ e.puesto_name }}</span></td>
-            <td class="text-[#94a3b8]">{{ e.phone || '—' }}</td>
-            <td class="text-[#94a3b8]">{{ e.user_name || '—' }}</td>
+            <td class="text-muted">{{ e.phone || '—' }}</td>
+            <td class="text-muted">{{ e.user_name || '—' }}</td>
             <td class="text-center">
               <span :class="e.is_active ? 'admin-badge admin-badge-success' : 'admin-badge admin-badge-danger'">{{ e.is_active ? 'Activo' : 'Inactivo' }}</span>
             </td>
@@ -161,7 +160,7 @@ onMounted(() => load())
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(e)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(e)" title="Eliminar">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(e)" title="Eliminar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -176,24 +175,24 @@ onMounted(() => load())
     <div class="lg:hidden space-y-3">
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
-          <div class="flex items-center justify-between"><div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" /><div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" /></div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3"><div class="flex gap-2"><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /></div></div>
+          <div class="flex items-center justify-between"><div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" /><div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" /></div>
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3"><div class="flex gap-2"><div class="h-7 w-16 animate-pulse rounded bg-surface-raised" /><div class="h-7 w-16 animate-pulse rounded bg-surface-raised" /></div></div>
         </div>
       </template>
       <template v-else-if="empleados.length > 0">
         <div v-for="e in empleados" :key="e.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <p class="font-medium text-[#dae2fd] truncate">{{ e.name }}</p>
+            <p class="font-medium text-content truncate">{{ e.name }}</p>
             <span :class="e.is_active ? 'admin-badge admin-badge-success shrink-0' : 'admin-badge admin-badge-danger shrink-0'">{{ e.is_active ? 'Activo' : 'Inactivo' }}</span>
           </div>
-          <p class="text-sm text-[#94a3b8]">{{ e.cedula || '—' }} · {{ e.puesto_name }} · {{ e.phone || '—' }}</p>
-          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+          <p class="text-sm text-muted">{{ e.cedula || '—' }} · {{ e.puesto_name }} · {{ e.phone || '—' }}</p>
+          <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(e)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Editar
             </button>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(e)">
+            <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(e)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               Eliminar
             </button>
@@ -291,7 +290,7 @@ onMounted(() => load())
           </div>
           <div class="mt-3 space-y-4">
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Puesto <span class="text-[#DC2626]">*</span></label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Puesto <span class="text-danger">*</span></label>
               <AppDropdown
                 :model-value="fv('puesto_id')"
                 @update:model-value="(v: string | number | null) => { form.puesto_id = v; clearError('puesto_id') }"
@@ -300,10 +299,10 @@ onMounted(() => load())
                 :disabled="saving"
                 :error="fieldErrors.puesto_id"
               />
-              <p v-if="fieldErrors.puesto_id" class="mt-1.5 text-xs text-[#DC2626]">{{ fieldErrors.puesto_id }}</p>
+              <p v-if="fieldErrors.puesto_id" class="mt-1.5 text-xs text-danger">{{ fieldErrors.puesto_id }}</p>
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Usuario de acceso</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Usuario de acceso</label>
               <AppDropdown
                 :model-value="fv('user_id')"
                 @update:model-value="(v: string | number | null) => form.user_id = v"
@@ -311,7 +310,7 @@ onMounted(() => load())
                 placeholder="Sin usuario asignado"
                 :disabled="saving"
               />
-              <p class="mt-1.5 text-xs text-[#64748b]">Opcional — Asigná un usuario para que pueda acceder al sistema</p>
+              <p class="mt-1.5 text-xs text-subtle">Opcional — Asigná un usuario para que pueda acceder al sistema</p>
             </div>
           </div>
         </div>
@@ -324,10 +323,10 @@ onMounted(() => load())
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Estado
           </div>
-          <div class="mt-3 flex items-center justify-between rounded-lg border border-[#1e293b] bg-[#0a1022]/50 px-4 py-3">
+          <div class="mt-3 flex items-center justify-between rounded-lg border border-line bg-canvas/50 px-4 py-3">
             <div>
-              <p class="text-sm font-medium text-[#dae2fd]">Activo</p>
-              <p class="text-xs text-[#64748b]">Los empleados inactivos no aparecen en asignaciones</p>
+              <p class="text-sm font-medium text-content">Activo</p>
+              <p class="text-xs text-subtle">Los empleados inactivos no aparecen en asignaciones</p>
             </div>
             <AppSwitch :model-value="!!form.is_active" @update:model-value="(v: boolean) => { form.is_active = v }" :disabled="saving" />
           </div>

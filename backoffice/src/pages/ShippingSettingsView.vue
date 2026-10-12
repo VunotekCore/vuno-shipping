@@ -9,6 +9,7 @@ import AppModal from '../components/ui/AppModal.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppDropdown from '../components/ui/AppDropdown.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const toast = useToast()
 const activeTab = ref<'delivery_types' | 'services' | 'options' | 'mapping'>('delivery_types')
@@ -342,37 +343,35 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
 <template>
   <div class="space-y-6">
     <!-- Page header -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Configuración de Envíos</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Administrar servicios de envío, opciones de entrega y su asignación</p>
-      </div>
-      <button
-        v-if="activeTab !== 'mapping'"
-        class="admin-btn admin-btn-primary sm:w-auto w-full"
-        @click="handleOpenCreate"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        {{ { services: 'Crear servicio', options: 'Crear opción', delivery_types: 'Crear tipo' }[activeTab] }}
-      </button>
-    </div>
+    <PageHeader title="Configuración de Envíos" subtitle="Administrar servicios de envío, opciones de entrega y su asignación">
+      <template #actions>
+        <button
+          v-if="activeTab !== 'mapping'"
+          class="admin-btn admin-btn-primary sm:w-auto w-full"
+          @click="handleOpenCreate"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          {{ { services: 'Crear servicio', options: 'Crear opción', delivery_types: 'Crear tipo' }[activeTab] }}
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Tabs -->
-    <div class="flex gap-1 rounded-xl bg-[#0a1022] p-1 border border-[#1e293b] w-fit">
+    <div class="flex gap-1 rounded-xl bg-canvas p-1 border border-line w-fit">
       <button
-        :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'delivery_types' ? 'bg-[#69dca4]/15 text-[#69dca4]' : 'text-[#64748b] hover:text-[#94a3b8]']"
+        :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'delivery_types' ? 'bg-primary/15 text-primary' : 'text-subtle hover:text-muted']"
         @click="activeTab = 'delivery_types'"
       >Tipos de Entrega</button>
       <button
-        :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'services' ? 'bg-[#69dca4]/15 text-[#69dca4]' : 'text-[#64748b] hover:text-[#94a3b8]']"
+        :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'services' ? 'bg-primary/15 text-primary' : 'text-subtle hover:text-muted']"
         @click="activeTab = 'services'"
       >Servicios de Envío</button>
       <button
-        :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'options' ? 'bg-[#69dca4]/15 text-[#69dca4]' : 'text-[#64748b] hover:text-[#94a3b8]']"
+        :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'options' ? 'bg-primary/15 text-primary' : 'text-subtle hover:text-muted']"
         @click="activeTab = 'options'"
       >Opciones de Entrega</button>
       <button
-        :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'mapping' ? 'bg-[#69dca4]/15 text-[#69dca4]' : 'text-[#64748b] hover:text-[#94a3b8]']"
+        :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'mapping' ? 'bg-primary/15 text-primary' : 'text-subtle hover:text-muted']"
         @click="activeTab = 'mapping'"
       >Mapping</button>
     </div>
@@ -387,8 +386,8 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
         empty-desc="Creá el primer tipo de entrega."
       >
         <tr v-for="dt in deliveryTypes" :key="dt.id">
-          <td class="font-medium text-[#dae2fd]">{{ dt.name }}</td>
-          <td class="text-[#94a3b8]">{{ dt.description || '—' }}</td>
+          <td class="font-medium text-content">{{ dt.name }}</td>
+          <td class="text-muted">{{ dt.description || '—' }}</td>
           <td>
             <span :class="dt.category === 'international' ? 'admin-badge admin-badge-info' : 'admin-badge admin-badge-success'">
               {{ dt.category === 'international' ? 'Internacional' : 'Local' }}
@@ -399,7 +398,7 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
               <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEditDeliveryType(dt)" title="Editar">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
-              <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDeleteDeliveryType(dt)" title="Eliminar">
+              <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDeleteDeliveryType(dt)" title="Eliminar">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               </button>
             </div>
@@ -418,8 +417,8 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
         empty-desc="Creá el primer servicio de envío."
       >
         <tr v-for="s in services" :key="s.id">
-          <td class="font-medium text-[#dae2fd]">{{ s.name }}</td>
-          <td class="text-[#94a3b8]">{{ s.description || '—' }}</td>
+          <td class="font-medium text-content">{{ s.name }}</td>
+          <td class="text-muted">{{ s.description || '—' }}</td>
           <td>
             <span :class="s.is_active ? 'admin-badge admin-badge-success' : 'admin-badge admin-badge-warning'">
               {{ s.is_active ? 'Activo' : 'Inactivo' }}
@@ -430,7 +429,7 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
               <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEditService(s)" title="Editar">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
-              <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDeleteService(s)" title="Eliminar">
+              <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDeleteService(s)" title="Eliminar">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               </button>
             </div>
@@ -449,8 +448,8 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
         empty-desc="Creá la primera opción de entrega."
       >
         <tr v-for="o in options" :key="o.id">
-          <td class="font-medium text-[#dae2fd]">{{ o.name }}</td>
-          <td class="text-[#94a3b8]">{{ o.description || '—' }}</td>
+          <td class="font-medium text-content">{{ o.name }}</td>
+          <td class="text-muted">{{ o.description || '—' }}</td>
           <td>
             <span :class="o.is_active ? 'admin-badge admin-badge-success' : 'admin-badge admin-badge-warning'">
               {{ o.is_active ? 'Activo' : 'Inactivo' }}
@@ -461,7 +460,7 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
               <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEditOption(o)" title="Editar">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
-              <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDeleteOption(o)" title="Eliminar">
+              <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDeleteOption(o)" title="Eliminar">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               </button>
             </div>
@@ -474,7 +473,7 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
     <div v-show="activeTab === 'mapping'" class="space-y-4">
       <!-- Select service -->
       <div class="admin-card p-5">
-        <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Servicio de envío</label>
+        <label class="mb-1.5 block text-sm font-medium text-muted">Servicio de envío</label>
         <AppDropdown
           :model-value="mappingServiceId"
           @update:model-value="(v: string | number | null) => mappingServiceId = v as number | null"
@@ -486,7 +485,7 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
       <!-- Options for selected service -->
       <div v-if="mappingServiceId" class="admin-card p-5">
         <div class="flex items-center justify-between mb-4">
-          <p class="text-sm font-semibold text-[#dae2fd]">Opciones de entrega para: {{ mappingService?.name }}</p>
+          <p class="text-sm font-semibold text-content">Opciones de entrega para: {{ mappingService?.name }}</p>
           <button
             class="admin-btn admin-btn-primary admin-btn-sm"
             :disabled="mappingSaving"
@@ -497,10 +496,10 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
         </div>
 
         <div v-if="mappingLoading" class="space-y-3">
-          <div v-for="i in 3" :key="i" class="h-12 animate-pulse rounded-lg bg-[#1e293b]" />
+          <div v-for="i in 3" :key="i" class="h-12 animate-pulse rounded-lg bg-surface-raised" />
         </div>
 
-        <div v-else-if="allDeliveryOptions.length === 0" class="text-sm text-[#64748b] italic">
+        <div v-else-if="allDeliveryOptions.length === 0" class="text-sm text-subtle italic">
           No hay opciones de entrega disponibles. Creá opciones en la pestaña "Opciones de Entrega".
         </div>
 
@@ -508,32 +507,32 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
           <div
             v-for="opt in allDeliveryOptions"
             :key="opt.id"
-            class="flex items-center justify-between rounded-lg border border-[#1e293b] bg-[#0a1022]/50 px-4 py-3 transition-colors hover:border-[#2a3a52]"
-            :class="{ 'border-[#69dca4]/30': optionToggles.find(o => o.id === opt.id)?.checked }"
+            class="flex items-center justify-between rounded-lg border border-line bg-canvas/50 px-4 py-3 transition-colors hover:border-line-strong"
+            :class="{ 'border-primary/30': optionToggles.find(o => o.id === opt.id)?.checked }"
           >
             <div class="flex items-center gap-3">
               <input
                 type="checkbox"
                 :checked="optionToggles.find(o => o.id === opt.id)?.checked ?? false"
                 @change="toggleOption(opt.id)"
-                class="h-4 w-4 rounded border-[#475569] bg-[#0a1022] text-[#69dca4] focus:ring-[#69dca4]"
+                class="h-4 w-4 rounded border-muted bg-canvas text-primary focus:ring-primary"
               />
               <div>
-                <p class="text-sm font-medium text-[#dae2fd]">{{ opt.description || opt.name }}</p>
-                <p class="text-xs text-[#64748b]">{{ opt.name }}</p>
+                <p class="text-sm font-medium text-content">{{ opt.description || opt.name }}</p>
+                <p class="text-xs text-subtle">{{ opt.name }}</p>
               </div>
             </div>
             <div class="flex items-center gap-3">
               <label
                 v-if="optionToggles.find(o => o.id === opt.id)?.checked"
-                class="flex items-center gap-1.5 text-xs text-[#64748b] cursor-pointer"
+                class="flex items-center gap-1.5 text-xs text-subtle cursor-pointer"
                 @click.prevent="setDefault(opt.id)"
               >
                 <input
                   type="radio"
                   name="default_option"
                   :checked="selectedDefault === opt.id"
-                  class="h-3.5 w-3.5 border-[#475569] bg-[#0a1022] text-[#69dca4] focus:ring-[#69dca4]"
+                  class="h-3.5 w-3.5 border-muted bg-canvas text-primary focus:ring-primary"
                 />
                 Default
               </label>
@@ -557,31 +556,31 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
     <AppModal :visible="showModal" :title="modalTitle" @close="showModal = false" size="sm">
       <form class="space-y-4" @submit.prevent="handleSave">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Nombre *</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Nombre *</label>
           <input v-model="form.name" class="admin-input" placeholder="Nombre" required :disabled="saving" maxlength="100" />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Descripción</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Descripción</label>
           <textarea v-model="form.description" class="admin-input" rows="2" placeholder="Descripción opcional" :disabled="saving" maxlength="500" />
         </div>
         <div v-if="activeTab === 'delivery_types'">
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Categoría</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Categoría</label>
           <select v-model="form.category" class="admin-input" :disabled="saving">
             <option value="international">Internacional</option>
             <option value="local">Local</option>
           </select>
         </div>
         <div v-if="activeTab === 'services'">
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Tipo de entrega asociado</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Tipo de entrega asociado</label>
           <select v-model="form.delivery_type_id" class="admin-input" :disabled="saving">
             <option :value="null">Ninguno</option>
             <option v-for="dt in deliveryTypeOptions" :key="dt.id" :value="dt.id">{{ dt.name }} — {{ dt.description || '' }}</option>
           </select>
         </div>
-        <div v-if="activeTab !== 'delivery_types'" class="flex items-center justify-between rounded-lg border border-[#1e293b] bg-[#0a1022]/50 px-4 py-3">
+        <div v-if="activeTab !== 'delivery_types'" class="flex items-center justify-between rounded-lg border border-line bg-canvas/50 px-4 py-3">
           <div>
-            <p class="text-sm font-medium text-[#dae2fd]">Activo</p>
-            <p class="text-xs text-[#64748b]">Los elementos inactivos no aparecen en los selectores</p>
+            <p class="text-sm font-medium text-content">Activo</p>
+            <p class="text-xs text-subtle">Los elementos inactivos no aparecen en los selectores</p>
           </div>
           <AppSwitch :model-value="!!form.is_active" @update:model-value="(v: boolean) => { form.is_active = v }" :disabled="saving" />
         </div>

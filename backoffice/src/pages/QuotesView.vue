@@ -20,6 +20,7 @@ import AppDropdown from '../components/ui/AppDropdown.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -440,34 +441,32 @@ onMounted(async () => {
 <template>
   <div class="space-y-6">
     <!-- Page header -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Cotizaciones</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Cotiza envíos, asigná vendedores y convertí a paquetes</p>
-      </div>
-      <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Nueva cotización
-      </button>
-    </div>
+    <PageHeader title="Cotizaciones" subtitle="Cotiza envíos, asigná vendedores y convertí a paquetes">
+      <template #actions>
+        <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Nueva cotización
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Summary cards -->
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <div class="admin-card p-4">
-        <p class="text-xs text-[#64748b]">Borradores</p>
-        <p class="mt-1 text-lg font-bold text-[#dae2fd]">{{ summary.draft }}</p>
+        <p class="text-xs text-subtle">Borradores</p>
+        <p class="mt-1 text-lg font-bold text-content">{{ summary.draft }}</p>
       </div>
       <div class="admin-card p-4">
-        <p class="text-xs text-[#64748b]">Enviadas</p>
-        <p class="mt-1 text-lg font-bold text-[#f59e0b]">{{ summary.sent }}</p>
+        <p class="text-xs text-subtle">Enviadas</p>
+        <p class="mt-1 text-lg font-bold text-warning">{{ summary.sent }}</p>
       </div>
       <div class="admin-card p-4">
-        <p class="text-xs text-[#64748b]">Aceptadas</p>
-        <p class="mt-1 text-lg font-bold text-[#69dca4]">{{ summary.accepted }}</p>
+        <p class="text-xs text-subtle">Aceptadas</p>
+        <p class="mt-1 text-lg font-bold text-primary">{{ summary.accepted }}</p>
       </div>
       <div class="admin-card p-4">
-        <p class="text-xs text-[#64748b]">Convertidas</p>
-        <p class="mt-1 text-lg font-bold text-[#69dca4]">{{ summary.converted }}</p>
+        <p class="text-xs text-subtle">Convertidas</p>
+        <p class="mt-1 text-lg font-bold text-primary">{{ summary.converted }}</p>
       </div>
     </div>
 
@@ -475,25 +474,25 @@ onMounted(async () => {
     <div class="admin-card p-4">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 class="text-sm font-semibold text-[#dae2fd]">{{ isVendor ? 'Mis comisiones' : 'Comisiones por vendedor' }}</h2>
-          <p class="mt-0.5 text-xs text-[#64748b]">
+          <h2 class="text-sm font-semibold text-content">{{ isVendor ? 'Mis comisiones' : 'Comisiones por vendedor' }}</h2>
+          <p class="mt-0.5 text-xs text-subtle">
             {{ commissionTotals.count }} conversiones · {{ formatUSD(commissionTotals.converted) }} convertidos · {{ formatUSD(commissionTotals.commission) }} en comisiones
           </p>
         </div>
         <div class="flex items-center gap-2">
           <div class="w-36"><input v-model="commissionsFrom" type="date" class="admin-input" /></div>
-          <span class="text-xs text-[#64748b]">a</span>
+          <span class="text-xs text-subtle">a</span>
           <div class="w-36"><input v-model="commissionsTo" type="date" class="admin-input" /></div>
         </div>
       </div>
 
       <div v-if="commissionsLoading" class="mt-4 space-y-2">
-        <div v-for="i in 3" :key="i" class="h-9 animate-pulse rounded bg-[#1e293b]" />
+        <div v-for="i in 3" :key="i" class="h-9 animate-pulse rounded bg-surface-raised" />
       </div>
       <div v-else-if="commissions.length" class="mt-4 overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="text-left text-xs uppercase tracking-wider text-[#64748b]">
+            <tr class="text-left text-xs uppercase tracking-wider text-subtle">
               <th class="py-2 pr-3 font-medium">Vendedor</th>
               <th class="px-3 py-2 text-right font-medium">Conversiones</th>
               <th class="px-3 py-2 text-right font-medium">Monto convertido</th>
@@ -501,24 +500,24 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in commissions" :key="row.agent_id ?? 'none'" class="border-t border-[#1e293b]">
-              <td class="py-2 pr-3 text-[#dae2fd]">{{ row.agent_name || 'Sin vendedor' }}</td>
-              <td class="px-3 py-2 text-right text-[#94a3b8]">{{ row.converted_count }}</td>
-              <td class="px-3 py-2 text-right text-[#94a3b8]">{{ formatUSD(row.converted_total) }}</td>
-              <td class="py-2 pl-3 text-right font-medium text-[#69dca4]">{{ formatUSD(row.commission_total) }}</td>
+            <tr v-for="row in commissions" :key="row.agent_id ?? 'none'" class="border-t border-line">
+              <td class="py-2 pr-3 text-content">{{ row.agent_name || 'Sin vendedor' }}</td>
+              <td class="px-3 py-2 text-right text-muted">{{ row.converted_count }}</td>
+              <td class="px-3 py-2 text-right text-muted">{{ formatUSD(row.converted_total) }}</td>
+              <td class="py-2 pl-3 text-right font-medium text-primary">{{ formatUSD(row.commission_total) }}</td>
             </tr>
           </tbody>
           <tfoot>
-            <tr class="border-t border-[#334155]">
-              <td class="py-2 pr-3 font-medium text-[#dae2fd]">Total</td>
-              <td class="px-3 py-2 text-right text-[#dae2fd]">{{ commissionTotals.count }}</td>
-              <td class="px-3 py-2 text-right text-[#dae2fd]">{{ formatUSD(commissionTotals.converted) }}</td>
-              <td class="py-2 pl-3 text-right font-semibold text-[#69dca4]">{{ formatUSD(commissionTotals.commission) }}</td>
+            <tr class="border-t border-line-strong">
+              <td class="py-2 pr-3 font-medium text-content">Total</td>
+              <td class="px-3 py-2 text-right text-content">{{ commissionTotals.count }}</td>
+              <td class="px-3 py-2 text-right text-content">{{ formatUSD(commissionTotals.converted) }}</td>
+              <td class="py-2 pl-3 text-right font-semibold text-primary">{{ formatUSD(commissionTotals.commission) }}</td>
             </tr>
           </tfoot>
         </table>
       </div>
-      <p v-else class="mt-4 text-sm text-[#64748b]">Sin conversiones en el rango seleccionado.</p>
+      <p v-else class="mt-4 text-sm text-subtle">Sin conversiones en el rango seleccionado.</p>
     </div>
 
     <!-- Filters -->
@@ -547,7 +546,7 @@ onMounted(async () => {
             placeholder="Vendedor"
           />
         </div>
-        <p class="text-xs text-[#64748b] whitespace-nowrap">{{ total }} cotizaciones</p>
+        <p class="text-xs text-subtle whitespace-nowrap">{{ total }} cotizaciones</p>
       </div>
     </div>
 
@@ -556,24 +555,24 @@ onMounted(async () => {
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading || paginating" :is-empty="quotes.length === 0" empty-title="Sin cotizaciones" empty-desc="Creá la primera cotización.">
           <tr v-for="q in quotes" :key="q.id">
-            <td class="font-medium text-[#dae2fd]">{{ q.quote_number }}</td>
-            <td class="text-[#94a3b8]">{{ q.recipient_name }}</td>
-            <td class="text-[#94a3b8]">{{ q.agent_name || '—' }}</td>
-            <td class="text-right font-medium text-[#dae2fd]">{{ formatUSD(q.total_amount) }}</td>
+            <td class="font-medium text-content">{{ q.quote_number }}</td>
+            <td class="text-muted">{{ q.recipient_name }}</td>
+            <td class="text-muted">{{ q.agent_name || '—' }}</td>
+            <td class="text-right font-medium text-content">{{ formatUSD(q.total_amount) }}</td>
             <td><span class="admin-badge" :class="statusInfo[q.status]?.cls || ''">{{ statusInfo[q.status]?.label || q.status }}</span></td>
-            <td class="text-[#94a3b8]">{{ fmtDate(q.created_at) }}</td>
+            <td class="text-muted">{{ fmtDate(q.created_at) }}</td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openDetail(q.id)" title="Ver detalle">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
-                <button v-if="canConvert(q)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#69dca4]" @click="openConvert(q)" title="Convertir a paquete">
+                <button v-if="canConvert(q)" class="admin-btn admin-btn-ghost admin-btn-sm text-primary" @click="openConvert(q)" title="Convertir a paquete">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                 </button>
                 <button v-if="canEdit(q)" class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(q)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button v-if="canEdit(q)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(q)" title="Eliminar">
+                <button v-if="canEdit(q)" class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(q)" title="Eliminar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -588,27 +587,27 @@ onMounted(async () => {
     <div class="lg:hidden space-y-3">
       <template v-if="loading || paginating">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
-          <div class="flex items-center justify-between"><div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" /><div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" /></div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3"><div class="flex gap-2"><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /></div></div>
+          <div class="flex items-center justify-between"><div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" /><div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" /></div>
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3"><div class="flex gap-2"><div class="h-7 w-16 animate-pulse rounded bg-surface-raised" /><div class="h-7 w-16 animate-pulse rounded bg-surface-raised" /></div></div>
         </div>
       </template>
       <template v-else-if="quotes.length > 0">
         <div v-for="q in quotes" :key="q.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <p class="font-medium text-[#dae2fd] truncate">{{ q.quote_number }}</p>
+            <p class="font-medium text-content truncate">{{ q.quote_number }}</p>
             <span class="admin-badge shrink-0" :class="statusInfo[q.status]?.cls || ''">{{ statusInfo[q.status]?.label || q.status }}</span>
           </div>
-          <p class="text-sm text-[#94a3b8] truncate">{{ q.recipient_name }}</p>
+          <p class="text-sm text-muted truncate">{{ q.recipient_name }}</p>
           <div class="flex items-center justify-between">
-            <p class="text-base font-bold text-[#dae2fd]">{{ formatUSD(q.total_amount) }}</p>
-            <p class="text-xs text-[#64748b]">{{ q.agent_name || '—' }} · {{ fmtDate(q.created_at) }}</p>
+            <p class="text-base font-bold text-content">{{ formatUSD(q.total_amount) }}</p>
+            <p class="text-xs text-subtle">{{ q.agent_name || '—' }} · {{ fmtDate(q.created_at) }}</p>
           </div>
-          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+          <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openDetail(q.id)">Ver</button>
-            <button v-if="canConvert(q)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#69dca4]" @click="openConvert(q)">Convertir</button>
+            <button v-if="canConvert(q)" class="admin-btn admin-btn-ghost admin-btn-sm text-primary" @click="openConvert(q)">Convertir</button>
             <button v-if="canEdit(q)" class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(q)">Editar</button>
-            <button v-if="canEdit(q)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(q)">Eliminar</button>
+            <button v-if="canEdit(q)" class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(q)">Eliminar</button>
           </div>
         </div>
       </template>
@@ -648,44 +647,44 @@ onMounted(async () => {
           <div class="admin-form-section">Configuración de envío</div>
           <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Origen</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Origen</label>
               <AppDropdown :model-value="form.origin" @update:model-value="(v: string | number | null) => form.origin = (v === 'local' ? 'local' : 'online')" :options="originOptions" :disabled="saving" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Cliente (opcional)</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Cliente (opcional)</label>
               <AppDropdown :model-value="form.client_id" @update:model-value="(v: string | number | null) => form.client_id = v == null || v === '' ? null : Number(v)" :options="clientOptions" placeholder="Sin cliente asociado" :disabled="saving" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Zona</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Zona</label>
               <AppDropdown :model-value="form.zone_id" @update:model-value="(v: string | number | null) => form.zone_id = v == null || v === '' ? null : Number(v)" :options="zoneOptions" placeholder="Seleccionar zona" :disabled="saving" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Tipo de entrega</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Tipo de entrega</label>
               <AppDropdown :model-value="form.delivery_type || null" @update:model-value="(v: string | number | null) => form.delivery_type = String(v ?? '')" :options="deliveryTypeOpts" placeholder="Seleccionar tipo" :disabled="saving" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Servicio</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Servicio</label>
               <AppDropdown :model-value="form.shipping_service || null" @update:model-value="(v: string | number | null) => form.shipping_service = String(v ?? '')" :options="serviceOpts" placeholder="Seleccionar servicio" :disabled="saving" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Opción de entrega</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Opción de entrega</label>
               <AppDropdown :model-value="form.delivery_option || null" @update:model-value="(v: string | number | null) => form.delivery_option = String(v ?? '')" :options="optionOpts" placeholder="Seleccionar opción" :disabled="saving" />
             </div>
             <div>
               <AppFormField :model-value="fv('valid_until')" @update:model-value="(v: string | number | null) => form.valid_until = String(v ?? '')" label="Válida hasta" type="date" icon="calendar" :disabled="saving" />
             </div>
             <div v-if="!isVendor">
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Vendedor asignado</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Vendedor asignado</label>
               <AppDropdown :model-value="form.agent_id" @update:model-value="(v: string | number | null) => form.agent_id = v == null || v === '' ? null : Number(v)" :options="agentOptions" placeholder="Sin asignar" :disabled="saving" />
             </div>
             <div class="flex items-end">
-              <label class="flex items-center gap-3 rounded-lg border border-[#1e293b] px-3 py-2 w-full">
+              <label class="flex items-center gap-3 rounded-lg border border-line px-3 py-2 w-full">
                 <AppSwitch :model-value="form.pickup_required" @update:model-value="(v: boolean) => form.pickup_required = v" />
-                <span class="text-sm text-[#94a3b8]">Requiere recolección</span>
+                <span class="text-sm text-muted">Requiere recolección</span>
               </label>
             </div>
             <div v-if="form.pickup_required">
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Vehículo de recolección</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Vehículo de recolección</label>
               <AppDropdown
                 :model-value="form.pickup_vehicle_id"
                 @update:model-value="(v: string | number | null) => form.pickup_vehicle_id = v == null || v === '' ? null : Number(v)"
@@ -712,10 +711,10 @@ onMounted(async () => {
             </button>
           </div>
           <div class="mt-3 space-y-3">
-            <div v-for="(item, idx) in form.items" :key="idx" class="rounded-xl border border-[#1e293b] bg-[#0f172a] p-3 space-y-3">
+            <div v-for="(item, idx) in form.items" :key="idx" class="rounded-xl border border-line bg-surface-sunken p-3 space-y-3">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold uppercase tracking-wider text-[#64748b]">Ítem {{ idx + 1 }}</span>
-                <button v-if="form.items.length > 1" type="button" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="removeItem(idx)" :disabled="saving">
+                <span class="text-xs font-semibold uppercase tracking-wider text-subtle">Ítem {{ idx + 1 }}</span>
+                <button v-if="form.items.length > 1" type="button" class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="removeItem(idx)" :disabled="saving">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -732,7 +731,7 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-          <p class="mt-2 text-xs text-[#64748b]">Los costos de flete y entrega se calculan automáticamente con las reglas de pricing al guardar.</p>
+          <p class="mt-2 text-xs text-subtle">Los costos de flete y entrega se calculan automáticamente con las reglas de pricing al guardar.</p>
         </div>
       </form>
       <template #footer>

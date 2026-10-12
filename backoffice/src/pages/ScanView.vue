@@ -141,7 +141,7 @@ onMounted(() => {
     <!-- Scan input -->
     <div class="admin-card p-5">
       <div class="flex items-center gap-3">
-        <svg class="h-6 w-6 shrink-0 text-[#64748b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <svg class="h-6 w-6 shrink-0 text-subtle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M3 9V7a2 2 0 012-2h2M3 15v2a2 2 0 002 2h2M21 9V7a2 2 0 00-2-2h-2M21 15v2a2 2 0 01-2 2h-2M7 12h.01M12 12h.01M17 12h.01" />
         </svg>
         <input
@@ -163,7 +163,7 @@ onMounted(() => {
 
     <!-- Loading -->
     <div v-if="loading" class="mt-6 space-y-3">
-      <div v-for="i in 4" :key="i" class="h-5 animate-pulse rounded bg-[#1e293b]" />
+      <div v-for="i in 4" :key="i" class="h-5 animate-pulse rounded bg-surface-raised" />
     </div>
 
     <!-- Package info -->
@@ -172,8 +172,8 @@ onMounted(() => {
       <div class="admin-card p-5">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <p class="text-xs text-[#64748b]">Tracking</p>
-            <p class="text-2xl font-bold font-mono tracking-wider text-[#dae2fd]">{{ packageData.tracking_number }}</p>
+            <p class="text-xs text-subtle">Tracking</p>
+            <p class="text-2xl font-bold font-mono tracking-wider text-content">{{ packageData.tracking_number }}</p>
           </div>
           <div class="text-right">
             <span :class="['admin-badge', statusColorClass, 'text-sm px-3 py-1']">
@@ -184,24 +184,24 @@ onMounted(() => {
 
         <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
           <div>
-            <p class="text-xs text-[#64748b]">Destinatario</p>
-            <p class="font-medium text-[#dae2fd] truncate">{{ packageData.recipient_name }}</p>
+            <p class="text-xs text-subtle">Destinatario</p>
+            <p class="font-medium text-content truncate">{{ packageData.recipient_name }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64748b]">Teléfono</p>
-            <p class="text-[#94a3b8]">{{ packageData.recipient_phone }}</p>
+            <p class="text-xs text-subtle">Teléfono</p>
+            <p class="text-muted">{{ packageData.recipient_phone }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64748b]">Peso cobrable</p>
-            <p class="text-[#94a3b8]">{{ packageData.chargeable_weight ? Number(packageData.chargeable_weight).toFixed(2) + ' lb' : '—' }}</p>
+            <p class="text-xs text-subtle">Peso cobrable</p>
+            <p class="text-muted">{{ packageData.chargeable_weight ? Number(packageData.chargeable_weight).toFixed(2) + ' lb' : '—' }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64748b]">Total</p>
-            <p class="font-medium text-[#69dca4]">{{ formatCurrency(packageData.shipping_cost) }}</p>
+            <p class="text-xs text-subtle">Total</p>
+            <p class="font-medium text-primary">{{ formatCurrency(packageData.shipping_cost) }}</p>
           </div>
         </div>
 
-        <div v-if="packageData.recipient_address" class="mt-2 text-xs text-[#64748b]">
+        <div v-if="packageData.recipient_address" class="mt-2 text-xs text-subtle">
           {{ packageData.recipient_address }}{{ packageData.recipient_city ? ', ' + packageData.recipient_city : '' }}
         </div>
       </div>
@@ -214,7 +214,7 @@ onMounted(() => {
             v-for="status in availableTransitions"
             :key="status"
             class="admin-btn text-sm font-medium"
-            :class="status === 'delivered' ? 'admin-btn-success bg-[#69dca4] text-[#0a1022] hover:bg-[#4fbf8a]' : 'admin-btn-primary'"
+            :class="status === 'delivered' ? 'admin-btn-success bg-primary text-canvas hover:bg-success' : 'admin-btn-primary'"
             @click="openStatusTransition(status)"
           >
             <svg class="-ml-1 mr-1.5 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path :d="statusLabels[status]?.icon || 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'" /></svg>
@@ -224,14 +224,14 @@ onMounted(() => {
       </div>
 
       <div v-else class="admin-card p-5 text-center">
-        <p class="text-sm text-[#64748b]">Este paquete no tiene cambios de estado disponibles</p>
+        <p class="text-sm text-subtle">Este paquete no tiene cambios de estado disponibles</p>
       </div>
 
       <!-- Timeline -->
       <div class="admin-card p-5">
         <div class="flex items-center justify-between mb-4">
           <p class="admin-form-section mb-0">Eventos</p>
-          <button class="text-xs text-[#00A8FF] hover:underline" @click="viewHistory">
+          <button class="text-xs text-secondary hover:underline" @click="viewHistory">
             {{ historyMode ? 'Ver menos' : 'Ver historial completo' }}
           </button>
         </div>
@@ -248,21 +248,21 @@ onMounted(() => {
               <div
                 :class="[
                   'h-3 w-3 rounded-full border-2 shrink-0',
-                  i === 0 ? 'border-[#69dca4] bg-[#69dca4]' : 'border-[#1e293b] bg-[#0b1326]'
+                  i === 0 ? 'border-primary bg-primary' : 'border-line bg-surface'
                 ]"
               />
-              <div v-if="i < (historyMode ? events.length : Math.min(lastEvents.length, events.length)) - 1" class="mt-0.5 w-px flex-1 bg-[#1e293b]" />
+              <div v-if="i < (historyMode ? events.length : Math.min(lastEvents.length, events.length)) - 1" class="mt-0.5 w-px flex-1 bg-surface-raised" />
             </div>
             <!-- Event content -->
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
-                <span class="text-sm font-medium text-[#dae2fd]">
+                <span class="text-sm font-medium text-content">
                   {{ statusLabels[ev.status]?.label || ev.status }}
                 </span>
                 <span :class="['admin-badge', statusColor(ev.status), 'text-[10px]']">{{ ev.status }}</span>
               </div>
-              <p v-if="ev.description" class="mt-0.5 text-xs text-[#94a3b8]">{{ ev.description }}</p>
-              <div class="mt-0.5 flex items-center gap-2 text-[10px] text-[#64748b]">
+              <p v-if="ev.description" class="mt-0.5 text-xs text-muted">{{ ev.description }}</p>
+              <div class="mt-0.5 flex items-center gap-2 text-[10px] text-subtle">
                 <span>{{ ev.recorded_at || ev.created_at }}</span>
                 <span v-if="ev.created_by_name">— {{ ev.created_by_name }}</span>
                 <span v-if="ev.location_name">— {{ ev.location_name }}</span>
@@ -270,7 +270,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <div v-if="events.length === 0" class="py-4 text-center text-sm text-[#64748b]">
+          <div v-if="events.length === 0" class="py-4 text-center text-sm text-subtle">
             Sin eventos registrados
           </div>
         </div>
@@ -279,30 +279,30 @@ onMounted(() => {
 
     <!-- Empty state -->
     <div v-else class="mt-16 text-center">
-      <svg class="mx-auto h-16 w-16 text-[#1e293b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+      <svg class="mx-auto h-16 w-16 text-content" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
         <path d="M3 9V7a2 2 0 012-2h2M3 15v2a2 2 0 002 2h2M21 9V7a2 2 0 00-2-2h-2M21 15v2a2 2 0 01-2 2h-2M7 12h.01M12 12h.01M17 12h.01" />
       </svg>
-      <p class="mt-4 text-lg font-medium text-[#64748b]">Escaneá o ingresá un código</p>
-      <p class="mt-1 text-sm text-[#475569]">Usá el escáner o escribí el número de tracking</p>
+      <p class="mt-4 text-lg font-medium text-subtle">Escaneá o ingresá un código</p>
+      <p class="mt-1 text-sm text-muted">Usá el escáner o escribí el número de tracking</p>
     </div>
 
     <!-- Status confirm modal -->
     <Teleport to="body">
       <div
         v-if="showStatusModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-primary-deep/55 p-4"
         @click.self="showStatusModal = false"
       >
-        <div class="w-full max-w-sm rounded-xl border border-[#1e293b] bg-[#111d2e] p-6 shadow-2xl">
-          <h3 class="text-lg font-bold text-[#dae2fd]">
+        <div class="w-full max-w-sm rounded-xl border border-line bg-surface p-6 shadow-2xl">
+          <h3 class="text-lg font-bold text-content">
             {{ statusLabels[selectedStatus]?.label || selectedStatus }}
           </h3>
-          <p class="mt-1 text-sm text-[#64748b]">
-            Paquete <span class="font-mono text-[#94a3b8]">{{ packageData?.tracking_number }}</span>
+          <p class="mt-1 text-sm text-subtle">
+            Paquete <span class="font-mono text-muted">{{ packageData?.tracking_number }}</span>
           </p>
 
           <div class="mt-4">
-            <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Nota (opcional)</label>
+            <label class="mb-1.5 block text-sm font-medium text-muted">Nota (opcional)</label>
             <textarea
               v-model="statusNote"
               class="admin-input w-full"

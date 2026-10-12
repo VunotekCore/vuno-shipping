@@ -11,6 +11,7 @@ import AppModal from '../components/ui/AppModal.vue'
 import AppFormField from '../components/ui/AppFormField.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const toast = useToast()
 
@@ -261,16 +262,14 @@ onMounted(() => load())
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Embarques</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Consolidar paquetes de Miami y despacharlos por vía aérea o marítima a Nicaragua</p>
-      </div>
-      <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Crear embarque
-      </button>
-    </div>
+    <PageHeader title="Embarques" subtitle="Consolidar paquetes de Miami y despacharlos por vía aérea o marítima a Nicaragua">
+      <template #actions>
+        <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Crear embarque
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Status filters -->
     <div class="flex flex-wrap items-center gap-2">
@@ -280,8 +279,8 @@ onMounted(() => load())
         :class="[
           'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
           activeStatus === tab.value
-            ? 'bg-[#69dca4]/15 text-[#69dca4]'
-            : 'bg-[#111d2e] text-[#94a3b8] hover:text-[#dae2fd] border border-[#1e293b]'
+            ? 'bg-primary/15 text-primary'
+            : 'bg-surface text-muted hover:text-content border border-line'
         ]"
         @click="activeStatus = tab.value; filterTabs()"
       >
@@ -294,15 +293,15 @@ onMounted(() => load())
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading" :is-empty="shipments.length === 0" empty-title="Sin embarques" empty-desc="Creá el primer embarque para consolidar paquetes de Miami.">
           <tr v-for="s in shipments" :key="s.id" class="cursor-pointer" @click="openDetail(s)">
-            <td class="font-medium text-[#dae2fd]">{{ s.code }}</td>
-            <td class="text-[#94a3b8]">{{ modeLabel(s.mode) }}</td>
+            <td class="font-medium text-content">{{ s.code }}</td>
+            <td class="text-muted">{{ modeLabel(s.mode) }}</td>
             <td>
               <span :class="['admin-badge', shipmentStatusColor(s.status)]">{{ s.status }}</span>
             </td>
-            <td class="text-center text-[#dae2fd]">{{ s.package_count }}</td>
-            <td class="text-[#94a3b8]">{{ fmtDate(s.departure_date) }}</td>
-            <td class="text-[#94a3b8]">{{ fmtDate(s.arrival_date) }}</td>
-            <td class="text-[#64748b]">{{ s.created_by_name ?? '—' }}</td>
+            <td class="text-center text-content">{{ s.package_count }}</td>
+            <td class="text-muted">{{ fmtDate(s.departure_date) }}</td>
+            <td class="text-muted">{{ fmtDate(s.arrival_date) }}</td>
+            <td class="text-subtle">{{ s.created_by_name ?? '—' }}</td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1" @click.stop>
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openDetail(s)" title="Ver detalle">
@@ -311,7 +310,7 @@ onMounted(() => load())
                 <button v-if="s.status === 'draft'" class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(s)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button v-if="s.status === 'draft' || s.status === 'cancelled'" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(s)" title="Eliminar">
+                <button v-if="s.status === 'draft' || s.status === 'cancelled'" class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(s)" title="Eliminar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -327,15 +326,15 @@ onMounted(() => load())
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
+            <div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" />
+            <div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" />
           </div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="h-3 w-1/4 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="h-3 w-1/4 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3">
             <div class="flex gap-2">
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
             </div>
           </div>
         </div>
@@ -344,17 +343,17 @@ onMounted(() => load())
       <template v-else-if="shipments.length > 0">
         <div v-for="s in shipments" :key="s.id" class="admin-card p-4 space-y-3 cursor-pointer" @click="openDetail(s)">
           <div class="flex items-center justify-between gap-2">
-            <p class="font-medium text-[#dae2fd] truncate">{{ s.code }}</p>
+            <p class="font-medium text-content truncate">{{ s.code }}</p>
             <span :class="['admin-badge shrink-0', shipmentStatusColor(s.status)]">{{ s.status }}</span>
           </div>
-          <p class="text-sm text-[#94a3b8] truncate">{{ modeLabel(s.mode) }} · {{ s.package_count }} paquetes</p>
-          <p class="text-xs text-[#64748b]">Salida {{ fmtDate(s.departure_date) }} · Llegada {{ fmtDate(s.arrival_date) }}</p>
-          <div class="border-t border-[#1e293b] pt-3 flex items-center gap-2">
+          <p class="text-sm text-muted truncate">{{ modeLabel(s.mode) }} · {{ s.package_count }} paquetes</p>
+          <p class="text-xs text-subtle">Salida {{ fmtDate(s.departure_date) }} · Llegada {{ fmtDate(s.arrival_date) }}</p>
+          <div class="border-t border-line pt-3 flex items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click.stop="openEdit(s)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Editar
             </button>
-            <button v-if="s.status === 'draft' || s.status === 'cancelled'" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click.stop="openDelete(s)">
+            <button v-if="s.status === 'draft' || s.status === 'cancelled'" class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click.stop="openDelete(s)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               Eliminar
             </button>
@@ -472,24 +471,24 @@ onMounted(() => load())
         <!-- Header info -->
         <div class="flex flex-wrap items-center gap-2">
           <span :class="['admin-badge', shipmentStatusColor(detailShipment.status)]">{{ detailShipment.status }}</span>
-          <span class="rounded-full bg-[#111d2e] border border-[#1e293b] px-2.5 py-0.5 text-xs font-medium text-[#94a3b8]">{{ modeLabel(detailShipment.mode) }}</span>
-          <span class="rounded-full bg-[#111d2e] border border-[#1e293b] px-2.5 py-0.5 text-xs font-medium text-[#94a3b8]">{{ detailShipment.package_count }} paquetes</span>
+          <span class="rounded-full bg-surface border border-line px-2.5 py-0.5 text-xs font-medium text-muted">{{ modeLabel(detailShipment.mode) }}</span>
+          <span class="rounded-full bg-surface border border-line px-2.5 py-0.5 text-xs font-medium text-muted">{{ detailShipment.package_count }} paquetes</span>
         </div>
 
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div class="rounded-lg border border-[#1e293b] bg-[#0b1326] p-3">
-            <p class="text-xs text-[#64748b]">Salida</p>
-            <p class="text-sm font-medium text-[#dae2fd] mt-0.5">{{ fmtDate(detailShipment.departure_date) }}</p>
+          <div class="rounded-lg border border-line bg-surface p-3">
+            <p class="text-xs text-subtle">Salida</p>
+            <p class="text-sm font-medium text-content mt-0.5">{{ fmtDate(detailShipment.departure_date) }}</p>
           </div>
-          <div class="rounded-lg border border-[#1e293b] bg-[#0b1326] p-3">
-            <p class="text-xs text-[#64748b]">Llegada</p>
-            <p class="text-sm font-medium text-[#dae2fd] mt-0.5">{{ fmtDate(detailShipment.arrival_date) }}</p>
+          <div class="rounded-lg border border-line bg-surface p-3">
+            <p class="text-xs text-subtle">Llegada</p>
+            <p class="text-sm font-medium text-content mt-0.5">{{ fmtDate(detailShipment.arrival_date) }}</p>
           </div>
         </div>
 
-        <div v-if="detailShipment.notes" class="rounded-lg border border-[#1e293b] bg-[#0b1326] p-3">
-          <p class="text-xs text-[#64748b]">Notas</p>
-          <p class="text-sm text-[#dae2fd] mt-0.5">{{ detailShipment.notes }}</p>
+        <div v-if="detailShipment.notes" class="rounded-lg border border-line bg-surface p-3">
+          <p class="text-xs text-subtle">Notas</p>
+          <p class="text-sm text-content mt-0.5">{{ detailShipment.notes }}</p>
         </div>
 
         <!-- Actions -->
@@ -511,28 +510,28 @@ onMounted(() => load())
         <!-- Packages list -->
         <div>
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-[#dae2fd]">Paquetes del embarque</h3>
+            <h3 class="text-sm font-semibold text-content">Paquetes del embarque</h3>
           </div>
           <div v-if="loadingDetail" class="mt-3 space-y-2">
-            <div v-for="i in 2" :key="i" class="h-10 animate-pulse rounded-lg bg-[#1e293b]" />
+            <div v-for="i in 2" :key="i" class="h-10 animate-pulse rounded-lg bg-surface-raised" />
           </div>
           <div v-else class="mt-3 space-y-2 max-h-64 overflow-y-auto pr-1">
             <div
               v-for="p in detailPackages"
               :key="p.id"
-              class="flex items-center justify-between gap-2 rounded-lg border border-[#1e293b] bg-[#0b1326] px-3 py-2.5"
+              class="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface px-3 py-2.5"
             >
               <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-[#dae2fd]">{{ p.tracking_number }}</p>
-                <p class="truncate text-xs text-[#64748b]">
+                <p class="truncate text-sm font-medium text-content">{{ p.tracking_number }}</p>
+                <p class="truncate text-xs text-subtle">
                   {{ p.recipient_name }} · {{ p.chargeable_weight ? p.chargeable_weight + ' kg' : '—' }} · {{ p.origin === 'local' ? 'Ingreso local' : 'Compra EEUU' }}
                 </p>
               </div>
               <div class="flex shrink-0 items-center gap-2">
-                <span class="text-xs text-[#94a3b8]">{{ statusLabel(p.status_name) }}</span>
+                <span class="text-xs text-muted">{{ statusLabel(p.status_name) }}</span>
                 <button
                   v-if="canAddRemove"
-                  class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]"
+                  class="admin-btn admin-btn-ghost admin-btn-sm text-danger"
                   :disabled="removingId === p.id"
                   :title="removingId === p.id ? 'Removiendo...' : 'Quitar del embarque'"
                   @click="removePackage(p.id)"
@@ -541,13 +540,13 @@ onMounted(() => load())
                 </button>
               </div>
             </div>
-            <p v-if="detailPackages.length === 0" class="py-6 text-center text-sm text-[#64748b]">
+            <p v-if="detailPackages.length === 0" class="py-6 text-center text-sm text-subtle">
               Sin paquetes. Agregá paquetes en estado "Recibido en Miami" para despachar el embarque.
             </p>
           </div>
         </div>
 
-        <p class="text-xs text-[#64748b]">Creado por {{ detailShipment.created_by_name ?? '—' }} · {{ detailShipment.created_at?.slice(0, 10) }}</p>
+        <p class="text-xs text-subtle">Creado por {{ detailShipment.created_by_name ?? '—' }} · {{ detailShipment.created_at?.slice(0, 10) }}</p>
       </div>
 
       <template #footer>
@@ -560,11 +559,11 @@ onMounted(() => load())
     <!-- Add packages modal -->
     <AppModal :visible="showAddPackages" title="Agregar paquetes al embarque" size="lg" @close="showAddPackages = false">
       <div class="space-y-4">
-        <div v-if="detailShipment" class="flex items-center gap-2 rounded-lg border border-[#1e293b] bg-[#111d2e] px-3 py-2.5">
-          <span class="rounded-full bg-[#69dca4]/15 px-2.5 py-0.5 text-xs font-semibold text-[#69dca4]">
+        <div v-if="detailShipment" class="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2.5">
+          <span class="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">
             {{ detailShipment.mode === 'sea' ? 'Marítimo' : 'Aéreo' }}
           </span>
-          <p class="text-xs text-[#64748b]">
+          <p class="text-xs text-subtle">
             Solo se listan paquetes con servicio {{ detailShipment.mode === 'sea' ? 'Marítimo' : 'Aéreo' }} en estado "Recibido en Miami".
           </p>
         </div>
@@ -581,7 +580,7 @@ onMounted(() => load())
         </div>
 
         <div v-if="loadingEligible" class="space-y-2">
-          <div v-for="i in 3" :key="i" class="h-11 animate-pulse rounded-lg bg-[#1e293b]" />
+          <div v-for="i in 3" :key="i" class="h-11 animate-pulse rounded-lg bg-surface-raised" />
         </div>
 
         <div v-else class="space-y-2 max-h-80 overflow-y-auto pr-1">
@@ -590,19 +589,19 @@ onMounted(() => load())
             :key="p.id"
             :class="[
               'flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2.5 transition-colors',
-              isChecked(p.id) ? 'border-[#69dca4]/50 bg-[#69dca4]/10' : 'border-[#1e293b] bg-[#0b1326] hover:border-[#334155]'
+              isChecked(p.id) ? 'border-primary/50 bg-primary/10' : 'border-line bg-surface hover:border-line-strong'
             ]"
           >
             <div class="min-w-0">
-              <p class="truncate text-sm font-medium text-[#dae2fd]">{{ p.tracking_number }}</p>
-              <p class="truncate text-xs text-[#64748b]">
+              <p class="truncate text-sm font-medium text-content">{{ p.tracking_number }}</p>
+              <p class="truncate text-xs text-subtle">
                 {{ p.recipient_name }} · {{ p.chargeable_weight ? p.chargeable_weight + ' kg' : '—' }} · {{ p.origin === 'local' ? 'Ingreso local' : 'Compra EEUU' }}{{ p.shipping_service_name ? ' · ' + p.shipping_service_name : '' }}
               </p>
             </div>
-            <input type="checkbox" class="h-4 w-4 shrink-0 accent-[#69dca4]" :checked="isChecked(p.id)" @change="toggleSelect(p.id)" />
+            <input type="checkbox" class="h-4 w-4 shrink-0 accent-primary" :checked="isChecked(p.id)" @change="toggleSelect(p.id)" />
           </label>
 
-          <p v-if="eligible.length === 0" class="py-6 text-center text-sm text-[#64748b]">
+          <p v-if="eligible.length === 0" class="py-6 text-center text-sm text-subtle">
             No hay paquetes elegibles para este embarque (deben estar en estado "Recibido en Miami", con servicio correspondiente y no pertenecer a otro embarque).
           </p>
         </div>

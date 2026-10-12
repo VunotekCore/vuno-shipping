@@ -13,6 +13,7 @@ import AppDropdown from '../components/ui/AppDropdown.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const roles = ref<Role[]>([])
 const allPermissions = ref<Permission[]>([])
@@ -219,26 +220,24 @@ onMounted(() => load())
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Usuarios</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Gestionar usuarios del sistema</p>
-      </div>
-      <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Crear usuario
-      </button>
-    </div>
+    <PageHeader title="Usuarios" subtitle="Gestionar usuarios del sistema">
+      <template #actions>
+        <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Crear usuario
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Desktop: Table view (lg+) -->
     <div class="hidden lg:block">
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading" :is-empty="users.length === 0" empty-title="Sin usuarios" empty-desc="Creá el primer usuario del sistema.">
           <tr v-for="u in users" :key="u.id">
-            <td class="font-medium text-[#dae2fd]">{{ u.name }}</td>
-            <td class="text-[#94a3b8]">{{ u.email }}</td>
+            <td class="font-medium text-content">{{ u.name }}</td>
+            <td class="text-muted">{{ u.email }}</td>
             <td><span class="admin-badge admin-badge-info">{{ u.role_name }}</span></td>
-            <td class="text-[#64748b]">{{ u.created_at ? formatDate(u.created_at) : '—' }}</td>
+            <td class="text-subtle">{{ u.created_at ? formatDate(u.created_at) : '—' }}</td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openPerms(u)" title="Permisos">
@@ -247,7 +246,7 @@ onMounted(() => load())
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(u)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(u)" title="Eliminar">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(u)" title="Eliminar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -262,20 +261,20 @@ onMounted(() => load())
     <div class="lg:hidden space-y-3">
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
-          <div class="flex items-center justify-between"><div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" /><div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" /></div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3"><div class="flex gap-2"><div class="h-7 w-20 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /><div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" /></div></div>
+          <div class="flex items-center justify-between"><div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" /><div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" /></div>
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3"><div class="flex gap-2"><div class="h-7 w-20 animate-pulse rounded bg-surface-raised" /><div class="h-7 w-16 animate-pulse rounded bg-surface-raised" /><div class="h-7 w-16 animate-pulse rounded bg-surface-raised" /></div></div>
         </div>
       </template>
       <template v-else-if="users.length > 0">
         <div v-for="u in users" :key="u.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <p class="font-medium text-[#dae2fd] truncate">{{ u.name }}</p>
+            <p class="font-medium text-content truncate">{{ u.name }}</p>
             <span class="admin-badge admin-badge-info shrink-0">{{ u.role_name }}</span>
           </div>
-          <p class="text-sm text-[#94a3b8] truncate">{{ u.email }}</p>
-          <p class="text-xs text-[#64748b]">{{ u.created_at ? formatDate(u.created_at) : '—' }}</p>
-          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+          <p class="text-sm text-muted truncate">{{ u.email }}</p>
+          <p class="text-xs text-subtle">{{ u.created_at ? formatDate(u.created_at) : '—' }}</p>
+          <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openPerms(u)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
               Permisos
@@ -284,7 +283,7 @@ onMounted(() => load())
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Editar
             </button>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(u)">
+            <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(u)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               Eliminar
             </button>
@@ -351,7 +350,7 @@ onMounted(() => load())
               @input="clearError('password')"
             />
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Rol <span class="text-[#DC2626]">*</span></label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Rol <span class="text-danger">*</span></label>
               <AppDropdown
                 :model-value="fv('role_id')"
                 @update:model-value="(v: string | number | null) => { form.role_id = v; clearError('role_id') }"
@@ -360,10 +359,10 @@ onMounted(() => load())
                 :disabled="saving"
                 :error="fieldErrors.role_id"
               />
-              <p v-if="fieldErrors.role_id" class="mt-1.5 text-xs text-[#DC2626]">{{ fieldErrors.role_id }}</p>
+              <p v-if="fieldErrors.role_id" class="mt-1.5 text-xs text-danger">{{ fieldErrors.role_id }}</p>
             </div>
             <div v-if="selectedRoleSlug === 'vendedor'">
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Comisión por venta</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Comisión por venta</label>
               <div class="grid grid-cols-2 gap-3">
                 <AppDropdown
                   :model-value="fv('commission_type') ?? 'none'"
@@ -399,22 +398,22 @@ onMounted(() => load())
     <!-- Permissions Matrix Modal -->
     <AppModal :visible="showPermsModal" :title="`Permisos — ${permUser?.name}`" size="lg" @close="showPermsModal = false">
       <div class="space-y-4">
-        <div class="rounded-lg border border-[#1e293b] bg-[#0a1022]/50 p-3 text-sm text-[#94a3b8]">
-          Rol: <span class="font-medium text-[#dae2fd]">{{ permUser?.role_name }}</span>
+        <div class="rounded-lg border border-line bg-canvas/50 p-3 text-sm text-muted">
+          Rol: <span class="font-medium text-content">{{ permUser?.role_name }}</span>
           — Los permisos del rol son la base. Los toggles controlan permisos extra o excluidos para este usuario.
         </div>
-        <div v-for="(perms, module) in groupedPerms" :key="module" class="rounded-lg border border-[#1e293b] bg-[#0a1022]/50 p-4">
+        <div v-for="(perms, module) in groupedPerms" :key="module" class="rounded-lg border border-line bg-canvas/50 p-4">
           <div class="mb-3 flex items-center gap-3">
             <AppSwitch :model-value="isModuleChecked(module, perms)" @update:model-value="toggleModule(module, perms)" />
-            <span class="text-sm font-semibold text-[#dae2fd] uppercase tracking-wide">{{ module }}</span>
-            <span v-if="rolePermIds.size > 0" class="ml-auto text-xs text-[#64748b]">{{ perms.filter(p => rolePermIds.has(p.id)).length }}/{{ perms.length }} del rol</span>
+            <span class="text-sm font-semibold text-content uppercase tracking-wide">{{ module }}</span>
+            <span v-if="rolePermIds.size > 0" class="ml-auto text-xs text-subtle">{{ perms.filter(p => rolePermIds.has(p.id)).length }}/{{ perms.length }} del rol</span>
           </div>
           <div class="grid grid-cols-2 gap-2 pl-8 sm:grid-cols-3 md:grid-cols-4">
-            <label v-for="p in perms" :key="p.id" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/[0.04]">
-              <input type="checkbox" :checked="selectedPerms.has(p.id)" @change="togglePerm(p.id)" class="h-4 w-4 rounded border-[#404944] bg-[#1e293b] text-[#69dca4] focus:ring-[#69dca4]/50" />
-              <span :class="rolePermIds.has(p.id) ? 'text-[#94a3b8]' : 'text-[#69dca4]'">{{ p.action }}</span>
-              <span v-if="rolePermIds.has(p.id)" class="ml-auto text-[10px] text-[#64748b]">rol</span>
-              <span v-else-if="selectedPerms.has(p.id)" class="ml-auto text-[10px] text-[#fd8b00]">+extra</span>
+            <label v-for="p in perms" :key="p.id" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-surface-raised">
+              <input type="checkbox" :checked="selectedPerms.has(p.id)" @change="togglePerm(p.id)" class="h-4 w-4 rounded border-line-strong bg-surface-raised text-primary focus:ring-primary/50" />
+              <span :class="rolePermIds.has(p.id) ? 'text-muted' : 'text-primary'">{{ p.action }}</span>
+              <span v-if="rolePermIds.has(p.id)" class="ml-auto text-[10px] text-subtle">rol</span>
+              <span v-else-if="selectedPerms.has(p.id)" class="ml-auto text-[10px] text-accent">+extra</span>
             </label>
           </div>
         </div>

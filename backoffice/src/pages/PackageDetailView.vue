@@ -8,6 +8,7 @@ import { useToast } from '../composables/useToast'
 import { formatCurrency, statusColor, statusLabel } from '../utils/format'
 import AppModal from '../components/ui/AppModal.vue'
 import AppDropdown from '../components/ui/AppDropdown.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -156,24 +157,24 @@ onMounted(() => loadPackage())
     <!-- Loading skeleton -->
     <template v-if="loading">
       <div class="flex items-center gap-3">
-        <div class="h-8 w-8 animate-pulse rounded-lg bg-[#1e293b]" />
-        <div class="h-6 w-48 animate-pulse rounded bg-[#1e293b]" />
+        <div class="h-8 w-8 animate-pulse rounded-lg bg-surface-raised" />
+        <div class="h-6 w-48 animate-pulse rounded bg-surface-raised" />
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 admin-card p-6 space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div v-for="i in 8" :key="i" class="space-y-2">
-              <div class="h-3 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-4 w-full animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-3 w-16 animate-pulse rounded bg-surface-raised" />
+              <div class="h-4 w-full animate-pulse rounded bg-surface-raised" />
             </div>
           </div>
         </div>
         <div class="admin-card p-6 space-y-4">
           <div v-for="i in 4" :key="i" class="flex gap-3">
-            <div class="h-3 w-3 animate-pulse rounded-full bg-[#1e293b]" />
+            <div class="h-3 w-3 animate-pulse rounded-full bg-surface-raised" />
             <div class="flex-1 space-y-2">
-              <div class="h-3 w-24 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-3 w-full animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-3 w-24 animate-pulse rounded bg-surface-raised" />
+              <div class="h-3 w-full animate-pulse rounded bg-surface-raised" />
             </div>
           </div>
         </div>
@@ -182,194 +183,184 @@ onMounted(() => loadPackage())
 
     <template v-else-if="pkg">
       <!-- Page header -->
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex items-center gap-3">
-          <button
-            class="admin-btn admin-btn-ghost admin-btn-sm"
-            @click="router.push('/packages')"
-            title="Volver"
-          >
+      <PageHeader back-to="/packages" title="Detalle del paquete">
+        <template #title>
+          <span class="font-mono">{{ pkg.tracking_number }}</span>
+        </template>
+        <template #actions>
+          <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openStatusUpdate">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
+              <path d="M12 5v14M5 12h14" />
             </svg>
+            Actualizar estado
           </button>
-          <div>
-            <h1 class="text-xl font-bold text-[#dae2fd] font-mono">{{ pkg.tracking_number }}</h1>
-            <p class="mt-1 text-sm text-[#64748b]">Detalle del paquete</p>
-          </div>
-        </div>
-        <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openStatusUpdate">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Actualizar estado
-        </button>
-      </div>
+        </template>
+      </PageHeader>
 
       <!-- Two-column layout -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left: Package info -->
         <div class="lg:col-span-2">
           <div class="admin-card p-6">
-            <h2 class="text-sm font-semibold text-[#dae2fd] mb-4">Información del paquete</h2>
+            <h2 class="text-sm font-semibold text-content mb-4">Información del paquete</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p class="text-xs text-[#64748b] mb-1">Tracking</p>
-                <p class="font-mono font-medium text-[#dae2fd]">{{ pkg.tracking_number }}</p>
+                <p class="text-xs text-subtle mb-1">Tracking</p>
+                <p class="font-mono font-medium text-content">{{ pkg.tracking_number }}</p>
               </div>
               <div>
-                <p class="text-xs text-[#64748b] mb-1">Estado</p>
+                <p class="text-xs text-subtle mb-1">Estado</p>
                 <span class="admin-badge" :class="statusColor(pkg.status_name)">
                   {{ statusLabel(pkg.status_name) }}
                 </span>
               </div>
               <div>
-                <p class="text-xs text-[#64748b] mb-1">Cliente</p>
-                <p class="text-sm text-[#94a3b8]">{{ pkg.client_name || '—' }}</p>
+                <p class="text-xs text-subtle mb-1">Cliente</p>
+                <p class="text-sm text-muted">{{ pkg.client_name || '—' }}</p>
               </div>
               <div>
-                <p class="text-xs text-[#64748b] mb-1">Servicio de envío</p>
-                <p class="text-sm text-[#94a3b8]">{{ pkg.shipping_service_name || '—' }}</p>
+                <p class="text-xs text-subtle mb-1">Servicio de envío</p>
+                <p class="text-sm text-muted">{{ pkg.shipping_service_name || '—' }}</p>
               </div>
               <div>
-                <p class="text-xs text-[#64748b] mb-1">Opción de entrega</p>
-                <p class="text-sm text-[#94a3b8]">{{ pkg.delivery_option_name || pkg.delivery_option || '—' }}</p>
+                <p class="text-xs text-subtle mb-1">Opción de entrega</p>
+                <p class="text-sm text-muted">{{ pkg.delivery_option_name || pkg.delivery_option || '—' }}</p>
               </div>
 
-              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
-                <p class="text-xs text-[#64748b] mb-1">Descripción</p>
-                <p class="text-sm text-[#94a3b8]">{{ pkg.description || '—' }}</p>
+              <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
+                <p class="text-xs text-subtle mb-1">Descripción</p>
+                <p class="text-sm text-muted">{{ pkg.description || '—' }}</p>
               </div>
 
-              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
-                <p class="text-xs text-[#64748b] mb-2">Remitente</p>
+              <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
+                <p class="text-xs text-subtle mb-2">Remitente</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Nombre</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.sender_name }}</p>
+                    <p class="text-xs text-subtle mb-1">Nombre</p>
+                    <p class="text-sm text-muted">{{ pkg.sender_name }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Teléfono</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.sender_phone || '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Teléfono</p>
+                    <p class="text-sm text-muted">{{ pkg.sender_phone || '—' }}</p>
                   </div>
                 </div>
               </div>
 
-              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
-                <p class="text-xs text-[#64748b] mb-2">Destinatario</p>
+              <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
+                <p class="text-xs text-subtle mb-2">Destinatario</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Nombre</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.recipient_name }}</p>
+                    <p class="text-xs text-subtle mb-1">Nombre</p>
+                    <p class="text-sm text-muted">{{ pkg.recipient_name }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Teléfono</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.recipient_phone }}</p>
+                    <p class="text-xs text-subtle mb-1">Teléfono</p>
+                    <p class="text-sm text-muted">{{ pkg.recipient_phone }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Dirección</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.recipient_address }}</p>
+                    <p class="text-xs text-subtle mb-1">Dirección</p>
+                    <p class="text-sm text-muted">{{ pkg.recipient_address }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Ciudad / Departamento</p>
-                    <p class="text-sm text-[#94a3b8]">
+                    <p class="text-xs text-subtle mb-1">Ciudad / Departamento</p>
+                    <p class="text-sm text-muted">
                       {{ pkg.recipient_city || '—' }}{{ pkg.recipient_department ? ' / ' + pkg.recipient_department : '' }}
                     </p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Zona de entrega</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.zone_name || '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Zona de entrega</p>
+                    <p class="text-sm text-muted">{{ pkg.zone_name || '—' }}</p>
                   </div>
                 </div>
               </div>
 
-              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
-                <p class="text-xs text-[#64748b] mb-2">Dimensiones y peso</p>
+              <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
+                <p class="text-xs text-subtle mb-2">Dimensiones y peso</p>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Peso físico</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.weight ? pkg.weight + ' lb' : '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Peso físico</p>
+                    <p class="text-sm text-muted">{{ pkg.weight ? pkg.weight + ' lb' : '—' }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">
+                    <p class="text-xs text-subtle mb-1">
                       Peso volumétrico
                       <span class="help-tip" title="Peso volumétrico = (largo × ancho × alto) ÷ divisor (166 para aéreo). Representa el espacio que ocupa el paquete en el avión.">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline-block ml-0.5 -mt-0.5 opacity-50"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                       </span>
                     </p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.volumetric_weight ? pkg.volumetric_weight + ' lb' : '—' }}</p>
+                    <p class="text-sm text-muted">{{ pkg.volumetric_weight ? pkg.volumetric_weight + ' lb' : '—' }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">
+                    <p class="text-xs text-subtle mb-1">
                       Peso cobrable
                       <span class="help-tip" title="Peso cobrable = el mayor entre el peso físico y el volumétrico. Es lo que se usa para calcular el flete.">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline-block ml-0.5 -mt-0.5 opacity-50"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                       </span>
                     </p>
-                    <p class="text-sm text-[#94a3b8] font-medium">{{ pkg.chargeable_weight ? pkg.chargeable_weight + ' lb' : '—' }}</p>
+                    <p class="text-sm text-muted font-medium">{{ pkg.chargeable_weight ? pkg.chargeable_weight + ' lb' : '—' }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Largo × Ancho × Alto</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.length ?? '—' }} × {{ pkg.width ?? '—' }} × {{ pkg.height ?? '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Largo × Ancho × Alto</p>
+                    <p class="text-sm text-muted">{{ pkg.length ?? '—' }} × {{ pkg.width ?? '—' }} × {{ pkg.height ?? '—' }}</p>
                   </div>
                 </div>
               </div>
 
-              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
-                <p class="text-xs text-[#64748b] mb-2">Desglose de costos</p>
+              <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
+                <p class="text-xs text-subtle mb-2">Desglose de costos</p>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">
+                    <p class="text-xs text-subtle mb-1">
                       Valor declarado
                       <span class="help-tip" title="Valor de la factura de compra (ej. $100 en Amazon). Usado para reglas de tipo porcentaje del valor.">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline-block ml-0.5 -mt-0.5 opacity-50"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                       </span>
                     </p>
-                    <p class="text-sm text-[#94a3b8]">{{ formatCurrency(pkg.declared_value) }}</p>
+                    <p class="text-sm text-muted">{{ formatCurrency(pkg.declared_value) }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">
+                    <p class="text-xs text-subtle mb-1">
                       Flete (internacional)
                       <span class="help-tip" title="Costo del envío Miami → Nicaragua. Se calcula según la regla de precios (por peso, volumen, valor declarado o tarifa fija).">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline-block ml-0.5 -mt-0.5 opacity-50"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                       </span>
                     </p>
-                    <p class="text-sm text-[#94a3b8]">{{ formatCurrency(pkg.flete_cost) }}</p>
+                    <p class="text-sm text-muted">{{ formatCurrency(pkg.flete_cost) }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">
+                    <p class="text-xs text-subtle mb-1">
                       Delivery (última milla)
                       <span class="help-tip" title="Costo de entrega a domicilio en Nicaragua. Se aplica solo si el tipo de entrega es 'Domicilio' y se basa en la zona de entrega.">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline-block ml-0.5 -mt-0.5 opacity-50"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                       </span>
                     </p>
-                    <p class="text-sm text-[#94a3b8]">{{ formatCurrency(pkg.delivery_cost) }}</p>
+                    <p class="text-sm text-muted">{{ formatCurrency(pkg.delivery_cost) }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">
+                    <p class="text-xs text-subtle mb-1">
                       Total
                       <span class="help-tip" title="Total = flete + delivery. Es el monto final que paga el cliente.">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline-block ml-0.5 -mt-0.5 opacity-50"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                       </span>
                     </p>
-                    <p class="text-sm text-[#dae2fd] font-medium">{{ formatCurrency(pkg.shipping_cost) }}</p>
+                    <p class="text-sm text-content font-medium">{{ formatCurrency(pkg.shipping_cost) }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Zona</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.zone_name || '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Zona</p>
+                    <p class="text-sm text-muted">{{ pkg.zone_name || '—' }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Regla de pricing</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.pricing_rule_name || '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Regla de pricing</p>
+                    <p class="text-sm text-muted">{{ pkg.pricing_rule_name || '—' }}</p>
                   </div>
                 </div>
               </div>
 
-              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
-                <p class="text-xs text-[#64748b] mb-2">Factura</p>
+              <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
+                <p class="text-xs text-subtle mb-2">Factura</p>
                 <div v-if="pkg.invoice_number" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Número</p>
+                    <p class="text-xs text-subtle mb-1">Número</p>
                     <button
                       v-if="pkg.invoice_id"
                       class="admin-btn admin-btn-ghost admin-btn-sm font-mono"
@@ -377,86 +368,86 @@ onMounted(() => loadPackage())
                     >
                       {{ pkg.invoice_number }}
                     </button>
-                    <p v-else class="text-sm font-mono text-[#94a3b8]">{{ pkg.invoice_number }}</p>
+                    <p v-else class="text-sm font-mono text-muted">{{ pkg.invoice_number }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Estado</p>
+                    <p class="text-xs text-subtle mb-1">Estado</p>
                     <span v-if="pkg.invoice_status === 'paid'" class="admin-badge admin-badge-success">Pagada</span>
                     <span v-else-if="pkg.invoice_status === 'cancelled'" class="admin-badge admin-badge-danger">Anulada</span>
                     <span v-else class="admin-badge admin-badge-warning">Por cobrar</span>
                   </div>
                 </div>
-                <p v-else class="text-sm text-[#94a3b8]">Este paquete no tiene factura asociada.</p>
+                <p v-else class="text-sm text-muted">Este paquete no tiene factura asociada.</p>
               </div>
 
-              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
-                <p class="text-xs text-[#64748b] mb-2">Asignación</p>
+              <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
+                <p class="text-xs text-subtle mb-2">Asignación</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Asignado a</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.assigned_to_name || '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Asignado a</p>
+                    <p class="text-sm text-muted">{{ pkg.assigned_to_name || '—' }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Notas</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.notes || '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Notas</p>
+                    <p class="text-sm text-muted">{{ pkg.notes || '—' }}</p>
                   </div>
                 </div>
               </div>
 
-              <div v-if="pkg.pickup_required" class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
-                <p class="text-xs text-[#64748b] mb-2">Recolección</p>
+              <div v-if="pkg.pickup_required" class="sm:col-span-2 border-t border-line pt-4 mt-2">
+                <p class="text-xs text-subtle mb-2">Recolección</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Requiere recolección</p>
+                    <p class="text-xs text-subtle mb-1">Requiere recolección</p>
                     <span class="admin-badge admin-badge-info">Sí</span>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Vehículo</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.pickup_vehicle_plate || 'Sin asignar' }}</p>
+                    <p class="text-xs text-subtle mb-1">Vehículo</p>
+                    <p class="text-sm text-muted">{{ pkg.pickup_vehicle_plate || 'Sin asignar' }}</p>
                   </div>
                 </div>
               </div>
 
-              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
+              <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
                 <div class="mb-2 flex items-center justify-between">
-                  <p class="text-xs text-[#64748b]">Almacenaje</p>
+                  <p class="text-xs text-subtle">Almacenaje</p>
                   <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openStorageModal">Gestionar</button>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Clasificación</p>
-                    <span v-if="pkg.storage_category_name" class="inline-flex items-center gap-1.5 text-sm text-[#94a3b8]">
-                      <span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: pkg.storage_category_color || '#3b82f6' }" />
+                    <p class="text-xs text-subtle mb-1">Clasificación</p>
+                    <span v-if="pkg.storage_category_name" class="inline-flex items-center gap-1.5 text-sm text-muted">
+                      <span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: pkg.storage_category_color || '#0284c7' }" />
                       {{ pkg.storage_category_name }}
                     </span>
-                    <p v-else class="text-sm text-[#94a3b8]">—</p>
+                    <p v-else class="text-sm text-muted">—</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Ubicación</p>
-                    <p v-if="pkg.storage_location_code" class="font-mono text-sm text-[#dae2fd]">{{ pkg.storage_location_code }}</p>
-                    <p v-else class="text-sm text-[#94a3b8]">Sin ubicación</p>
+                    <p class="text-xs text-subtle mb-1">Ubicación</p>
+                    <p v-if="pkg.storage_location_code" class="font-mono text-sm text-content">{{ pkg.storage_location_code }}</p>
+                    <p v-else class="text-sm text-muted">Sin ubicación</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Almacenado</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.stored_at ? formatDate(pkg.stored_at) : '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Almacenado</p>
+                    <p class="text-sm text-muted">{{ pkg.stored_at ? formatDate(pkg.stored_at) : '—' }}</p>
                   </div>
                 </div>
               </div>
 
-              <div class="sm:col-span-2 border-t border-[#1e293b] pt-4 mt-2">
-                <p class="text-xs text-[#64748b] mb-2">Fechas</p>
+              <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
+                <p class="text-xs text-subtle mb-2">Fechas</p>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Creado</p>
-                    <p class="text-sm text-[#94a3b8]">{{ formatDate(pkg.created_at) }}</p>
+                    <p class="text-xs text-subtle mb-1">Creado</p>
+                    <p class="text-sm text-muted">{{ formatDate(pkg.created_at) }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Recibido</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.received_at ? formatDate(pkg.received_at) : '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Recibido</p>
+                    <p class="text-sm text-muted">{{ pkg.received_at ? formatDate(pkg.received_at) : '—' }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-[#64748b] mb-1">Entregado</p>
-                    <p class="text-sm text-[#94a3b8]">{{ pkg.delivered_at ? formatDate(pkg.delivered_at) : '—' }}</p>
+                    <p class="text-xs text-subtle mb-1">Entregado</p>
+                    <p class="text-sm text-muted">{{ pkg.delivered_at ? formatDate(pkg.delivered_at) : '—' }}</p>
                   </div>
                 </div>
               </div>
@@ -467,14 +458,14 @@ onMounted(() => loadPackage())
         <!-- Right: Tracking timeline + QR -->
         <div class="lg:col-span-1 space-y-6">
           <div class="admin-card p-6">
-            <h2 class="text-sm font-semibold text-[#dae2fd] mb-4">Historial de seguimiento</h2>
+            <h2 class="text-sm font-semibold text-content mb-4">Historial de seguimiento</h2>
 
             <!-- Empty timeline -->
             <div v-if="events.length === 0" class="text-center py-8">
-              <svg class="mx-auto mb-3 text-[#64748b]" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <svg class="mx-auto mb-3 text-subtle" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p class="text-sm text-[#64748b]">Sin eventos registrados</p>
+              <p class="text-sm text-subtle">Sin eventos registrados</p>
             </div>
 
             <!-- Timeline -->
@@ -483,13 +474,13 @@ onMounted(() => loadPackage())
                 <div class="flex flex-col items-center">
                   <div
                     class="h-3 w-3 rounded-full"
-                    :class="idx === 0 ? 'bg-[#69dca4]' : 'bg-[#1e293b]'"
+                    :class="idx === 0 ? 'bg-primary' : 'bg-surface-raised'"
                   ></div>
-                  <div v-if="idx < events.length - 1" class="w-px flex-1 bg-[#1e293b]"></div>
+                  <div v-if="idx < events.length - 1" class="w-px flex-1 bg-surface-raised"></div>
                 </div>
                 <div class="pb-4 flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-0.5">
-                    <p class="text-sm font-medium text-[#dae2fd]">{{ statusLabel(event.status) }}</p>
+                    <p class="text-sm font-medium text-content">{{ statusLabel(event.status) }}</p>
                     <span
                       v-if="idx === 0"
                       class="admin-badge admin-badge-success text-[10px] py-0 px-1.5"
@@ -497,18 +488,18 @@ onMounted(() => loadPackage())
                       Actual
                     </span>
                   </div>
-                  <p v-if="event.description" class="text-sm text-[#94a3b8] mb-0.5">
+                  <p v-if="event.description" class="text-sm text-muted mb-0.5">
                     {{ event.description }}
                   </p>
-                  <p v-if="event.location_name" class="text-xs text-[#64748b] mb-0.5">
+                  <p v-if="event.location_name" class="text-xs text-subtle mb-0.5">
                     <svg class="inline-block mr-1 -mt-0.5" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
                       <circle cx="12" cy="10" r="3" />
                     </svg>
                     {{ event.location_name }}
                   </p>
-                  <p class="text-xs text-[#475569]">{{ formatDate(event.recorded_at) }}</p>
-                  <p v-if="event.created_by_name" class="text-xs text-[#475569]">
+                  <p class="text-xs text-muted">{{ formatDate(event.recorded_at) }}</p>
+                  <p v-if="event.created_by_name" class="text-xs text-muted">
                     por {{ event.created_by_name }}
                   </p>
                 </div>
@@ -518,16 +509,16 @@ onMounted(() => loadPackage())
 
           <!-- QR Code card -->
           <div class="admin-card p-6 text-center">
-            <h2 class="text-sm font-semibold text-[#dae2fd] mb-4">Código QR</h2>
+            <h2 class="text-sm font-semibold text-content mb-4">Código QR</h2>
             <img
               :src="packageService.getQrUrl(pkg.id)"
               alt="QR del paquete"
               width="240"
               height="240"
-              class="mx-auto rounded-lg border border-[#1e293b]"
+              class="mx-auto rounded-lg border border-line"
               loading="lazy"
             />
-            <p class="mt-3 text-xs text-[#64748b] break-all">{{ trackingUrl }}</p>
+            <p class="mt-3 text-xs text-subtle break-all">{{ trackingUrl }}</p>
             <div class="mt-3 flex items-center justify-center gap-2">
               <button
                 @click="goToScan"
@@ -553,10 +544,10 @@ onMounted(() => loadPackage())
     <!-- Not found -->
     <template v-else-if="!loading">
       <div class="admin-card p-12 text-center">
-        <svg class="mx-auto mb-3 text-[#64748b]" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <svg class="mx-auto mb-3 text-subtle" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
-        <p class="text-sm text-[#94a3b8] mb-1">Paquete no encontrado</p>
+        <p class="text-sm text-muted mb-1">Paquete no encontrado</p>
         <button class="admin-btn admin-btn-ghost admin-btn-sm mt-3" @click="router.push('/packages')">
           Volver a paquetes
         </button>
@@ -567,7 +558,7 @@ onMounted(() => loadPackage())
     <AppModal :visible="showStatusModal" title="Actualizar estado" @close="showStatusModal = false">
       <form class="space-y-4" @submit.prevent="updateStatus">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Nuevo estado</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Nuevo estado</label>
           <select
             v-model="statusForm.status"
             class="admin-input"
@@ -581,7 +572,7 @@ onMounted(() => loadPackage())
           </select>
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Descripción (opcional)</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Descripción (opcional)</label>
           <textarea
             v-model="statusForm.description"
             class="admin-input"
@@ -611,7 +602,7 @@ onMounted(() => loadPackage())
     <AppModal :visible="showStorageModal" title="Gestionar almacenaje" @close="showStorageModal = false">
       <div class="space-y-4">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Clasificación</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Clasificación</label>
           <AppDropdown
             :model-value="storageForm.storage_category_id"
             :options="storageCategories.map((c) => ({ value: c.id, label: c.name }))"
@@ -621,7 +612,7 @@ onMounted(() => loadPackage())
           />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Ubicación</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Ubicación</label>
           <AppDropdown
             :model-value="storageForm.storage_location_id"
             :options="storageLocationOptions"
@@ -629,7 +620,7 @@ onMounted(() => loadPackage())
             :disabled="storageSaving || storageLoading"
             @update:model-value="(v: string | number | null) => storageForm.storage_location_id = v as number | null"
           />
-          <p class="mt-1 text-xs text-[#64748b]">Se sugiere automáticamente según la clasificación; podés cambiarla o dejarla vacía.</p>
+          <p class="mt-1 text-xs text-subtle">Se sugiere automáticamente según la clasificación; podés cambiarla o dejarla vacía.</p>
         </div>
       </div>
       <template #footer>

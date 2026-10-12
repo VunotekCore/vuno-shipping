@@ -8,6 +8,7 @@ import { useToast } from '../composables/useToast'
 import { useAuthStore } from '../stores/auth'
 import VehicleKmModal from '../components/vehicle/VehicleKmModal.vue'
 import AppModal from '../components/ui/AppModal.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { NICARAGUA_MAP_OPTIONS, NICARAGUA_BOUNDS, stabilizeMapSize, fitMapToBounds } from '../utils/map'
@@ -122,7 +123,7 @@ async function loadVehicleHistory() {
       .map(h => [Number(h.latitude), Number(h.longitude)] as [number, number])
       .filter(ll => !Number.isNaN(ll[0]) && !Number.isNaN(ll[1]))
     if (latlngs.length >= 2) {
-      vehicleTrajectory = L.polyline(latlngs, { color: '#f97316', weight: 3, opacity: 0.85 }).addTo(map)
+      vehicleTrajectory = L.polyline(latlngs, { color: '#eb5a28', weight: 3, opacity: 0.85 }).addTo(map)
     }
   } catch {
     /* sin historial aun */
@@ -164,7 +165,7 @@ function upsertLiveMarker(lat: number, lng: number) {
   if (!liveMarker) {
     liveMarker = L.circleMarker([lat, lng], {
       radius: 9,
-      fillColor: '#ef4444',
+      fillColor: '#dc2626',
       color: '#fff',
       weight: 2,
       fillOpacity: 1,
@@ -288,7 +289,7 @@ function initMap() {
       const coords = typeof rd.trajectory === 'string' ? JSON.parse(rd.trajectory) : rd.trajectory
       if (Array.isArray(coords) && coords.length >= 2) {
         const latlngs: [number, number][] = coords.map((c: any) => [c[1] ?? c.lat, c[0] ?? c.lng])
-        L.polyline(latlngs, { color: rd.route_color || '#22c55e', weight: 4, opacity: 0.8 }).addTo(map!)
+        L.polyline(latlngs, { color: rd.route_color || '#16a34a', weight: 4, opacity: 0.8 }).addTo(map!)
         routeCorridor = latlngs
         latlngs.forEach((ll) => bounds.push(ll))
       }
@@ -303,8 +304,8 @@ function initMap() {
       const lng = Number(z.lng)
       const circle = L.circle([lat, lng], {
         radius: 1500,
-        color: rd.route_color || '#22c55e',
-        fillColor: rd.route_color || '#22c55e',
+        color: rd.route_color || '#16a34a',
+        fillColor: rd.route_color || '#16a34a',
         fillOpacity: 0.08,
         weight: 1,
         opacity: 0.35,
@@ -317,7 +318,7 @@ function initMap() {
   // OSRM optimal route (blue dashed line)
   const optimized = parseCoords(rd.optimized_geometry)
   if (optimized.length >= 2) {
-    L.polyline(optimized, { color: '#00A8FF', weight: 3, dashArray: '8 8', opacity: 0.9 }).addTo(map!)
+    L.polyline(optimized, { color: '#1ea7dc', weight: 3, dashArray: '8 8', opacity: 0.9 }).addTo(map!)
     if (routeCorridor.length === 0) routeCorridor = optimized
     optimized.forEach((ll) => bounds.push(ll))
   }
@@ -327,7 +328,7 @@ function initMap() {
     if (stop.latitude && stop.longitude) {
       const lat = Number(stop.latitude)
       const lng = Number(stop.longitude)
-      const markerColor = stop.status_name === 'delivered' ? '#22c55e' : stop.status_name === 'pending' ? '#eab308' : '#64748b'
+      const markerColor = stop.status_name === 'delivered' ? '#16a34a' : stop.status_name === 'pending' ? '#d97706' : '#94a3b8'
       const marker = L.circleMarker([lat, lng], {
         radius: 8,
         fillColor: markerColor,
@@ -336,7 +337,7 @@ function initMap() {
         opacity: 1,
         fillOpacity: 0.9,
       }).addTo(map!)
-      const carryTag = stop.carried_over ? '<br/><i style="color:#f97316">↻ Arrastrado del despacho anterior</i>' : ''
+      const carryTag = stop.carried_over ? '<br/><i style="color:#eb5a28">↻ Arrastrado del despacho anterior</i>' : ''
       const notesTag = stop.notes ? `<br/><i style="color:#94a3b8">${stop.notes}</i>` : ''
       const popupHtml = `<b>#${stop.stop_order}</b> ${stop.client_name}<br/>${stop.address || ''}${stop.from_zone_center ? '<br/><i style="color:#94a3b8">Punto por centro de zona (sin GPS)</i>' : ''}${carryTag}${notesTag}`
       marker.bindPopup(popupHtml)
@@ -347,13 +348,13 @@ function initMap() {
   // Start/end markers (offset del centro de zona para no tapar stops fallback)
   if (rd.start_latitude && rd.start_longitude) {
     const ll: [number, number] = [Number(rd.start_latitude) + 0.004, Number(rd.start_longitude) - 0.004]
-    L.circleMarker(ll, { radius: 6, fillColor: '#22c55e', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
+    L.circleMarker(ll, { radius: 6, fillColor: '#16a34a', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
       .bindPopup('Inicio')
     bounds.push(ll)
   }
   if (rd.end_latitude && rd.end_longitude) {
     const ll: [number, number] = [Number(rd.end_latitude) - 0.004, Number(rd.end_longitude) + 0.004]
-    L.circleMarker(ll, { radius: 6, fillColor: '#ef4444', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
+    L.circleMarker(ll, { radius: 6, fillColor: '#dc2626', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
       .bindPopup('Fin')
     bounds.push(ll)
   }
@@ -590,37 +591,37 @@ onBeforeUnmount(() => {
 <template>
   <div class="space-y-6">
     <!-- Back button -->
-    <button class="flex items-center gap-2 text-sm text-[#94a3b8] transition-colors hover:text-[#dae2fd]" @click="router.push('/runs')">
+    <button class="flex items-center gap-2 text-sm text-muted transition-colors hover:text-content" @click="router.push('/runs')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       Volver a despachos
     </button>
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center py-20">
-      <div class="h-8 w-8 animate-spin rounded-full border-2 border-[#69dca4] border-t-transparent" />
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
     </div>
 
     <!-- Error -->
     <div v-else-if="error" class="admin-card p-6 text-center">
-      <p class="text-[#DC2626]">{{ error }}</p>
+      <p class="text-danger">{{ error }}</p>
     </div>
 
     <!-- Content -->
     <template v-else-if="runData">
       <!-- Header -->
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div class="flex items-center gap-3">
-          <span class="inline-block h-5 w-5 rounded-full shrink-0" :style="{ backgroundColor: runData.route_color || '#22c55e' }" />
-          <div>
-            <h1 class="text-xl font-bold text-[#dae2fd]">{{ runData.route_name }}</h1>
-            <p class="mt-0.5 text-sm text-[#64748b]">
-              Despacho del {{ formatDate(runData.run_date) }}
-              <span v-if="runData.carried_over" class="text-[#f97316]">· ↻ {{ runData.carried_over }} arrastrados</span>
-            </p>
-          </div>
-          <span :class="['admin-badge', statusBadge(runData.status_name)]">{{ statusLabel(runData.status_name) }}</span>
-        </div>
-        <div class="flex flex-wrap gap-2">
+      <PageHeader :title="runData.route_name">
+        <template #title>
+          <span class="flex items-center gap-3">
+            <span class="inline-block h-5 w-5 rounded-full shrink-0" :style="{ backgroundColor: runData.route_color || '#16a34a' }" />
+            {{ runData.route_name }}
+            <span :class="['admin-badge', statusBadge(runData.status_name)]">{{ statusLabel(runData.status_name) }}</span>
+          </span>
+        </template>
+        <template #subtitle>
+          Despacho del {{ formatDate(runData.run_date) }}
+          <span v-if="runData.carried_over" class="text-accent">· ↻ {{ runData.carried_over }} arrastrados</span>
+        </template>
+        <template #actions>
           <button
             v-for="t in allowedTransitions"
             :key="t"
@@ -631,60 +632,60 @@ onBeforeUnmount(() => {
           >
             {{ statusLoading ? '...' : `→ ${t}` }}
           </button>
-        </div>
-      </div>
+        </template>
+      </PageHeader>
 
       <!-- Info cards -->
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div class="admin-card p-3">
           <div class="flex items-center justify-between gap-1">
-            <p class="text-xs text-[#64748b]">Conductor</p>
+            <p class="text-xs text-subtle">Conductor</p>
             <button class="admin-btn admin-btn-ghost admin-btn-sm" title="Asignar conductor y vehículo" @click="openAssignDriverModal">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
           </div>
-          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ runData.driver_name || 'Sin asignar' }}</p>
+          <p class="mt-1 text-sm font-medium text-content">{{ runData.driver_name || 'Sin asignar' }}</p>
         </div>
         <div class="admin-card p-3">
-          <p class="text-xs text-[#64748b]">Vehículo</p>
-          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ runData.vehicle_plate || 'Sin asignar' }}</p>
+          <p class="text-xs text-subtle">Vehículo</p>
+          <p class="mt-1 text-sm font-medium text-content">{{ runData.vehicle_plate || 'Sin asignar' }}</p>
         </div>
         <div class="admin-card p-3">
-          <p class="text-xs text-[#64748b]">Horario</p>
-          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ formatSchedule() }}</p>
+          <p class="text-xs text-subtle">Horario</p>
+          <p class="mt-1 text-sm font-medium text-content">{{ formatSchedule() }}</p>
         </div>
         <div class="admin-card p-3">
-          <p class="text-xs text-[#64748b]">Paradas</p>
-          <p class="mt-1 text-sm font-medium text-[#dae2fd]">{{ runData.stop_count ?? 0 }} ({{ runData.pending_stops ?? 0 }} pendientes)</p>
+          <p class="text-xs text-subtle">Paradas</p>
+          <p class="mt-1 text-sm font-medium text-content">{{ runData.stop_count ?? 0 }} ({{ runData.pending_stops ?? 0 }} pendientes)</p>
         </div>
       </div>
 
       <!-- Map -->
       <div>
-        <div class="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[#94a3b8]">
-          <span class="inline-flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#22c55e" /> Trayectoria</span>
-          <span class="inline-flex items-center gap-1.5"><span class="h-0 w-5 border-t-2 border-dashed" style="border-color:#00A8FF" /> Ruta óptima OSRM</span>
-          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#22c55e;opacity:.25" /> Zonas</span>
-          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#eab308" /> Pendiente</span>
-          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#22c55e" /> Visitada</span>
-          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#64748b" /> Omitida/Fallada</span>
-          <span class="inline-flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#f97316" /> Trayectoria vehículo</span>
-          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#ef4444" /> Conductor / Fin</span>
+        <div class="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted">
+          <span class="inline-flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#16a34a" /> Trayectoria</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-0 w-5 border-t-2 border-dashed" style="border-color:#1ea7dc" /> Ruta óptima OSRM</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#16a34a;opacity:.25" /> Zonas</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#d97706" /> Pendiente</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#16a34a" /> Visitada</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#94a3b8" /> Omitida/Fallada</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#eb5a28" /> Trayectoria vehículo</span>
+          <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#dc2626" /> Conductor / Fin</span>
           <span
             v-if="offRoute"
-            class="inline-flex items-center gap-1.5 rounded-full border border-[#DC2626] bg-[#DC2626]/15 px-2 py-0.5 font-semibold text-[#f87171]"
+            class="inline-flex items-center gap-1.5 rounded-full border border-danger bg-danger/15 px-2 py-0.5 font-semibold text-danger"
           >
             <span class="relative flex h-2 w-2">
-              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#DC2626] opacity-75" />
-              <span class="relative inline-flex h-2 w-2 rounded-full bg-[#DC2626]" />
+              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger opacity-75" />
+              <span class="relative inline-flex h-2 w-2 rounded-full bg-danger" />
             </span>
             FUERA DE RUTA
           </span>
         </div>
-        <div ref="mapContainer" class="relative h-[400px] w-full rounded-xl border border-[#1e293b] overflow-hidden">
+        <div ref="mapContainer" class="relative h-[400px] w-full rounded-xl border border-line overflow-hidden">
           <button
             v-if="canRecenter"
-            class="absolute right-3 top-3 z-[1010] rounded-lg bg-[#0b1326]/90 px-3 py-1.5 text-xs font-medium text-[#dae2fd] shadow-md transition-colors hover:bg-[#1e293b]"
+            class="absolute right-3 top-3 z-[1010] rounded-lg bg-surface/90 px-3 py-1.5 text-xs font-medium text-content shadow-md transition-colors hover:bg-surface-raised"
             @click.stop="recenterMap"
           >
             Re-centrar ruta
@@ -710,15 +711,15 @@ onBeforeUnmount(() => {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
           Hoja de picking
         </button>
-        <p v-if="!canOptimize" class="basis-full text-xs text-[#64748b]">
+        <p v-if="!canOptimize" class="basis-full text-xs text-subtle">
           {{ stops.length > 0 ? 'Se necesitan al menos 2 paradas pendientes con coordenadas para optimizar.' : 'Sin paradas pendientes para optimizar.' }}
         </p>
       </div>
 
       <!-- Stops table -->
       <div class="admin-card">
-        <div class="flex items-center justify-between border-b border-[#1e293b] px-5 py-3">
-          <h3 class="text-sm font-semibold text-[#dae2fd]">Paradas ({{ stops.length }})</h3>
+        <div class="flex items-center justify-between border-b border-line px-5 py-3">
+          <h3 class="text-sm font-semibold text-content">Paradas ({{ stops.length }})</h3>
         </div>
 
         <div v-if="stops.length === 0" class="admin-empty-state py-8">
@@ -729,7 +730,7 @@ onBeforeUnmount(() => {
         <div v-else class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="border-b border-[#1e293b] text-left text-[#64748b]">
+              <tr class="border-b border-line text-left text-subtle">
                 <th class="px-5 py-3 font-medium">#</th>
                 <th class="px-5 py-3 font-medium">Cliente</th>
                 <th class="px-5 py-3 font-medium">Dirección</th>
@@ -741,32 +742,32 @@ onBeforeUnmount(() => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="s in stops" :key="s.id" class="border-b border-[#1e293b] transition-colors hover:bg-white/[0.02]">
-                <td class="px-5 py-3 text-[#94a3b8]">
+              <tr v-for="s in stops" :key="s.id" class="border-b border-line transition-colors hover:bg-surface-raised">
+                <td class="px-5 py-3 text-muted">
                   {{ s.stop_order }}
-                  <span v-if="s.carried_over" class="ml-1 rounded-full bg-[#f97316]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#f97316]" title="Arrastrado del despacho anterior">↻</span>
+                  <span v-if="s.carried_over" class="ml-1 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent" title="Arrastrado del despacho anterior">↻</span>
                 </td>
-                <td class="px-5 py-3 font-medium text-[#dae2fd]">{{ s.client_name || '—' }}</td>
-                <td class="px-5 py-3 text-[#94a3b8] max-w-[200px] truncate" :title="s.address || ''">{{ s.address || '—' }}</td>
-                <td class="px-5 py-3 text-[#94a3b8]">{{ s.tracking_number || '—' }}</td>
+                <td class="px-5 py-3 font-medium text-content">{{ s.client_name || '—' }}</td>
+                <td class="px-5 py-3 text-muted max-w-[200px] truncate" :title="s.address || ''">{{ s.address || '—' }}</td>
+                <td class="px-5 py-3 text-muted">{{ s.tracking_number || '—' }}</td>
                 <td class="px-5 py-3">
-                  <span v-if="s.storage_location_code" class="inline-flex items-center gap-1.5 font-mono text-xs text-[#94a3b8]">
-                    <span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: s.storage_category_color || '#3b82f6' }" />
+                  <span v-if="s.storage_location_code" class="inline-flex items-center gap-1.5 font-mono text-xs text-muted">
+                    <span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: s.storage_category_color || '#0284c7' }" />
                     {{ s.storage_location_code }}
                   </span>
-                  <span v-else class="text-xs text-[#64748b]">—</span>
+                  <span v-else class="text-xs text-subtle">—</span>
                 </td>
                 <td class="px-5 py-3">
                   <span :class="['admin-badge', stopStatusBadge(s.status_name)]">{{ statusLabel(s.status_name) }}</span>
                 </td>
-                <td class="px-5 py-3 text-xs text-[#94a3b8] max-w-[220px] truncate" :title="s.notes || ''">{{ s.notes || '—' }}</td>
+                <td class="px-5 py-3 text-xs text-muted max-w-[220px] truncate" :title="s.notes || ''">{{ s.notes || '—' }}</td>
                 <td class="px-5 py-3">
                   <div v-if="s.status_name === 'pending'" class="flex gap-1">
-                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#22c55e]" :disabled="!isRunActive" :title="isRunActive ? 'Entregar' : 'El despacho debe estar activo'" @click="markDelivered(s.id)">✔</button>
-                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#94a3b8]" :disabled="!isRunActive" :title="isRunActive ? 'Saltar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'skipped')">→</button>
-                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" :disabled="!isRunActive" :title="isRunActive ? 'Fallar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'failed')">✕</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-success" :disabled="!isRunActive" :title="isRunActive ? 'Entregar' : 'El despacho debe estar activo'" @click="markDelivered(s.id)">✔</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-muted" :disabled="!isRunActive" :title="isRunActive ? 'Saltar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'skipped')">→</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" :disabled="!isRunActive" :title="isRunActive ? 'Fallar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'failed')">✕</button>
                   </div>
-                  <span v-else class="text-xs text-[#64748b]">—</span>
+                  <span v-else class="text-xs text-subtle">—</span>
                 </td>
               </tr>
             </tbody>
@@ -778,7 +779,7 @@ onBeforeUnmount(() => {
     <!-- Assign packages modal -->
     <AppModal :visible="showAssignModal" title="Asignar paquetes al despacho" size="lg" @close="showAssignModal = false">
       <div v-if="loadingPackages" class="flex items-center justify-center py-10">
-        <div class="h-6 w-6 animate-spin rounded-full border-2 border-[#69dca4] border-t-transparent" />
+        <div class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
       <template v-else-if="candidatePackages.length === 0">
         <div class="admin-empty-state py-8">
@@ -793,25 +794,25 @@ onBeforeUnmount(() => {
           :class="[
             'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
             selectedPackageIds.includes(pkg.id)
-              ? 'border-[#69dca4] bg-[#69dca4]/10'
-              : 'border-[#1e293b] hover:border-[#334155]'
+              ? 'border-primary bg-primary/10'
+              : 'border-line hover:border-line-strong'
           ]"
           @click="togglePackage(pkg.id)"
         >
           <div :class="['flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] font-bold',
-            selectedPackageIds.includes(pkg.id) ? 'border-[#69dca4] bg-[#69dca4] text-[#0b1326]' : 'border-[#334155] text-[#64748b]']">
+            selectedPackageIds.includes(pkg.id) ? 'border-primary bg-primary text-surface' : 'border-line-strong text-subtle']">
             {{ selectedPackageIds.includes(pkg.id) ? '✓' : '' }}
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-medium text-[#dae2fd] truncate">{{ pkg.tracking_number }}</p>
-            <p class="text-xs text-[#94a3b8] truncate">{{ pkg.recipient_name }} — {{ pkg.recipient_address }}</p>
+            <p class="text-sm font-medium text-content truncate">{{ pkg.tracking_number }}</p>
+            <p class="text-xs text-muted truncate">{{ pkg.recipient_name }} — {{ pkg.recipient_address }}</p>
           </div>
-          <span class="shrink-0 text-xs text-[#64748b]">{{ pkg.zone_name }}</span>
+          <span class="shrink-0 text-xs text-subtle">{{ pkg.zone_name }}</span>
         </div>
       </div>
       <template #footer>
         <div class="flex justify-between gap-3">
-          <span class="text-sm text-[#64748b]">{{ selectedPackageIds.length }} seleccionados</span>
+          <span class="text-sm text-subtle">{{ selectedPackageIds.length }} seleccionados</span>
           <div class="flex gap-3">
             <button class="admin-btn admin-btn-ghost" @click="showAssignModal = false">Cancelar</button>
             <button class="admin-btn admin-btn-primary" :disabled="selectedPackageIds.length === 0 || saving" @click="generateStops">
@@ -825,12 +826,12 @@ onBeforeUnmount(() => {
     <!-- Stop action modal (skip/fail con observacion) -->
     <AppModal :visible="showStopActionModal" :title="`Marcar parada como '${stopActionStatus}'`" @close="showStopActionModal = false">
       <div class="space-y-4">
-        <div class="rounded-lg border border-[#1e293b] bg-white/[0.02] p-3">
-          <p class="text-sm font-medium text-[#dae2fd]">{{ stopActionTarget?.client_name || 'Cliente' }}</p>
-          <p class="mt-0.5 text-xs text-[#94a3b8]">{{ stopActionTarget?.tracking_number }} · {{ stopActionTarget?.address }}</p>
+        <div class="rounded-lg border border-line bg-surface-raised p-3">
+          <p class="text-sm font-medium text-content">{{ stopActionTarget?.client_name || 'Cliente' }}</p>
+          <p class="mt-0.5 text-xs text-muted">{{ stopActionTarget?.tracking_number }} · {{ stopActionTarget?.address }}</p>
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Observación (se arrastrará al próximo despacho)</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Observación (se arrastrará al próximo despacho)</label>
           <textarea
             v-model="stopActionNotes"
             class="admin-input min-h-[90px]"
@@ -853,21 +854,21 @@ onBeforeUnmount(() => {
     <!-- Asignar conductor y vehiculo (por dia) -->
     <AppModal :visible="showAssignDriverModal" title="Asignar conductor y vehículo" @close="showAssignDriverModal = false">
       <div v-if="loadingAssignOptions" class="flex items-center justify-center py-10">
-        <div class="h-6 w-6 animate-spin rounded-full border-2 border-[#69dca4] border-t-transparent" />
+        <div class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
       <div v-else class="space-y-4">
-        <p class="text-xs text-[#64748b]">
+        <p class="text-xs text-subtle">
           Los valores por defecto de la ruta se copian al crear el despacho; acá podés cambiarlos para este día.
         </p>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Conductor</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Conductor</label>
           <select v-model="assignDriverId" class="admin-input w-full" :disabled="savingAssignment">
             <option :value="null">Sin conductor</option>
             <option v-for="d in driverOptions" :key="d.id" :value="d.id">{{ d.name }}</option>
           </select>
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Vehículo</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Vehículo</label>
           <select v-model="assignVehicleId" class="admin-input w-full" :disabled="savingAssignment">
             <option :value="null">Sin vehículo</option>
             <option v-for="v in vehicleOptions" :key="v.id" :value="v.id">{{ v.plate }}{{ v.brand ? ` · ${v.brand}` : '' }}</option>

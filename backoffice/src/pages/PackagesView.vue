@@ -8,6 +8,7 @@ import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppModal from '../components/ui/AppModal.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const router = useRouter()
 const backofficeUrl = window.location.origin
@@ -99,41 +100,38 @@ onMounted(() => load())
 
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="text-xl font-bold text-[#dae2fd]">Paquetes</h1>
-      <p class="mt-1 text-sm text-[#64748b]">Consulta y gestión de envíos</p>
-    </div>
+    <PageHeader title="Paquetes" subtitle="Consulta y gestión de envíos" />
 
     <!-- Status filter tabs -->
     <div class="flex flex-wrap gap-2">
       <button
         class="admin-btn admin-btn-ghost admin-btn-sm"
-        :class="statusFilter === '' && 'bg-white/[0.08]'"
+        :class="statusFilter === '' && 'bg-primary-soft'"
         @click="filterByStatus('')"
       >Todos</button>
       <button
         class="admin-btn admin-btn-ghost admin-btn-sm"
-        :class="statusFilter === 'pending' && 'bg-white/[0.08]'"
+        :class="statusFilter === 'pending' && 'bg-primary-soft'"
         @click="filterByStatus('pending')"
       >Pendientes</button>
       <button
         class="admin-btn admin-btn-ghost admin-btn-sm"
-        :class="statusFilter === 'received' && 'bg-white/[0.08]'"
+        :class="statusFilter === 'received' && 'bg-primary-soft'"
         @click="filterByStatus('received')"
       >En Miami</button>
       <button
         class="admin-btn admin-btn-ghost admin-btn-sm"
-        :class="statusFilter === 'in_transit' && 'bg-white/[0.08]'"
+        :class="statusFilter === 'in_transit' && 'bg-primary-soft'"
         @click="filterByStatus('in_transit')"
       >En tránsito</button>
       <button
         class="admin-btn admin-btn-ghost admin-btn-sm"
-        :class="statusFilter === 'in_nicaragua' && 'bg-white/[0.08]'"
+        :class="statusFilter === 'in_nicaragua' && 'bg-primary-soft'"
         @click="filterByStatus('in_nicaragua')"
       >En Nicaragua</button>
       <button
         class="admin-btn admin-btn-ghost admin-btn-sm"
-        :class="statusFilter === 'delivered' && 'bg-white/[0.08]'"
+        :class="statusFilter === 'delivered' && 'bg-primary-soft'"
         @click="filterByStatus('delivered')"
       >Entregados</button>
     </div>
@@ -143,17 +141,17 @@ onMounted(() => load())
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading" :is-empty="packages.length === 0" empty-title="Sin paquetes" empty-desc="Creá el primer paquete del sistema.">
           <tr v-for="p in packages" :key="p.id">
-            <td class="font-mono font-medium text-[#dae2fd]">{{ p.tracking_number }}</td>
-            <td class="text-[#94a3b8]">{{ p.recipient_name }}</td>
-            <td class="text-[#94a3b8]">{{ p.recipient_department ?? '—' }}</td>
+            <td class="font-mono font-medium text-content">{{ p.tracking_number }}</td>
+            <td class="text-muted">{{ p.recipient_name }}</td>
+            <td class="text-muted">{{ p.recipient_department ?? '—' }}</td>
             <td>
               <span class="admin-badge" :class="statusColor(p.status_name)">{{ statusLabel(p.status_name) }}</span>
             </td>
-            <td class="text-[#94a3b8] text-xs" :title="'Costo del envío internacional Miami → Nicaragua'">{{ formatCurrency(p.flete_cost) }}</td>
-            <td class="text-[#94a3b8] text-xs" :title="'Costo de entrega a domicilio en Nicaragua (última milla)'">{{ formatCurrency(p.delivery_cost) }}</td>
-            <td class="text-[#94a3b8] font-medium" :title="'Total = flete + delivery. Monto final que paga el cliente'">{{ formatCurrency(p.shipping_cost) }}</td>
-            <td class="text-[#94a3b8]">{{ p.shipping_service_name ?? '—' }}</td>
-            <td class="text-[#94a3b8]">{{ p.delivery_option_name ?? '—' }}</td>
+            <td class="text-muted text-xs" :title="'Costo del envío internacional Miami → Nicaragua'">{{ formatCurrency(p.flete_cost) }}</td>
+            <td class="text-muted text-xs" :title="'Costo de entrega a domicilio en Nicaragua (última milla)'">{{ formatCurrency(p.delivery_cost) }}</td>
+            <td class="text-muted font-medium" :title="'Total = flete + delivery. Monto final que paga el cliente'">{{ formatCurrency(p.shipping_cost) }}</td>
+            <td class="text-muted">{{ p.shipping_service_name ?? '—' }}</td>
+            <td class="text-muted">{{ p.delivery_option_name ?? '—' }}</td>
             <td>
               <button
                 v-if="p.invoice_id"
@@ -164,7 +162,7 @@ onMounted(() => load())
               >
                 {{ p.invoice_status === 'paid' ? 'Pagada' : p.invoice_status === 'cancelled' ? 'Anulada' : 'Por cobrar' }}
               </button>
-              <span v-else class="text-[#64748b] text-xs">Sin factura</span>
+              <span v-else class="text-subtle text-xs">Sin factura</span>
             </td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
@@ -180,7 +178,7 @@ onMounted(() => load())
                   </svg>
                 </button>
                 <button
-                  class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]"
+                  class="admin-btn admin-btn-ghost admin-btn-sm text-danger"
                   @click="openDelete(p)"
                   title="Eliminar"
                   :disabled="!['pending','received','in_nicaragua'].includes(p.status_name ?? '')"
@@ -200,16 +198,16 @@ onMounted(() => load())
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
+            <div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" />
+            <div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" />
           </div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="h-3 w-1/4 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="h-3 w-1/4 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3">
             <div class="flex gap-2">
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
             </div>
           </div>
         </div>
@@ -217,7 +215,7 @@ onMounted(() => load())
       <template v-else-if="packages.length > 0">
         <div v-for="p in packages" :key="p.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <p class="font-mono font-medium text-[#dae2fd] truncate">{{ p.tracking_number }}</p>
+            <p class="font-mono font-medium text-content truncate">{{ p.tracking_number }}</p>
             <div class="flex shrink-0 items-center gap-1.5">
               <span
                 v-if="p.invoice_id"
@@ -228,12 +226,12 @@ onMounted(() => load())
               <span class="admin-badge" :class="statusColor(p.status_name)">{{ statusLabel(p.status_name) }}</span>
             </div>
           </div>
-          <p class="text-sm text-[#94a3b8] truncate">{{ p.recipient_name }}{{ p.recipient_department ? ' · ' + p.recipient_department : '' }}</p>
-          <p class="text-xs text-[#64748b]" title="Flete (envío internacional) + Delivery (última milla)">
+          <p class="text-sm text-muted truncate">{{ p.recipient_name }}{{ p.recipient_department ? ' · ' + p.recipient_department : '' }}</p>
+          <p class="text-xs text-subtle" title="Flete (envío internacional) + Delivery (última milla)">
             Flete: {{ formatCurrency(p.flete_cost) }} | Delivery: {{ formatCurrency(p.delivery_cost) }} | Total: {{ formatCurrency(p.shipping_cost) }}
             · {{ p.shipping_service_name ?? '—' }} · {{ p.delivery_option_name ?? '—' }}
           </p>
-          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+          <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="viewDetail(p)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               Ver
@@ -248,7 +246,7 @@ onMounted(() => load())
               QR
             </button>
             <button
-              class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]"
+              class="admin-btn admin-btn-ghost admin-btn-sm text-danger"
               @click="openDelete(p)"
               :disabled="!['pending','received','in_nicaragua'].includes(p.status_name ?? '')"
             >
@@ -289,11 +287,11 @@ onMounted(() => load())
           alt="QR del paquete"
           width="240"
           height="240"
-          class="rounded-lg border border-[#1e293b]"
+          class="rounded-lg border border-line"
           @error="qrError = true"
         />
-        <p v-if="qrError" class="text-sm text-[#DC2626] mt-4">Error al cargar el código QR</p>
-        <p class="mt-4 text-xs text-[#64748b] text-center break-all">
+        <p v-if="qrError" class="text-sm text-danger mt-4">Error al cargar el código QR</p>
+        <p class="mt-4 text-xs text-subtle text-center break-all">
           {{ backofficeUrl }}/scan?tracking={{ qrPackage?.tracking_number ?? '' }}
         </p>
         <button

@@ -6,6 +6,7 @@ import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const toast = useToast()
 
@@ -119,22 +120,20 @@ onMounted(() => load())
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Permisos</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Permisos del sistema RBAC — generados desde la base de datos</p>
-      </div>
-      <button class="admin-btn admin-btn-primary sm:w-auto w-full" :disabled="syncing" @click="sync">
-        <svg
-          width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-          :class="{ 'animate-spin': syncing }"
-        >
-          <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9" />
-        </svg>
-        {{ syncing ? 'Sincronizando...' : 'Sincronizar permisos' }}
-      </button>
-    </div>
+    <PageHeader title="Permisos" subtitle="Permisos del sistema RBAC — generados desde la base de datos">
+      <template #actions>
+        <button class="admin-btn admin-btn-primary sm:w-auto w-full" :disabled="syncing" @click="sync">
+          <svg
+            width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            :class="{ 'animate-spin': syncing }"
+          >
+            <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9" />
+          </svg>
+          {{ syncing ? 'Sincronizando...' : 'Sincronizar permisos' }}
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Desktop: Table view (lg+) -->
     <div class="hidden lg:block">
@@ -147,9 +146,9 @@ onMounted(() => load())
           empty-desc="Usá el botón sincronizar para generar permisos desde las tablas de la base de datos."
         >
           <template v-for="[module, perms] in grouped" :key="module">
-            <tr class="bg-[#111d2e]/50 cursor-pointer select-none hover:bg-[#1e293b]/50" @click="toggleModule(module)">
+            <tr class="bg-surface/50 cursor-pointer select-none hover:bg-surface-raised/50" @click="toggleModule(module)">
               <td :colspan="4" class="px-4 py-2">
-                <span class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#64748b]">
+                <span class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-subtle">
                   <svg class="h-3 w-3 transition-transform duration-200" :class="{ 'rotate-90': expandedModules.has(module) }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
                   {{ module }}
                 </span>
@@ -162,9 +161,9 @@ onMounted(() => load())
               <td>
                 <span class="admin-badge admin-badge-success">{{ p.action }}</span>
               </td>
-              <td class="text-[#94a3b8]">{{ p.label || '—' }}</td>
+              <td class="text-muted">{{ p.label || '—' }}</td>
               <td class="text-right">
-                <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" title="Eliminar" @click="openDelete(p)">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" title="Eliminar" @click="openDelete(p)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </td>
@@ -180,18 +179,18 @@ onMounted(() => load())
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <div class="h-5 w-20 animate-pulse rounded-full bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
+            <div class="h-5 w-20 animate-pulse rounded-full bg-surface-raised" />
+            <div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" />
           </div>
-          <div class="h-3.5 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
-            <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
+          <div class="h-3.5 w-1/3 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3">
+            <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
           </div>
         </div>
       </template>
       <template v-else-if="permissions.length > 0">
         <div v-for="[module, perms] in grouped" :key="module" class="space-y-2">
-          <button class="flex w-full items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-[#64748b] transition-colors hover:text-[#94a3b8]" @click="toggleModule(module)">
+          <button class="flex w-full items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-subtle transition-colors hover:text-muted" @click="toggleModule(module)">
             <svg class="h-3 w-3 transition-transform duration-200" :class="{ 'rotate-90': expandedModules.has(module) }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
             {{ module }}
           </button>
@@ -201,9 +200,9 @@ onMounted(() => load())
               <span class="admin-badge admin-badge-info shrink-0">{{ p.module }}</span>
               <span class="admin-badge admin-badge-success shrink-0">{{ p.action }}</span>
             </div>
-            <p class="text-sm text-[#94a3b8]">{{ p.label || '—' }}</p>
-            <div class="border-t border-[#1e293b] pt-3">
-              <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(p)">
+            <p class="text-sm text-muted">{{ p.label || '—' }}</p>
+            <div class="border-t border-line pt-3">
+              <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(p)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 Eliminar
               </button>

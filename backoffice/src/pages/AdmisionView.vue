@@ -22,6 +22,7 @@ import AppPhoneInput from '../components/ui/AppPhoneInput.vue'
 import AppDropdown from '../components/ui/AppDropdown.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppModal from '../components/ui/AppModal.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -240,7 +241,7 @@ function setGeoMarker(p: { lat: number; lng: number }) {
   if (geoMarker) geoMarker.remove()
   geoMarker = L.circleMarker([p.lat, p.lng], {
     radius: 9,
-    fillColor: '#00A8FF',
+    fillColor: '#1ea7dc',
     color: '#fff',
     weight: 2,
     fillOpacity: 1,
@@ -685,30 +686,25 @@ onMounted(() => loadReferenceData())
 <template>
   <div class="space-y-6">
     <!-- Page header -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Admisión de Envíos</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Registrá un nuevo paquete en el sistema</p>
-      </div>
-    </div>
+    <PageHeader title="Admisión de Envíos" subtitle="Registrá un nuevo paquete en el sistema" />
 
     <!-- Loading skeleton (B4) -->
     <template v-if="loadingReferences">
       <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
           <div v-for="i in 4" :key="i" class="admin-card p-5 space-y-4">
-            <div class="h-4 w-24 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-10 w-full animate-pulse rounded bg-[#1e293b]" />
+            <div class="h-4 w-24 animate-pulse rounded bg-surface-raised" />
+            <div class="h-10 w-full animate-pulse rounded bg-surface-raised" />
             <div class="grid grid-cols-2 gap-3">
-              <div class="h-10 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-10 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-10 animate-pulse rounded bg-surface-raised" />
+              <div class="h-10 animate-pulse rounded bg-surface-raised" />
             </div>
           </div>
         </div>
         <div class="space-y-4">
           <div class="admin-card p-5 space-y-3">
-            <div class="h-4 w-20 animate-pulse rounded bg-[#1e293b]" />
-            <div v-for="i in 4" :key="i" class="h-4 animate-pulse rounded bg-[#1e293b]" />
+            <div class="h-4 w-20 animate-pulse rounded bg-surface-raised" />
+            <div v-for="i in 4" :key="i" class="h-4 animate-pulse rounded bg-surface-raised" />
           </div>
         </div>
       </div>
@@ -728,7 +724,7 @@ onMounted(() => loadReferenceData())
             <div class="space-y-3">
               <!-- Search existing -->
               <div class="relative" v-if="!showClientCreate">
-                <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Buscar cliente existente</label>
+                <label class="mb-1.5 block text-sm font-medium text-muted">Buscar cliente existente</label>
                 <input
                   v-model="clientSearch"
                   class="admin-input w-full"
@@ -737,36 +733,36 @@ onMounted(() => loadReferenceData())
                 />
                 <div
                   v-if="clientSearch && filteredClients.length > 0 && !selectedClient"
-                  class="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-[#1e293b] bg-[#111d2e] shadow-xl"
+                  class="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-line bg-surface shadow-xl"
                 >
                   <button
                     v-for="c in filteredClients"
                     :key="c.id"
-                    class="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-[#dae2fd] transition-colors hover:bg-white/[0.04]"
+                    class="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-content transition-colors hover:bg-surface-raised"
                     @click="selectClient(c)"
                   >
                     <span>{{ c.name }}</span>
-                    <span class="text-xs text-[#64748b]">{{ c.phone || '—' }}</span>
+                    <span class="text-xs text-subtle">{{ c.phone || '—' }}</span>
                   </button>
                 </div>
               </div>
 
-              <div v-if="selectedClient" class="flex items-center justify-between rounded-lg bg-[#1e293b]/50 px-3 py-2">
+              <div v-if="selectedClient" class="flex items-center justify-between rounded-lg bg-surface-raised/50 px-3 py-2">
                 <div>
-                  <span class="text-sm text-[#dae2fd]">{{ selectedClient.name }}</span>
-                  <span class="ml-2 text-xs text-[#64748b]">{{ selectedClient.phone || '—' }}</span>
+                  <span class="text-sm text-content">{{ selectedClient.name }}</span>
+                  <span class="ml-2 text-xs text-subtle">{{ selectedClient.phone || '—' }}</span>
                 </div>
-                <button class="text-xs text-[#00A8FF] hover:underline" @click="selectClient(null)">Cambiar</button>
+                <button class="text-xs text-secondary hover:underline" @click="selectClient(null)">Cambiar</button>
               </div>
 
-              <div v-if="!showClientCreate && !selectedClient" class="text-sm text-[#64748b] italic">
+              <div v-if="!showClientCreate && !selectedClient" class="text-sm text-subtle italic">
                 Sin cliente — envío ocasional
-                <button class="ml-2 text-[#00A8FF] hover:underline" @click="showClientCreate = true">Crear cliente</button>
+                <button class="ml-2 text-secondary hover:underline" @click="showClientCreate = true">Crear cliente</button>
               </div>
 
               <!-- Quick-create client -->
-              <div v-if="showClientCreate" class="rounded-lg border border-[#1e293b] p-3 space-y-3">
-                <p class="text-sm font-medium text-[#dae2fd]">Nuevo cliente</p>
+              <div v-if="showClientCreate" class="rounded-lg border border-line p-3 space-y-3">
+                <p class="text-sm font-medium text-content">Nuevo cliente</p>
                 <input v-model="newClient.name" class="admin-input w-full" placeholder="Nombre *" />
                 <div class="grid grid-cols-2 gap-3">
                   <input v-model="newClient.email" class="admin-input w-full" placeholder="Email" type="email" />
@@ -778,7 +774,7 @@ onMounted(() => loadReferenceData())
                 </div>
                 <!-- Extra fields toggle -->
                 <button
-                  class="flex items-center gap-1 text-xs text-[#64748b] hover:text-[#94a3b8] transition-colors"
+                  class="flex items-center gap-1 text-xs text-subtle hover:text-muted transition-colors"
                   @click="newClient.showExtra = !newClient.showExtra"
                 >
                   <svg
@@ -813,32 +809,32 @@ onMounted(() => loadReferenceData())
                 type="button"
                 class="flex items-center gap-3 rounded-xl border p-4 text-left transition-colors"
                 :class="form.origin === 'online'
-                  ? 'border-[#00a8ff]/60 bg-[#00a8ff]/10'
-                  : 'border-[#1e293b] bg-transparent hover:border-[#334155]'"
+                  ? 'border-primary/60 bg-primary/10'
+                  : 'border-line bg-transparent hover:border-line-strong'"
                 @click="form.origin = 'online'"
               >
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#00a8ff]/15 text-[#00a8ff]">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
                 </span>
                 <span>
-                  <span class="block text-sm font-semibold text-[#dae2fd]">Compra EEUU</span>
-                  <span class="mt-0.5 block text-xs text-[#64748b]">Recibido en el almacén de Miami, viaja en embarque a Nicaragua</span>
+                  <span class="block text-sm font-semibold text-content">Compra EEUU</span>
+                  <span class="mt-0.5 block text-xs text-subtle">Recibido en el almacén de Miami, viaja en embarque a Nicaragua</span>
                 </span>
               </button>
               <button
                 type="button"
                 class="flex items-center gap-3 rounded-xl border p-4 text-left transition-colors"
                 :class="form.origin === 'local'
-                  ? 'border-[#00a8ff]/60 bg-[#00a8ff]/10'
-                  : 'border-[#1e293b] bg-transparent hover:border-[#334155]'"
+                  ? 'border-primary/60 bg-primary/10'
+                  : 'border-line bg-transparent hover:border-line-strong'"
                 @click="form.origin = 'local'"
               >
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#00a8ff]/15 text-[#00a8ff]">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 019.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10zM2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
                 </span>
                 <span>
-                  <span class="block text-sm font-semibold text-[#dae2fd]">Ingreso local</span>
-                  <span class="mt-0.5 block text-xs text-[#64748b]">Cliente lo entrega en la oficina, listo para distribución</span>
+                  <span class="block text-sm font-semibold text-content">Ingreso local</span>
+                  <span class="mt-0.5 block text-xs text-subtle">Cliente lo entrega en la oficina, listo para distribución</span>
                 </span>
               </button>
             </div>
@@ -878,7 +874,7 @@ onMounted(() => loadReferenceData())
             </p>
             <div class="space-y-3">
               <!-- El destinatario es el mismo cliente? Solo aplica si hay cliente -->
-              <div v-if="canReuseClient" class="rounded-lg border border-[#1e293b] bg-[#1e293b]/40 p-3">
+              <div v-if="canReuseClient" class="rounded-lg border border-line bg-surface-raised/40 p-3">
                 <div class="flex items-start gap-3">
                   <AppSwitch
                     :model-value="form.use_client_data"
@@ -887,21 +883,21 @@ onMounted(() => loadReferenceData())
                     @update:model-value="onToggleUseClientData"
                   />
                   <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium text-[#dae2fd]">El destinatario es la misma persona</p>
-                    <p v-if="form.use_client_data" class="mt-0.5 truncate text-xs text-[#69dca4]">
+                    <p class="text-sm font-medium text-content">El destinatario es la misma persona</p>
+                    <p v-if="form.use_client_data" class="mt-0.5 truncate text-xs text-primary">
                       Se usará: {{ form.sender_name || '—' }}<span v-if="form.sender_phone"> · {{ form.sender_phone }}</span>
                     </p>
-                    <p v-else class="mt-0.5 text-xs text-[#64748b]">
+                    <p v-else class="mt-0.5 text-xs text-subtle">
                       Nombre y teléfono precargados del cliente. Edítalos si el paquete va a otra persona.
                     </p>
                   </div>
                 </div>
                 <!-- Sin teléfono no se puede admitir: el campo está oculto, así que
                      el aviso tiene que vivir aquí o el operador no ve qué falta. -->
-                <p v-if="form.use_client_data && !form.sender_phone" class="mt-2 text-xs text-[#fbbf24]">
+                <p v-if="form.use_client_data && !form.sender_phone" class="mt-2 text-xs text-warning">
                   El cliente no tiene teléfono. Agregalo arriba en Remitente, o desactivá el switch para escribirlo acá.
                 </p>
-                <p v-if="form.use_client_data" class="mt-2 text-xs text-[#64748b]">
+                <p v-if="form.use_client_data" class="mt-2 text-xs text-subtle">
                   La dirección de entrega se escribe igual: es en Nicaragua, no la de Amazon en Miami.
                 </p>
               </div>
@@ -942,20 +938,20 @@ onMounted(() => loadReferenceData())
               <div class="flex items-center justify-between gap-3">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1.5 text-sm text-[#00A8FF] hover:underline transition-colors"
+                  class="inline-flex items-center gap-1.5 text-sm text-secondary hover:underline transition-colors"
                   :disabled="creating"
                   @click="openGeoModal"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   {{ hasGeoPoint ? 'Cambiar ubicación en mapa' : 'Ubicar en mapa' }}
                 </button>
-                <span v-if="hasGeoPoint" class="text-xs text-[#64748b]">
+                <span v-if="hasGeoPoint" class="text-xs text-subtle">
                   {{ Number(form.latitude).toFixed(4) }}, {{ Number(form.longitude).toFixed(4) }}
                 </span>
               </div>
               <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div class="max-w-sm" style="overflow: visible">
-                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Departamento</label>
+                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Departamento</label>
                   <AppDropdown
                     :model-value="form.recipient_department"
                     @update:model-value="(v: string | number | null) => form.recipient_department = String(v ?? '')"
@@ -965,7 +961,7 @@ onMounted(() => loadReferenceData())
                   />
                 </div>
                 <div class="max-w-sm" style="overflow: visible">
-                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Ciudad</label>
+                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Ciudad</label>
                   <AppDropdown
                     :model-value="form.recipient_city"
                     @update:model-value="(v: string | number | null) => form.recipient_city = String(v ?? '')"
@@ -998,7 +994,7 @@ onMounted(() => loadReferenceData())
                 :rows="2"
               />
               <div>
-                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Regla de precio</label>
+                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Regla de precio</label>
                 <AppDropdown
                   :model-value="form.pricing_rule_id"
                   @update:model-value="(v: string | number | null) => form.pricing_rule_id = v as number | null"
@@ -1007,7 +1003,7 @@ onMounted(() => loadReferenceData())
                 />
               </div>
               <div v-if="form.delivery_option === 'door'" class="max-w-md" style="overflow: visible">
-                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Zona de entrega</label>
+                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Zona de entrega</label>
                 <AppDropdown
                   :model-value="form.zone_id"
                   @update:model-value="(v: string | number | null) => form.zone_id = v as number | null"
@@ -1083,7 +1079,7 @@ onMounted(() => loadReferenceData())
               Almacenaje
             </p>
             <div>
-              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Clasificación <span class="text-[#DC2626]">*</span></label>
+              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Clasificación <span class="text-danger">*</span></label>
               <AppDropdown
                 :model-value="form.storage_category_id"
                 @update:model-value="(v: string | number | null) => form.storage_category_id = v as number | null"
@@ -1093,7 +1089,7 @@ onMounted(() => loadReferenceData())
               />
             </div>
             <div>
-              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">
+              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">
                 Ubicación · {{ form.origin === 'local' ? 'Bodega Nicaragua' : 'Bodega Miami' }}
               </label>
               <AppDropdown
@@ -1103,7 +1099,7 @@ onMounted(() => loadReferenceData())
                 :placeholder="storageLoading ? 'Buscando ubicación...' : 'Sin ubicación'"
                 :disabled="creating || storageLoading || storageLocations.length === 0"
               />
-              <p class="mt-1 text-xs text-[#64748b]">Se sugiere automáticamente según la clasificación; podés cambiarla.</p>
+              <p class="mt-1 text-xs text-subtle">Se sugiere automáticamente según la clasificación; podés cambiarla.</p>
             </div>
           </div>
 
@@ -1113,14 +1109,14 @@ onMounted(() => loadReferenceData())
               <p class="admin-form-section mb-3">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 Servicio de envío</p>
-              <div v-if="currentShippingService" class="rounded-lg border border-[#1e293b] bg-[#1e293b]/30 px-4 py-3">
-                <p class="text-sm font-medium text-[#69dca4]">
+              <div v-if="currentShippingService" class="rounded-lg border border-line bg-surface-raised/30 px-4 py-3">
+                <p class="text-sm font-medium text-primary">
                   {{ currentShippingService.description || currentShippingService.name }}
                 </p>
-                <p class="text-xs text-[#64748b] mt-0.5">Definido por la regla de precio seleccionada</p>
+                <p class="text-xs text-subtle mt-0.5">Definido por la regla de precio seleccionada</p>
               </div>
-              <div v-else class="rounded-lg border border-[#1e293b] bg-[#1e293b]/20 px-4 py-3">
-                <p class="text-sm text-[#64748b]">Seleccioná una regla de precio para definir el servicio</p>
+              <div v-else class="rounded-lg border border-line bg-surface-raised/20 px-4 py-3">
+                <p class="text-sm text-subtle">Seleccioná una regla de precio para definir el servicio</p>
               </div>
             </div>
             <div>
@@ -1134,16 +1130,16 @@ onMounted(() => loadReferenceData())
                   :class="[
                     'rounded-lg border px-4 py-2 text-sm font-medium transition-all',
                     form.delivery_option === dopt.name
-                      ? 'border-[#00A8FF] bg-[#00A8FF]/10 text-[#00A8FF]'
-                      : 'border-[#1e293b] text-[#94a3b8] hover:border-[#404944] hover:text-[#dae2fd]'
+                      ? 'border-secondary bg-secondary/10 text-secondary'
+                      : 'border-line text-muted hover:border-line-strong hover:text-content'
                   ]"
                   @click="form.delivery_option = dopt.name; form.delivery_option_id = dopt.id"
                 >
                   {{ dopt.description || dopt.name }}
                 </button>
               </div>
-              <div v-else class="rounded-lg border border-[#1e293b] bg-[#1e293b]/20 px-4 py-3">
-                <p class="text-sm text-[#64748b]">Seleccioná una regla de precio para ver opciones de entrega</p>
+              <div v-else class="rounded-lg border border-line bg-surface-raised/20 px-4 py-3">
+                <p class="text-sm text-subtle">Seleccioná una regla de precio para ver opciones de entrega</p>
               </div>
             </div>
           </div>
@@ -1176,41 +1172,41 @@ onMounted(() => loadReferenceData())
             Cotización</p>
 
           <div v-if="pricingLoading" class="space-y-3">
-            <div v-for="i in 4" :key="i" class="h-4 animate-pulse rounded bg-[#1e293b]" />
+            <div v-for="i in 4" :key="i" class="h-4 animate-pulse rounded bg-surface-raised" />
           </div>
 
           <div v-else-if="pricingResult" class="space-y-3">
             <div class="flex items-center justify-between text-sm">
-              <span class="text-[#94a3b8]">Peso físico</span>
-              <span class="text-[#dae2fd] font-medium">{{ form.weight ? form.weight.toFixed(2) : '0' }} lb</span>
+              <span class="text-muted">Peso físico</span>
+              <span class="text-content font-medium">{{ form.weight ? form.weight.toFixed(2) : '0' }} lb</span>
             </div>
             <div class="flex items-center justify-between text-sm">
-              <span class="text-[#94a3b8]">Peso volumétrico</span>
-              <span class="text-[#dae2fd] font-medium">{{ pricingResult.volumetric_weight.toFixed(2) }} lb</span>
+              <span class="text-muted">Peso volumétrico</span>
+              <span class="text-content font-medium">{{ pricingResult.volumetric_weight.toFixed(2) }} lb</span>
             </div>
             <div class="flex items-center justify-between text-sm">
-              <span class="text-[#94a3b8]">Peso cobrable</span>
-              <span class="text-[#dae2fd] font-medium">{{ pricingResult.chargeable_weight.toFixed(2) }} lb</span>
+              <span class="text-muted">Peso cobrable</span>
+              <span class="text-content font-medium">{{ pricingResult.chargeable_weight.toFixed(2) }} lb</span>
             </div>
-            <div class="border-t border-[#1e293b] pt-2">
+            <div class="border-t border-line pt-2">
               <div class="flex items-center justify-between text-sm">
-                <span class="text-[#94a3b8]">Flete</span>
-                <span class="text-[#dae2fd] font-medium">{{ formatCurrency(pricingResult.flete_cost) }}</span>
+                <span class="text-muted">Flete</span>
+                <span class="text-content font-medium">{{ formatCurrency(pricingResult.flete_cost) }}</span>
               </div>
               <div class="flex items-center justify-between text-sm">
-                <span class="text-[#94a3b8]">Delivery</span>
-                <span class="text-[#dae2fd] font-medium">{{ formatCurrency(pricingResult.delivery_cost) }}</span>
+                <span class="text-muted">Delivery</span>
+                <span class="text-content font-medium">{{ formatCurrency(pricingResult.delivery_cost) }}</span>
               </div>
             </div>
-            <div class="border-t border-[#1e293b] pt-2">
+            <div class="border-t border-line pt-2">
               <div class="flex items-center justify-between">
-                <span class="text-sm font-semibold text-[#dae2fd]">Total</span>
-                <span class="text-lg font-bold text-[#69dca4]">{{ formatCurrency(pricingResult.total_amount) }}</span>
+                <span class="text-sm font-semibold text-content">Total</span>
+                <span class="text-lg font-bold text-primary">{{ formatCurrency(pricingResult.total_amount) }}</span>
               </div>
             </div>
-            <div v-if="selectedPricingRule" class="rounded-lg bg-[#1a2744]/50 p-3 space-y-1">
-              <p class="text-xs font-medium text-[#69dca4]">{{ selectedPricingRule.name }}</p>
-              <p class="text-[11px] text-[#64748b]">
+            <div v-if="selectedPricingRule" class="rounded-lg bg-line/50 p-3 space-y-1">
+              <p class="text-xs font-medium text-primary">{{ selectedPricingRule.name }}</p>
+              <p class="text-[11px] text-subtle">
                 {{ selectedPricingRule.type_name === 'weight' && selectedPricingRule.price_per_kg ? `$${selectedPricingRule.price_per_kg.toFixed(2)}/lb` : '' }}
                 {{ selectedPricingRule.type_name === 'percentage value' ? `$${selectedPricingRule.base_price.toFixed(2)} base + ${selectedPricingRule.percentage_of_value}% del valor` : '' }}
                 {{ selectedPricingRule.type_name === 'volume' && selectedPricingRule.price_per_volume ? `$${selectedPricingRule.price_per_volume.toFixed(2)}/vol` : '' }}
@@ -1220,18 +1216,18 @@ onMounted(() => loadReferenceData())
           </div>
 
           <div v-else class="py-6 text-center">
-            <svg class="mx-auto mb-2 h-8 w-8 text-[#475569]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <svg class="mx-auto mb-2 h-8 w-8 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p class="text-sm text-[#64748b]">Seleccioná un tipo de entrega, peso y regla de precio para cotizar</p>
+            <p class="text-sm text-subtle">Seleccioná un tipo de entrega, peso y regla de precio para cotizar</p>
           </div>
         </div>
 
         <!-- Reference info -->
-        <div class="admin-card p-4 text-xs text-[#64748b] space-y-1">
-          <p><span class="font-medium text-[#94a3b8]">Servicio + Entrega:</span> {{ deliveryTypeLabel }}</p>
+        <div class="admin-card p-4 text-xs text-subtle space-y-1">
+          <p><span class="font-medium text-muted">Servicio + Entrega:</span> {{ deliveryTypeLabel }}</p>
           <p v-if="form.zone_id">
-            <span class="font-medium text-[#94a3b8]">Zona:</span>
+            <span class="font-medium text-muted">Zona:</span>
             {{ zones.find((z) => z.id === form.zone_id)?.name || '—' }}
           </p>
         </div>
@@ -1241,26 +1237,26 @@ onMounted(() => loadReferenceData())
     <!-- Success state -->
     <template v-else>
       <div class="admin-card p-6 sm:p-8 text-center max-w-lg mx-auto">
-        <div class="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#69dca4]/15">
-          <svg class="h-7 w-7 text-[#69dca4]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/15">
+          <svg class="h-7 w-7 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
 
-        <h2 class="text-xl font-bold text-[#dae2fd]">Paquete registrado</h2>
-        <p class="mt-1 text-sm text-[#64748b]">Tracking number asignado</p>
+        <h2 class="text-xl font-bold text-content">Paquete registrado</h2>
+        <p class="mt-1 text-sm text-subtle">Tracking number asignado</p>
 
-        <p class="mt-4 text-3xl font-bold tracking-wider text-[#69dca4] font-mono">{{ createdPackage.tracking_number }}</p>
+        <p class="mt-4 text-3xl font-bold tracking-wider text-primary font-mono">{{ createdPackage.tracking_number }}</p>
 
-        <div v-if="createdInvoice" class="mt-5 rounded-xl border border-[#1e293b] bg-[#0f172a] px-4 py-3">
+        <div v-if="createdInvoice" class="mt-5 rounded-xl border border-line bg-surface-sunken px-4 py-3">
           <div class="flex items-center justify-between gap-3">
             <div class="text-left">
-              <p class="text-xs text-[#64748b]">Factura generada</p>
-              <p class="font-mono text-sm font-medium text-[#dae2fd]">{{ createdInvoice.invoice_number }}</p>
+              <p class="text-xs text-subtle">Factura generada</p>
+              <p class="font-mono text-sm font-medium text-content">{{ createdInvoice.invoice_number }}</p>
             </div>
             <div class="text-right">
-              <p class="text-xs text-[#64748b]">Total</p>
-              <p class="text-sm font-semibold text-[#f59e0b]">${{ Number(createdInvoice.total_amount).toFixed(2) }}</p>
+              <p class="text-xs text-subtle">Total</p>
+              <p class="text-sm font-semibold text-warning">${{ Number(createdInvoice.total_amount).toFixed(2) }}</p>
             </div>
           </div>
           <button
@@ -1272,7 +1268,7 @@ onMounted(() => loadReferenceData())
         </div>
 
         <div v-if="qrDataUrl" class="mt-6 flex justify-center">
-          <img :src="qrDataUrl" alt="QR" class="rounded-lg border border-[#1e293b]" width="240" height="240" />
+          <img :src="qrDataUrl" alt="QR" class="rounded-lg border border-line" width="240" height="240" />
         </div>
 
         <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
@@ -1302,30 +1298,30 @@ onMounted(() => loadReferenceData())
           </button>
         </form>
 
-        <div v-if="geoError" class="rounded-lg border border-[#7f1d1d] bg-[#7f1d1d]/20 px-3 py-2 text-sm text-[#fca5a5]">
+        <div v-if="geoError" class="rounded-lg border border-danger bg-danger/20 px-3 py-2 text-sm text-danger">
           {{ geoError }}
         </div>
 
-        <div v-if="geoResults.length > 0" class="max-h-40 overflow-y-auto rounded-lg border border-[#1e293b] divide-y divide-[#1e293b]">
+        <div v-if="geoResults.length > 0" class="max-h-40 overflow-y-auto rounded-lg border border-line divide-y divide-line">
           <button
             v-for="(r, idx) in geoResults"
             :key="idx"
             type="button"
-            class="flex w-full items-start gap-2 px-3 py-2 text-left text-sm text-[#dae2fd] transition-colors hover:bg-white/[0.04]"
+            class="flex w-full items-start gap-2 px-3 py-2 text-left text-sm text-content transition-colors hover:bg-surface-raised"
             @click="pickGeoResult(r)"
           >
-            <svg class="mt-0.5 h-4 w-4 shrink-0 text-[#00A8FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
             <span>{{ r.display_name }}</span>
           </button>
         </div>
 
-        <div ref="geoMapContainer" class="h-72 w-full rounded-lg border border-[#1e293b] z-0" />
+        <div ref="geoMapContainer" class="h-72 w-full rounded-lg border border-line z-0" />
 
-        <p class="text-xs text-[#64748b]">Hacé clic en el mapa para ajustar el punto exacto.</p>
+        <p class="text-xs text-subtle">Hacé clic en el mapa para ajustar el punto exacto.</p>
       </div>
       <template #footer>
         <div class="flex items-center justify-between gap-3">
-          <span v-if="geoPoint" class="text-xs text-[#94a3b8] font-mono">
+          <span v-if="geoPoint" class="text-xs text-muted font-mono">
             {{ geoPoint.lat.toFixed(6) }}, {{ geoPoint.lng.toFixed(6) }}
           </span>
           <span v-else />

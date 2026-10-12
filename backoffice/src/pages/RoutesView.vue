@@ -14,6 +14,7 @@ import AppFormField from '../components/ui/AppFormField.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import RouteTrajectoryEditor from '../components/ui/RouteTrajectoryEditor.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -67,7 +68,7 @@ const {
   dataKey: 'routes',
   entityName: 'Ruta',
   getDefaultForm: () => ({
-    name: '', description: '', color: '#22c55e', zone_ids: [], trajectory: [],
+    name: '', description: '', color: '#16a34a', zone_ids: [], trajectory: [],
     default_driver_id: null, default_vehicle_id: null,
   }),
   populateForm: (r) => ({
@@ -199,33 +200,31 @@ onMounted(() => load())
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Rutas maestras</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Rutas geográficas fijas y sus despachos diarios</p>
-      </div>
-      <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Crear ruta
-      </button>
-    </div>
+    <PageHeader title="Rutas maestras" subtitle="Rutas geográficas fijas y sus despachos diarios">
+      <template #actions>
+        <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Crear ruta
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Desktop: Table view (lg+) -->
     <div class="hidden lg:block">
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading" :is-empty="routes.length === 0" empty-title="Sin rutas" empty-desc="Creá la primera ruta maestra.">
           <tr v-for="r in routes" :key="r.id">
-            <td class="font-medium text-[#dae2fd]">
+            <td class="font-medium text-content">
               <div class="flex items-center gap-2">
-                <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: r.color || '#22c55e' }" />
+                <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: r.color || '#16a34a' }" />
                 {{ r.name }}
               </div>
             </td>
-            <td class="text-[#94a3b8]">{{ r.zone_count ?? 0 }}</td>
-            <td class="text-[#94a3b8]">{{ r.runs_count ?? 0 }}</td>
+            <td class="text-muted">{{ r.zone_count ?? 0 }}</td>
+            <td class="text-muted">{{ r.runs_count ?? 0 }}</td>
             <td>
               <span v-if="r.open_run_status" :class="['admin-badge', statusBadge(r.open_run_status)]">{{ r.open_run_status }}</span>
-              <span v-else class="text-[#64748b]">Sin despacho</span>
+              <span v-else class="text-subtle">Sin despacho</span>
             </td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
@@ -236,7 +235,7 @@ onMounted(() => load())
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(r)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(r)" title="Eliminar">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(r)" title="Eliminar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -252,15 +251,15 @@ onMounted(() => load())
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
+            <div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" />
+            <div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" />
           </div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="h-3 w-1/4 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="h-3 w-1/4 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3">
             <div class="flex gap-2">
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
             </div>
           </div>
         </div>
@@ -270,19 +269,19 @@ onMounted(() => load())
         <div v-for="r in routes" :key="r.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
-              <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: r.color || '#22c55e' }" />
-              <p class="font-medium text-[#dae2fd] truncate">{{ r.name }}</p>
+              <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: r.color || '#16a34a' }" />
+              <p class="font-medium text-content truncate">{{ r.name }}</p>
             </div>
             <span v-if="r.open_run_status" :class="['admin-badge shrink-0', statusBadge(r.open_run_status)]">{{ r.open_run_status }}</span>
           </div>
-          <p class="text-sm text-[#94a3b8]">{{ r.zone_count ?? 0 }} zonas · {{ r.runs_count ?? 0 }} despachos</p>
-          <p v-if="!r.open_run_status" class="text-xs text-[#64748b]">Sin despacho para hoy</p>
-          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+          <p class="text-sm text-muted">{{ r.zone_count ?? 0 }} zonas · {{ r.runs_count ?? 0 }} despachos</p>
+          <p v-if="!r.open_run_status" class="text-xs text-subtle">Sin despacho para hoy</p>
+          <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-primary admin-btn-sm" :disabled="openingRun !== null" @click="openTodayRun(r)">
               {{ openingRun === r.id ? 'Creando...' : (r.open_run_id ? 'Abrir despacho' : 'Despacho de hoy') }}
             </button>
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(r)">Editar</button>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(r)">Eliminar</button>
+            <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(r)">Eliminar</button>
           </div>
         </div>
       </template>
@@ -320,8 +319,8 @@ onMounted(() => load())
               :maxlength="255"
             />
             <div class="flex items-center gap-3">
-              <label class="text-sm text-[#94a3b8]">Color:</label>
-              <input v-model="form.color" type="color" class="h-9 w-16 rounded border border-[#1e293b] bg-transparent cursor-pointer" :disabled="saving" />
+              <label class="text-sm text-muted">Color:</label>
+              <input v-model="form.color" type="color" class="h-9 w-16 rounded border border-line bg-transparent cursor-pointer" :disabled="saving" />
             </div>
           </div>
           <div class="mt-4">
@@ -346,10 +345,10 @@ onMounted(() => load())
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0zM12 13a3 3 0 100-6 3 3 0 000 6z"/></svg>
             Zonas de la ruta
           </div>
-          <p class="mt-1 text-xs text-[#64748b]">
+          <p class="mt-1 text-xs text-subtle">
             Elegí las zonas en orden de visita: la primera es el inicio y la última el fin. La trayectoria se dibuja automáticamente.
           </p>
-          <div v-if="loadingZones" class="mt-3 text-sm text-[#64748b]">Cargando zonas...</div>
+          <div v-if="loadingZones" class="mt-3 text-sm text-subtle">Cargando zonas...</div>
           <div v-else class="mt-3 flex flex-wrap gap-2">
             <button
               v-for="z in zoneOptions"
@@ -358,36 +357,36 @@ onMounted(() => load())
               :class="[
                 'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors',
                 (form.zone_ids as number[]).includes(z.id)
-                  ? 'border-[#69dca4] bg-[#69dca4]/10 text-[#69dca4]'
-                  : 'border-[#1e293b] text-[#94a3b8] hover:border-[#334155]'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-line text-muted hover:border-line-strong'
               ]"
               :disabled="saving"
               @click="toggleZone(z.id)"
             >
-              <span v-if="(form.zone_ids as number[]).includes(z.id)" class="flex h-4 w-4 items-center justify-center rounded-full bg-[#69dca4] text-[10px] font-bold text-[#0a1022]">
+              <span v-if="(form.zone_ids as number[]).includes(z.id)" class="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-canvas">
                 {{ zoneOrderLabel(z.id) }}
               </span>
               {{ z.name }}
             </button>
-            <p v-if="zoneOptions.length === 0" class="text-sm text-[#64748b]">No hay zonas disponibles.</p>
+            <p v-if="zoneOptions.length === 0" class="text-sm text-subtle">No hay zonas disponibles.</p>
           </div>
 
           <!-- Orden de la ruta -->
-          <div v-if="(form.zone_ids as number[]).length > 0" class="mt-4 rounded-lg border border-[#1e293b] divide-y divide-[#1e293b]">
+          <div v-if="(form.zone_ids as number[]).length > 0" class="mt-4 rounded-lg border border-line divide-y divide-line">
             <div
               v-for="(zid, idx) in (form.zone_ids as number[])"
               :key="zid"
               class="flex items-center gap-3 px-3 py-2"
             >
-              <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#69dca4]/15 text-xs font-bold text-[#69dca4]">{{ idx + 1 }}</span>
-              <span class="min-w-0 flex-1 truncate text-sm text-[#dae2fd]">{{ selectedZone(zid)?.name || 'Zona' }}</span>
+              <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">{{ idx + 1 }}</span>
+              <span class="min-w-0 flex-1 truncate text-sm text-content">{{ selectedZone(zid)?.name || 'Zona' }}</span>
               <button type="button" class="admin-btn admin-btn-ghost admin-btn-sm" :disabled="saving || idx === 0" title="Mover arriba" @click="moveZone(zid, -1)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
               </button>
               <button type="button" class="admin-btn admin-btn-ghost admin-btn-sm" :disabled="saving || idx === (form.zone_ids as number[]).length - 1" title="Mover abajo" @click="moveZone(zid, 1)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
               </button>
-              <button type="button" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" :disabled="saving" title="Quitar" @click="toggleZone(zid)">
+              <button type="button" class="admin-btn admin-btn-ghost admin-btn-sm text-danger" :disabled="saving" title="Quitar" @click="toggleZone(zid)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
@@ -401,13 +400,13 @@ onMounted(() => load())
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             Asignación por defecto
           </div>
-          <p class="mt-1 text-xs text-[#64748b]">
+          <p class="mt-1 text-xs text-subtle">
             Se copian al crear el despacho diario ("Despacho de hoy") y se pueden cambiar por día desde el detalle del despacho.
           </p>
-          <div v-if="loadingAssign" class="mt-3 text-sm text-[#64748b]">Cargando conductores y vehículos...</div>
+          <div v-if="loadingAssign" class="mt-3 text-sm text-subtle">Cargando conductores y vehículos...</div>
           <div v-else class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Conductor por defecto</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Conductor por defecto</label>
               <select
                 v-model="form.default_driver_id"
                 class="admin-input w-full"
@@ -418,7 +417,7 @@ onMounted(() => load())
               </select>
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Vehículo por defecto</label>
+              <label class="mb-1.5 block text-sm font-medium text-muted">Vehículo por defecto</label>
               <select
                 v-model="form.default_vehicle_id"
                 class="admin-input w-full"
@@ -441,7 +440,7 @@ onMounted(() => load())
           <div class="mt-3">
             <RouteTrajectoryEditor
               :model-value="(form.trajectory as Array<[number, number]>)"
-              :color="(form.color as string) || '#22c55e'"
+              :color="(form.color as string) || '#16a34a'"
               :zone-markers="zoneMarkers"
               :disabled="saving"
               @update:model-value="(v: Array<[number, number]>) => form.trajectory = v"

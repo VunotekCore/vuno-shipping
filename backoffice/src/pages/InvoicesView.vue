@@ -13,6 +13,7 @@ import AppDropdown from '../components/ui/AppDropdown.vue'
 import InvoicePrintModal from '../components/ui/InvoicePrintModal.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -190,41 +191,36 @@ onMounted(async () => {
 <template>
   <div class="space-y-6">
     <!-- Page header -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Facturas</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Cobros y facturación de envíos</p>
-      </div>
-    </div>
+    <PageHeader title="Facturas" subtitle="Cobros y facturación de envíos" />
 
     <!-- Summary cards: el cobrado va separado por moneda porque `paid_amount`
          esta expresado en la moneda del cobro y sumarlos mezclaria USD con C$ -->
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div class="admin-card p-4 flex items-center gap-4">
-        <div class="h-10 w-10 rounded-xl bg-[#b45309]/20 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        <div class="h-10 w-10 rounded-xl bg-warning/20 flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
         </div>
         <div>
-          <p class="text-xs text-[#64748b]">Por cobrar (pendiente, USD)</p>
-          <p class="text-lg font-bold text-[#f59e0b]">{{ formatUSD(summary.pending_total) }}</p>
+          <p class="text-xs text-subtle">Por cobrar (pendiente, USD)</p>
+          <p class="text-lg font-bold text-warning">{{ formatUSD(summary.pending_total) }}</p>
         </div>
       </div>
       <div class="admin-card p-4 flex items-center gap-4">
-        <div class="h-10 w-10 rounded-xl bg-[#22c55e]/20 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        <div class="h-10 w-10 rounded-xl bg-success/20 flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         </div>
         <div>
-          <p class="text-xs text-[#64748b]">Cobrado hoy (USD)</p>
-          <p class="text-lg font-bold text-[#22c55e]">{{ formatUSD(summary.paid_today_usd) }}</p>
+          <p class="text-xs text-subtle">Cobrado hoy (USD)</p>
+          <p class="text-lg font-bold text-success">{{ formatUSD(summary.paid_today_usd) }}</p>
         </div>
       </div>
       <div class="admin-card p-4 flex items-center gap-4">
-        <div class="h-10 w-10 rounded-xl bg-[#22c55e]/20 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        <div class="h-10 w-10 rounded-xl bg-success/20 flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         </div>
         <div>
-          <p class="text-xs text-[#64748b]">Cobrado hoy (Córdobas)</p>
-          <p class="text-lg font-bold text-[#22c55e]">{{ formatCord(summary.paid_today_cord) }}</p>
+          <p class="text-xs text-subtle">Cobrado hoy (Córdobas)</p>
+          <p class="text-lg font-bold text-success">{{ formatCord(summary.paid_today_cord) }}</p>
         </div>
       </div>
     </div>
@@ -240,7 +236,7 @@ onMounted(async () => {
             placeholder="Filtrar por estado"
           />
         </div>
-        <p class="text-xs text-[#64748b]">{{ total }} facturas</p>
+        <p class="text-xs text-subtle">{{ total }} facturas</p>
       </div>
     </div>
 
@@ -249,23 +245,23 @@ onMounted(async () => {
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading || paginating" :is-empty="invoices.length === 0" empty-title="Sin facturas" empty-desc="Las facturas se generan automáticamente al admitir un paquete.">
           <tr v-for="iv in invoices" :key="iv.id">
-            <td class="font-medium text-[#dae2fd]">{{ iv.invoice_number }}</td>
-            <td class="text-[#94a3b8]">{{ iv.tracking_number || '—' }}</td>
-            <td class="text-[#94a3b8]">{{ invoiceName(iv) }}</td>
-            <td class="text-right font-medium text-[#dae2fd]">{{ formatUSD(iv.total_amount) }}</td>
+            <td class="font-medium text-content">{{ iv.invoice_number }}</td>
+            <td class="text-muted">{{ iv.tracking_number || '—' }}</td>
+            <td class="text-muted">{{ invoiceName(iv) }}</td>
+            <td class="text-right font-medium text-content">{{ formatUSD(iv.total_amount) }}</td>
             <td>
               <span class="admin-badge" :class="statusInfo[iv.status]?.cls || ''">{{ statusInfo[iv.status]?.label || iv.status }}</span>
             </td>
-            <td class="text-[#94a3b8]">{{ fmtDate(iv.created_at) }}</td>
+            <td class="text-muted">{{ fmtDate(iv.created_at) }}</td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openDetail(iv.id)" title="Ver detalle">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
-                <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#22c55e]" @click="openPay(iv)" title="Cobrar">
+                <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-success" @click="openPay(iv)" title="Cobrar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                 </button>
-                <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openCancel(iv)" title="Anular">
+                <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openCancel(iv)" title="Anular">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
                 </button>
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openPrint(iv.id)" title="Imprimir">
@@ -284,14 +280,14 @@ onMounted(async () => {
       <template v-if="loading || paginating">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
+            <div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" />
+            <div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" />
           </div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3">
             <div class="flex gap-2">
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
             </div>
           </div>
         </div>
@@ -300,18 +296,18 @@ onMounted(async () => {
       <template v-else-if="invoices.length > 0">
         <div v-for="iv in invoices" :key="iv.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <p class="font-medium text-[#dae2fd] truncate">{{ iv.invoice_number }}</p>
+            <p class="font-medium text-content truncate">{{ iv.invoice_number }}</p>
             <span class="admin-badge shrink-0" :class="statusInfo[iv.status]?.cls || ''">{{ statusInfo[iv.status]?.label || iv.status }}</span>
           </div>
-          <p class="text-sm text-[#94a3b8] truncate">{{ invoiceName(iv) }} · {{ iv.tracking_number || '—' }}</p>
+          <p class="text-sm text-muted truncate">{{ invoiceName(iv) }} · {{ iv.tracking_number || '—' }}</p>
           <div class="flex items-center justify-between">
-            <p class="text-base font-bold text-[#dae2fd]">{{ formatUSD(iv.total_amount) }}</p>
-            <p class="text-xs text-[#64748b]">{{ fmtDate(iv.created_at) }}</p>
+            <p class="text-base font-bold text-content">{{ formatUSD(iv.total_amount) }}</p>
+            <p class="text-xs text-subtle">{{ fmtDate(iv.created_at) }}</p>
           </div>
-          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+          <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openDetail(iv.id)">Ver</button>
-            <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#22c55e]" @click="openPay(iv)">Cobrar</button>
-            <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openCancel(iv)">Anular</button>
+            <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-success" @click="openPay(iv)">Cobrar</button>
+            <button v-if="isPending(iv)" class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openCancel(iv)">Anular</button>
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openPrint(iv.id)">Imprimir</button>
           </div>
         </div>
@@ -333,26 +329,26 @@ onMounted(async () => {
     <!-- Pay Modal -->
     <AppModal :visible="paying !== null" :title="`Cobrar ${paying?.invoice_number || ''}`" size="md" @close="paying = null">
       <div class="space-y-4">
-        <div class="rounded-xl border border-[#1e293b] bg-[#0f172a] p-4">
+        <div class="rounded-xl border border-line bg-surface-sunken p-4">
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#94a3b8]">
+            <span class="text-sm text-muted">
               Total a cobrar ({{ paidCurrencyLabel(payForm.paid_currency) }})
             </span>
-            <span class="text-xl font-bold text-[#dae2fd]">
+            <span class="text-xl font-bold text-content">
               {{ payPreview.currency === 'CORD' ? formatCord(payPreview.amount) : formatUSD(payPreview.amount) }}
             </span>
           </div>
-          <p class="mt-1 text-right text-xs text-[#64748b]">
+          <p class="mt-1 text-right text-xs text-subtle">
             Equivalente facturado: {{ formatUSD(paying?.total_amount ?? 0) }}
             <template v-if="paying?.tax_amount"> · incluye IVA {{ formatUSD(paying.tax_amount) }}</template>
           </p>
-          <p v-if="payPreview.currency === 'CORD'" class="mt-1 text-right text-xs text-[#64748b]">
+          <p v-if="payPreview.currency === 'CORD'" class="mt-1 text-right text-xs text-subtle">
             Tasa vigente: C${{ formatRate(exchangeRateUsd) }} por USD
           </p>
         </div>
 
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Moneda del cobro</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Moneda del cobro</label>
           <div class="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -368,16 +364,16 @@ onMounted(async () => {
         </div>
 
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Método de pago</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Método de pago</label>
           <AppDropdown
             :model-value="payForm.payment_method_id || ''"
             @update:model-value="(v: string | number | null) => payForm.payment_method_id = Number(v ?? 0)"
             :options="methods.map(m => ({ value: m.id, label: m.name }))"
             placeholder="Seleccionar método"
           />
-          <p class="mt-2 text-xs text-[#64748b]">
+          <p class="mt-2 text-xs text-subtle">
             Se registrará el cobro en
-            <strong class="text-[#94a3b8]">
+            <strong class="text-muted">
               {{ payPreview.currency === 'CORD' ? formatCord(payPreview.amount) : formatUSD(payPreview.amount) }}
             </strong>.
             La tasa queda congelada en la factura al confirmar.

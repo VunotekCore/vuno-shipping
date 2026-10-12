@@ -7,6 +7,7 @@ import { useToast } from '../composables/useToast'
 import AppTable from '../components/ui/AppTable.vue'
 import type { TableColumn } from '../components/ui/AppTable.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -127,54 +128,52 @@ const columns: TableColumn[] = [
 <template>
   <div class="space-y-6">
     <!-- Page header -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Despachos</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Todos los despachos diarios del sistema</p>
-      </div>
-      <div class="flex flex-wrap items-end gap-3">
-        <div>
-          <label class="mb-1.5 block text-xs font-medium text-[#64748b]">Fecha</label>
-          <input v-model="filters.date" type="date" class="admin-input h-10" @change="applyFilters" />
+    <PageHeader title="Despachos" subtitle="Todos los despachos diarios del sistema">
+      <template #actions>
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <label class="mb-1.5 block text-xs font-medium text-subtle">Fecha</label>
+            <input v-model="filters.date" type="date" class="admin-input h-10" @change="applyFilters" />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-xs font-medium text-subtle">Estado</label>
+            <select v-model="filters.status" class="admin-input h-10">
+              <option v-for="o in statusOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1.5 block text-xs font-medium text-subtle">Ruta</label>
+            <select v-model="filters.route_id" class="admin-input h-10">
+              <option value="">Todas las rutas</option>
+              <option v-for="r in routes" :key="r.id" :value="String(r.id)">{{ r.name }}</option>
+            </select>
+          </div>
+          <button v-if="filters.date || filters.status || filters.route_id" class="admin-btn admin-btn-ghost h-10" @click="resetFilters">
+            Limpiar
+          </button>
         </div>
-        <div>
-          <label class="mb-1.5 block text-xs font-medium text-[#64748b]">Estado</label>
-          <select v-model="filters.status" class="admin-input h-10">
-            <option v-for="o in statusOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="mb-1.5 block text-xs font-medium text-[#64748b]">Ruta</label>
-          <select v-model="filters.route_id" class="admin-input h-10">
-            <option value="">Todas las rutas</option>
-            <option v-for="r in routes" :key="r.id" :value="String(r.id)">{{ r.name }}</option>
-          </select>
-        </div>
-        <button v-if="filters.date || filters.status || filters.route_id" class="admin-btn admin-btn-ghost h-10" @click="resetFilters">
-          Limpiar
-        </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- Desktop: Table view (lg+) -->
     <div class="hidden lg:block">
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading" :is-empty="runs.length === 0" empty-title="Sin despachos" empty-desc="Creá el primer despacho desde una ruta maestra.">
-          <tr v-for="run in runs" :key="run.id" class="cursor-pointer transition-colors hover:bg-white/[0.02]" @click="openRun(run.id)">
-            <td class="text-[#dae2fd] font-medium">{{ formatDate(run.run_date) }}</td>
-            <td class="text-[#94a3b8]">
+          <tr v-for="run in runs" :key="run.id" class="cursor-pointer transition-colors hover:bg-surface-raised" @click="openRun(run.id)">
+            <td class="text-content font-medium">{{ formatDate(run.run_date) }}</td>
+            <td class="text-muted">
               <div class="flex items-center gap-2">
-                <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: run.route_color || '#22c55e' }" />
+                <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: run.route_color || '#16a34a' }" />
                 <span class="truncate">{{ run.route_name }}</span>
-                <span v-if="run.carried_over" class="shrink-0 rounded-full bg-[#f97316]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#f97316]" title="Paquetes arrastrados">↻ {{ run.carried_over }}</span>
+                <span v-if="run.carried_over" class="shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent" title="Paquetes arrastrados">↻ {{ run.carried_over }}</span>
               </div>
             </td>
-            <td class="text-[#94a3b8]">{{ run.driver_name || '—' }}</td>
-            <td class="text-[#94a3b8]">{{ run.vehicle_plate || '—' }}</td>
+            <td class="text-muted">{{ run.driver_name || '—' }}</td>
+            <td class="text-muted">{{ run.vehicle_plate || '—' }}</td>
             <td>
               <span :class="['admin-badge', statusBadge(run.status_name)]">{{ statusLabel(run.status_name) }}</span>
             </td>
-            <td class="text-[#94a3b8]">{{ run.stop_count ?? 0 }} <span v-if="run.pending_stops" class="text-[#eab308]">({{ run.pending_stops }} pend.)</span></td>
+            <td class="text-muted">{{ run.stop_count ?? 0 }} <span v-if="run.pending_stops" class="text-warning">({{ run.pending_stops }} pend.)</span></td>
             <td class="text-right">
               <button class="admin-btn admin-btn-ghost admin-btn-sm" @click.stop="openRun(run.id)">Abrir</button>
             </td>
@@ -189,13 +188,13 @@ const columns: TableColumn[] = [
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
+            <div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" />
+            <div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" />
           </div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="h-3.5 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
-            <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="h-3.5 w-1/3 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3">
+            <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
           </div>
         </div>
       </template>
@@ -204,18 +203,18 @@ const columns: TableColumn[] = [
         <div v-for="run in runs" :key="run.id" class="admin-card p-4 space-y-3 cursor-pointer" @click="openRun(run.id)">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
-              <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: run.route_color || '#22c55e' }" />
-              <p class="font-medium text-[#dae2fd] truncate">{{ run.route_name }}</p>
+              <span class="inline-block h-3 w-3 rounded-full shrink-0" :style="{ backgroundColor: run.route_color || '#16a34a' }" />
+              <p class="font-medium text-content truncate">{{ run.route_name }}</p>
             </div>
             <span :class="['admin-badge shrink-0', statusBadge(run.status_name)]">{{ statusLabel(run.status_name) }}</span>
           </div>
-          <p class="text-sm text-[#94a3b8]">{{ formatDate(run.run_date) }} · {{ run.driver_name || 'Sin conductor' }}</p>
-          <p class="text-xs text-[#64748b]">
+          <p class="text-sm text-muted">{{ formatDate(run.run_date) }} · {{ run.driver_name || 'Sin conductor' }}</p>
+          <p class="text-xs text-subtle">
             {{ run.vehicle_plate || 'Sin vehículo' }} · {{ run.stop_count ?? 0 }} paradas
             <template v-if="run.pending_stops"> · {{ run.pending_stops }} pendientes</template>
             <template v-if="run.carried_over"> · ↻ {{ run.carried_over }} arrastrados</template>
           </p>
-          <div class="border-t border-[#1e293b] pt-3 flex items-center gap-2">
+          <div class="border-t border-line pt-3 flex items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click.stop="openRun(run.id)">Abrir despacho</button>
           </div>
         </div>

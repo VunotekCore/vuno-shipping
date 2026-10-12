@@ -15,6 +15,7 @@ import AppRucInput from '../components/ui/AppRucInput.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
 import { classifyNicaraguanId } from '../utils/validation'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 const auth = useAuthStore()
 const isVendor = computed(() => auth.user?.role_slug === 'vendedor')
@@ -135,34 +136,32 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Clientes</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Gestionar clientes del sistema</p>
-      </div>
-      <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Crear cliente
-      </button>
-    </div>
+    <PageHeader title="Clientes" subtitle="Gestionar clientes del sistema">
+      <template #actions>
+        <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Crear cliente
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Desktop: Table view (lg+) -->
     <div class="hidden lg:block">
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading" :is-empty="clients.length === 0" empty-title="Sin clientes" empty-desc="Creá el primer cliente del sistema.">
           <tr v-for="c in clients" :key="c.id">
-            <td class="font-medium text-[#dae2fd]">{{ c.name }}</td>
-            <td class="text-[#94a3b8]">{{ c.email }}</td>
-            <td class="text-[#94a3b8]">{{ c.phone || '—' }}</td>
-            <td class="text-[#94a3b8] font-mono">{{ c.ruc || '—' }}</td>
-            <td class="text-[#94a3b8]">{{ c.department || '—' }}</td>
-            <td class="text-[#94a3b8]">{{ c.package_count ?? 0 }}</td>
+            <td class="font-medium text-content">{{ c.name }}</td>
+            <td class="text-muted">{{ c.email }}</td>
+            <td class="text-muted">{{ c.phone || '—' }}</td>
+            <td class="text-muted font-mono">{{ c.ruc || '—' }}</td>
+            <td class="text-muted">{{ c.department || '—' }}</td>
+            <td class="text-muted">{{ c.package_count ?? 0 }}</td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(c)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(c)" title="Eliminar">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(c)" title="Eliminar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -178,15 +177,15 @@ onMounted(async () => {
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
+            <div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" />
+            <div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" />
           </div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="h-3 w-1/4 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="h-3 w-1/4 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3">
             <div class="flex gap-2">
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
             </div>
           </div>
         </div>
@@ -195,18 +194,18 @@ onMounted(async () => {
       <template v-else-if="clients.length > 0">
         <div v-for="c in clients" :key="c.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <p class="font-medium text-[#dae2fd] truncate">{{ c.name }}</p>
+            <p class="font-medium text-content truncate">{{ c.name }}</p>
             <span class="admin-badge admin-badge-info shrink-0">{{ c.package_count ?? 0 }} paquetes</span>
           </div>
-          <p class="text-sm text-[#94a3b8] truncate">{{ c.email || '—' }}</p>
-          <p class="text-xs text-[#64748b]">{{ c.phone || '—' }} · {{ c.ruc || 'Sin RUC' }}</p>
-          <p class="text-xs text-[#64748b]">{{ c.department || '—' }}</p>
-          <div class="border-t border-[#1e293b] pt-3 flex flex-wrap items-center gap-2">
+          <p class="text-sm text-muted truncate">{{ c.email || '—' }}</p>
+          <p class="text-xs text-subtle">{{ c.phone || '—' }} · {{ c.ruc || 'Sin RUC' }}</p>
+          <p class="text-xs text-subtle">{{ c.department || '—' }}</p>
+          <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(c)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Editar
             </button>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(c)">
+            <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(c)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               Eliminar
             </button>
@@ -286,7 +285,7 @@ onMounted(async () => {
             />
           </div>
           <div v-if="!isVendor" class="mt-4 max-w-sm" style="overflow: visible">
-            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Vendedor asignado</label>
+            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Vendedor asignado</label>
             <AppDropdown
               :model-value="fv('agent_id')"
               @update:model-value="(v: string | number | null) => form.agent_id = v == null || v === '' ? null : Number(v)"
@@ -321,7 +320,7 @@ onMounted(async () => {
               @input="clearError('address')"
             />
             <div class="max-w-sm" style="overflow: visible">
-              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#64748b]">Departamento</label>
+              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Departamento</label>
               <AppDropdown
                 :model-value="fv('department')"
                 @update:model-value="(v: string | number | null) => form.department = v"

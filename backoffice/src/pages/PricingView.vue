@@ -10,6 +10,7 @@ import AppFormField from '../components/ui/AppFormField.vue'
 import AppSwitch from '../components/ui/AppSwitch.vue'
 import AppConfirmDialog from '../components/ui/AppConfirmDialog.vue'
 import AppPagination from '../components/ui/AppPagination.vue'
+import PageHeader from '../components/ui/PageHeader.vue'
 
 interface DeliveryType { id: number; name: string; description: string | null }
 interface PricingRuleType { id: number; name: string; description: string | null }
@@ -182,29 +183,27 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-[#dae2fd]">Reglas de pricing</h1>
-        <p class="mt-1 text-sm text-[#64748b]">Gestionar reglas de pricing y tarifas</p>
-      </div>
-      <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Crear regla
-      </button>
-    </div>
+    <PageHeader title="Reglas de pricing" subtitle="Gestionar reglas de pricing y tarifas">
+      <template #actions>
+        <button class="admin-btn admin-btn-primary sm:w-auto w-full" @click="openCreate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Crear regla
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Desktop: Table view (lg+) -->
     <div class="hidden lg:block">
       <div class="admin-card">
         <AppTable :columns="columns" :loading="loading" :is-empty="rules.length === 0" empty-title="Sin reglas de pricing" empty-desc="Creá la primera regla de pricing.">
           <tr v-for="r in rules" :key="r.id">
-            <td class="font-medium text-[#dae2fd]">{{ r.name }}</td>
-            <td class="text-[#94a3b8]">{{ r.delivery_type_name || '—' }}</td>
-            <td class="text-[#94a3b8]">{{ formatCurrency(r.base_price) }}</td>
-            <td class="text-[#94a3b8]">{{ formatCurrency(r.price_per_kg) }}</td>
-            <td class="text-[#94a3b8]">{{ formatCurrency(r.price_per_volume) }}</td>
-            <td class="text-[#94a3b8]">{{ formatCurrency(r.percentage_of_value) }}</td>
-            <td class="text-[#94a3b8]">{{ formatCurrency(r.min_price) }}</td>
+            <td class="font-medium text-content">{{ r.name }}</td>
+            <td class="text-muted">{{ r.delivery_type_name || '—' }}</td>
+            <td class="text-muted">{{ formatCurrency(r.base_price) }}</td>
+            <td class="text-muted">{{ formatCurrency(r.price_per_kg) }}</td>
+            <td class="text-muted">{{ formatCurrency(r.price_per_volume) }}</td>
+            <td class="text-muted">{{ formatCurrency(r.percentage_of_value) }}</td>
+            <td class="text-muted">{{ formatCurrency(r.min_price) }}</td>
             <td>
               <span :class="r.is_active ? 'admin-badge admin-badge-success' : 'admin-badge admin-badge-warning'">
                 {{ r.is_active ? 'Activa' : 'Inactiva' }}
@@ -215,7 +214,7 @@ onMounted(async () => {
                 <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(r)" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(r)" title="Eliminar">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(r)" title="Eliminar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -231,15 +230,15 @@ onMounted(async () => {
       <template v-if="loading">
         <div v-for="i in 3" :key="i" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <div class="h-4 w-1/3 animate-pulse rounded bg-[#1e293b]" />
-            <div class="h-5 w-16 animate-pulse rounded-full bg-[#1e293b]" />
+            <div class="h-4 w-1/3 animate-pulse rounded bg-surface-raised" />
+            <div class="h-5 w-16 animate-pulse rounded-full bg-surface-raised" />
           </div>
-          <div class="h-3.5 w-1/2 animate-pulse rounded bg-[#1e293b]" />
-          <div class="h-3 w-1/4 animate-pulse rounded bg-[#1e293b]" />
-          <div class="border-t border-[#1e293b] pt-3">
+          <div class="h-3.5 w-1/2 animate-pulse rounded bg-surface-raised" />
+          <div class="h-3 w-1/4 animate-pulse rounded bg-surface-raised" />
+          <div class="border-t border-line pt-3">
             <div class="flex gap-2">
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
-              <div class="h-7 w-16 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
+              <div class="h-7 w-16 animate-pulse rounded bg-surface-raised" />
             </div>
           </div>
         </div>
@@ -248,25 +247,25 @@ onMounted(async () => {
       <template v-else-if="rules.length > 0">
         <div v-for="r in rules" :key="r.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <p class="font-medium text-[#dae2fd] truncate">{{ r.name }}</p>
+            <p class="font-medium text-content truncate">{{ r.name }}</p>
             <span :class="r.is_active ? 'admin-badge admin-badge-success shrink-0' : 'admin-badge admin-badge-warning shrink-0'">
               {{ r.is_active ? 'Activa' : 'Inactiva' }}
             </span>
           </div>
-          <p v-if="r.delivery_type_name" class="text-sm text-[#69dca4]">{{ r.delivery_type_name }}</p>
-          <p class="text-sm text-[#94a3b8]">Base: {{ formatCurrency(r.base_price) }}</p>
-          <p class="text-xs text-[#64748b]">
+          <p v-if="r.delivery_type_name" class="text-sm text-primary">{{ r.delivery_type_name }}</p>
+          <p class="text-sm text-muted">Base: {{ formatCurrency(r.base_price) }}</p>
+          <p class="text-xs text-subtle">
             {{ formatCurrency(r.price_per_kg) }}/lb ·
             {{ formatCurrency(r.price_per_volume) }}/vol ·
             {{ formatCurrency(r.percentage_of_value) }}% valor
             <template v-if="r.min_price"> · Mín: {{ formatCurrency(r.min_price) }}</template>
           </p>
-          <div class="border-t border-[#1e293b] pt-3 flex items-center gap-2">
+          <div class="border-t border-line pt-3 flex items-center gap-2">
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(r)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Editar
             </button>
-            <button class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" @click="openDelete(r)">
+            <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDelete(r)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               Eliminar
             </button>
@@ -312,7 +311,7 @@ onMounted(async () => {
             />
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Tipo de cálculo</label>
+                <label class="mb-1.5 block text-sm font-medium text-muted">Tipo de cálculo</label>
                 <select
                   :value="form.type_id ?? ''"
                   @change="onTypeChange"
@@ -324,7 +323,7 @@ onMounted(async () => {
                 </select>
               </div>
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Tipo de entrega</label>
+                <label class="mb-1.5 block text-sm font-medium text-muted">Tipo de entrega</label>
                 <select
                   :value="form.delivery_type_id ?? ''"
                   @change="form.delivery_type_id = ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null"
@@ -603,23 +602,23 @@ onMounted(async () => {
               Zonas
             </div>
             <div class="mt-3 space-y-3">
-              <p class="text-xs text-[#64748b]">Seleccioná las zonas donde aplica esta regla</p>
-              <div v-if="zones.length === 0" class="text-sm text-[#64748b] italic">No hay zonas disponibles</div>
+              <p class="text-xs text-subtle">Seleccioná las zonas donde aplica esta regla</p>
+              <div v-if="zones.length === 0" class="text-sm text-subtle italic">No hay zonas disponibles</div>
               <div v-else class="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto">
                 <label
                   v-for="z in zones.filter(z => z.is_active)"
                   :key="z.id"
-                  class="flex items-center gap-2 cursor-pointer text-sm text-[#dae2fd] hover:text-white transition-colors"
+                  class="flex items-center gap-2 cursor-pointer text-sm text-content hover:text-content-strong transition-colors"
                 >
                   <input
                     type="checkbox"
                     :value="z.id"
                     :checked="hasZoneId(z.id)"
                     @change="toggleZoneId(z.id)"
-                    class="h-4 w-4 rounded border-[#475569] bg-[#0a1022] text-[#69dca4] focus:ring-[#69dca4]"
+                    class="h-4 w-4 rounded border-muted bg-canvas text-primary focus:ring-primary"
                   />
                   {{ z.name }}
-                  <span v-if="z.surcharge > 0" class="text-[#64748b]">(+${{ Number(z.surcharge).toFixed(2) }})</span>
+                  <span v-if="z.surcharge > 0" class="text-subtle">(+${{ Number(z.surcharge).toFixed(2) }})</span>
                 </label>
               </div>
             </div>
@@ -633,10 +632,10 @@ onMounted(async () => {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Estado
           </div>
-          <div class="mt-3 flex items-center justify-between rounded-lg border border-[#1e293b] bg-[#0a1022]/50 px-4 py-3">
+          <div class="mt-3 flex items-center justify-between rounded-lg border border-line bg-canvas/50 px-4 py-3">
             <div>
-              <p class="text-sm font-medium text-[#dae2fd]">Activa</p>
-              <p class="text-xs text-[#64748b]">Las reglas inactivas no se aplican al calcular precios</p>
+              <p class="text-sm font-medium text-content">Activa</p>
+              <p class="text-xs text-subtle">Las reglas inactivas no se aplican al calcular precios</p>
             </div>
             <AppSwitch :model-value="!!form.is_active" @update:model-value="(v: boolean) => { form.is_active = v }" :disabled="saving" />
           </div>
