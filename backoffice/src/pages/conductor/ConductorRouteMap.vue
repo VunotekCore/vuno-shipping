@@ -84,7 +84,7 @@ function drawOwnHistory(history: Array<{ latitude: number; longitude: number; re
     .map(h => [Number(h.latitude), Number(h.longitude)] as [number, number])
     .filter(ll => !Number.isNaN(ll[0]) && !Number.isNaN(ll[1]))
   if (latlngs.length >= 2) {
-    historyPolyline = L.polyline(latlngs, { color: '#f97316', weight: 4, opacity: 0.85 }).addTo(map)
+    historyPolyline = L.polyline(latlngs, { color: '#eb5a28', weight: 4, opacity: 0.85 }).addTo(map)
   }
 }
 
@@ -93,7 +93,7 @@ function upsertLiveMarker(lat: number, lng: number) {
   if (!liveMarker) {
     liveMarker = L.circleMarker([lat, lng], {
       radius: 9,
-      fillColor: '#ef4444',
+      fillColor: '#dc2626',
       color: '#fff',
       weight: 2,
       fillOpacity: 1,
@@ -142,7 +142,7 @@ function initMap() {
       const coords = typeof rd.trajectory === 'string' ? JSON.parse(rd.trajectory) : rd.trajectory
       if (Array.isArray(coords) && coords.length >= 2) {
         const latlngs: [number, number][] = coords.map((c: any) => [c[1] ?? c.lat, c[0] ?? c.lng])
-        L.polyline(latlngs, { color: rd.route_color || '#22c55e', weight: 4, opacity: 0.8 }).addTo(map!)
+        L.polyline(latlngs, { color: rd.route_color || '#16a34a', weight: 4, opacity: 0.8 }).addTo(map!)
         latlngs.forEach(ll => bounds.push(ll))
       }
     } catch {}
@@ -156,8 +156,8 @@ function initMap() {
       const lng = Number(z.lng)
       const circle = L.circle([lat, lng], {
         radius: 1500,
-        color: rd.route_color || '#22c55e',
-        fillColor: rd.route_color || '#22c55e',
+        color: rd.route_color || '#16a34a',
+        fillColor: rd.route_color || '#16a34a',
         fillOpacity: 0.08,
         weight: 1,
         opacity: 0.35,
@@ -170,7 +170,7 @@ function initMap() {
   // Ruta optima OSRM (azul punteada)
   const optimized = parseCoords(rd.optimized_geometry)
   if (optimized.length >= 2) {
-    L.polyline(optimized, { color: '#00A8FF', weight: 3, dashArray: '8 8', opacity: 0.9 }).addTo(map!)
+    L.polyline(optimized, { color: '#1ea7dc', weight: 3, dashArray: '8 8', opacity: 0.9 }).addTo(map!)
     optimized.forEach(ll => bounds.push(ll))
   }
 
@@ -182,7 +182,7 @@ function initMap() {
     const isPending = s.status_name === 'pending'
     const isDelivered = s.status_name === 'delivered'
 
-    const color = isDelivered ? '#22c55e' : isPending ? '#eab308' : '#64748b'
+    const color = isDelivered ? '#16a34a' : isPending ? '#d97706' : '#94a3b8'
 
     const marker = L.circleMarker([lat, lng], {
       radius: isPending ? 10 : isDelivered ? 7 : 7,
@@ -204,13 +204,13 @@ function initMap() {
   // Inicio / Fin de ruta (offset del centro de zona para no tapar stops fallback)
   if (rd.start_latitude && rd.start_longitude) {
     const ll: [number, number] = [Number(rd.start_latitude) + 0.004, Number(rd.start_longitude) - 0.004]
-    L.circleMarker(ll, { radius: 6, fillColor: '#22c55e', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
+    L.circleMarker(ll, { radius: 6, fillColor: '#16a34a', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
       .bindPopup('Inicio')
     bounds.push(ll)
   }
   if (rd.end_latitude && rd.end_longitude) {
     const ll: [number, number] = [Number(rd.end_latitude) - 0.004, Number(rd.end_longitude) + 0.004]
-    L.circleMarker(ll, { radius: 6, fillColor: '#ef4444', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
+    L.circleMarker(ll, { radius: 6, fillColor: '#dc2626', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map!)
       .bindPopup('Fin')
     bounds.push(ll)
   }
@@ -257,34 +257,34 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="space-y-4">
-    <button class="flex items-center gap-2 text-sm text-[#94a3b8] hover:text-[#dae2fd]" @click="goBack">
+    <button class="flex items-center gap-2 text-sm text-muted hover:text-content" @click="goBack">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       Volver
     </button>
 
     <div v-if="loading" class="flex justify-center py-12">
-      <div class="h-8 w-8 animate-spin rounded-full border-2 border-[#69dca4] border-t-transparent" />
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
     </div>
 
     <div v-else-if="error" class="admin-card p-6 text-center">
-      <p class="text-sm text-[#DC2626]">{{ error }}</p>
+      <p class="text-sm text-danger">{{ error }}</p>
     </div>
 
     <div v-else-if="!routeData" class="admin-card p-8 text-center">
-      <p class="font-medium text-[#64748b]">Sin ruta activa</p>
+      <p class="font-medium text-subtle">Sin ruta activa</p>
     </div>
 
     <template v-else>
       <div class="flex items-center gap-2">
-        <span class="inline-block h-3 w-3 rounded-full" :style="{ backgroundColor: routeData.route_color || '#22c55e' }" />
+        <span class="inline-block h-3 w-3 rounded-full" :style="{ backgroundColor: routeData.route_color || '#16a34a' }" />
         <h2 class="font-semibold">{{ routeData.route_name }}</h2>
-        <span class="ml-auto text-xs text-[#64748b]">{{ stops.filter(s => s.status_name === 'pending').length }} pendientes</span>
+        <span class="ml-auto text-xs text-subtle">{{ stops.filter(s => s.status_name === 'pending').length }} pendientes</span>
       </div>
 
-      <div ref="mapContainer" class="relative h-[60vh] w-full rounded-xl border border-[#1e293b] overflow-hidden">
+      <div ref="mapContainer" class="relative h-[60vh] w-full rounded-xl border border-line overflow-hidden">
         <button
           v-if="canRecenter"
-          class="absolute right-3 top-3 z-[1010] rounded-lg bg-[#0b1326]/90 px-3 py-1.5 text-xs font-medium text-[#dae2fd] shadow-md transition-colors hover:bg-[#1e293b]"
+          class="absolute right-3 top-3 z-[1010] rounded-lg bg-surface/90 px-3 py-1.5 text-xs font-medium text-content shadow-md transition-colors hover:bg-surface-raised"
           @click.stop="recenterMap"
         >
           Re-centrar ruta
@@ -292,14 +292,14 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Mini legend -->
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#64748b]">
-        <span class="flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#22c55e" /> Trayectoria ruta</span>
-        <span class="flex items-center gap-1.5"><span class="h-0.5 w-5 border-t-2 border-dashed" style="border-color:#00A8FF" /> Ruta óptima</span>
-        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#eab308]" /> Pendiente</span>
-        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#22c55e]" /> Entregado</span>
-        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#64748b]" /> Otro</span>
-        <span class="flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#f97316" /> Tu recorrido</span>
-        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ef4444]" /> Fin / Tu ubicación</span>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-subtle">
+        <span class="flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#16a34a" /> Trayectoria ruta</span>
+        <span class="flex items-center gap-1.5"><span class="h-0.5 w-5 border-t-2 border-dashed" style="border-color:#1ea7dc" /> Ruta óptima</span>
+        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-warning" /> Pendiente</span>
+        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-success" /> Entregado</span>
+        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-subtle" /> Otro</span>
+        <span class="flex items-center gap-1.5"><span class="h-1 w-5 rounded" style="background:#eb5a28" /> Tu recorrido</span>
+        <span class="flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-danger" /> Fin / Tu ubicación</span>
       </div>
     </template>
   </div>

@@ -77,17 +77,17 @@ onMounted(() => load())
 
 <template>
   <div class="space-y-4">
-    <button class="flex items-center gap-2 text-sm text-[#94a3b8] hover:text-[#dae2fd]" @click="goBack">
+    <button class="flex items-center gap-2 text-sm text-muted hover:text-content" @click="goBack">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       Volver
     </button>
 
     <div v-if="loading" class="flex justify-center py-12">
-      <div class="h-8 w-8 animate-spin rounded-full border-2 border-[#69dca4] border-t-transparent" />
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
     </div>
 
     <div v-else-if="error" class="admin-card p-6 text-center">
-      <p class="text-sm text-[#DC2626]">{{ error }}</p>
+      <p class="text-sm text-danger">{{ error }}</p>
     </div>
 
     <template v-else-if="stop">
@@ -95,7 +95,7 @@ onMounted(() => load())
       <div class="flex items-center justify-between">
         <h1 class="text-lg font-bold">Parada #{{ stop.stop_order }}</h1>
         <span class="rounded-full px-3 py-1 text-[11px] font-medium"
-          :class="stop.status_name === 'delivered' ? 'bg-[#22c55e]/15 text-[#22c55e]' : stop.status_name === 'pending' ? 'bg-[#eab308]/15 text-[#eab308]' : stop.status_name === 'failed' ? 'bg-[#DC2626]/15 text-[#f87171]' : 'bg-[#1e293b] text-[#64748b]'"
+          :class="stop.status_name === 'delivered' ? 'bg-success/15 text-success' : stop.status_name === 'pending' ? 'bg-warning/15 text-warning' : stop.status_name === 'failed' ? 'bg-danger/15 text-danger' : 'bg-surface-raised text-subtle'"
         >
           {{ statusLabel(stop.status_name) }}
         </span>
@@ -104,48 +104,48 @@ onMounted(() => load())
       <!-- Client info -->
       <div class="admin-card p-5 space-y-4">
         <div>
-          <p class="text-xs text-[#64748b] uppercase tracking-wide">Cliente</p>
+          <p class="text-xs text-subtle uppercase tracking-wide">Cliente</p>
           <p class="mt-0.5 text-base font-medium">{{ stop.client_name || '—' }}</p>
         </div>
 
         <div>
-          <p class="text-xs text-[#64748b] uppercase tracking-wide">Dirección</p>
+          <p class="text-xs text-subtle uppercase tracking-wide">Dirección</p>
           <p class="mt-0.5 text-sm">{{ stop.address || '—' }}</p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <p class="text-xs text-[#64748b] uppercase tracking-wide">Tracking</p>
+            <p class="text-xs text-subtle uppercase tracking-wide">Tracking</p>
             <p class="mt-0.5 text-sm font-mono">{{ stop.tracking_number || '—' }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64748b] uppercase tracking-wide">Teléfono</p>
+            <p class="text-xs text-subtle uppercase tracking-wide">Teléfono</p>
             <p class="mt-0.5 text-sm">{{ stop.recipient_phone || '—' }}</p>
           </div>
         </div>
 
-        <div v-if="stop.invoice_number" class="flex items-center justify-between rounded-lg border border-[#1e293b] px-3 py-2.5">
+        <div v-if="stop.invoice_number" class="flex items-center justify-between rounded-lg border border-line px-3 py-2.5">
           <div>
-            <p class="text-xs text-[#64748b] uppercase tracking-wide">Pago del paquete</p>
-            <p class="mt-0.5 text-xs text-[#94a3b8]">{{ stop.invoice_number }}</p>
+            <p class="text-xs text-subtle uppercase tracking-wide">Pago del paquete</p>
+            <p class="mt-0.5 text-xs text-muted">{{ stop.invoice_number }}</p>
           </div>
           <span
             class="rounded-full px-2.5 py-1 text-[11px] font-medium"
-            :class="stop.invoice_status === 'paid' ? 'bg-[#22c55e]/15 text-[#22c55e]' : 'bg-[#eab308]/15 text-[#eab308]'"
+            :class="stop.invoice_status === 'paid' ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning'"
           >
             {{ stop.invoice_status === 'paid' ? 'PAGADO' : 'COBRAR EN ENTREGA' }}
           </span>
         </div>
 
         <div v-if="stop.notes">
-          <p class="text-xs text-[#64748b] uppercase tracking-wide">Notas</p>
+          <p class="text-xs text-subtle uppercase tracking-wide">Notas</p>
           <p class="mt-0.5 text-sm">{{ stop.notes }}</p>
         </div>
       </div>
 
       <!-- Package info -->
       <div v-if="stop.package_description" class="admin-card p-5">
-        <p class="text-xs text-[#64748b] uppercase tracking-wide">Descripción del paquete</p>
+        <p class="text-xs text-subtle uppercase tracking-wide">Descripción del paquete</p>
         <p class="mt-0.5 text-sm">{{ stop.package_description }}</p>
       </div>
 
@@ -153,20 +153,20 @@ onMounted(() => load())
       <div v-if="stop.status_name === 'pending'" class="space-y-2">
         <template v-if="runStatus === 'active'">
           <button
-            class="w-full rounded-lg bg-[#69dca4] py-3 text-center text-sm font-semibold text-[#0b1326] transition-opacity hover:opacity-90"
+            class="w-full rounded-lg bg-primary py-3 text-center text-sm font-semibold text-surface transition-opacity hover:opacity-90"
             @click="goDeliver"
           >
             Entregar paquete
           </button>
           <div class="grid grid-cols-2 gap-2">
             <button
-              class="rounded-lg bg-[#1e293b] py-2.5 text-center text-sm font-medium text-[#dae2fd] transition-colors hover:bg-[#334155]"
+              class="rounded-lg bg-surface-raised py-2.5 text-center text-sm font-medium text-content transition-colors hover:bg-line-strong"
               @click="openAction('skipped')"
             >
               Omitir
             </button>
             <button
-              class="rounded-lg bg-[#DC2626]/10 py-2.5 text-center text-sm font-medium text-[#f87171] transition-colors hover:bg-[#DC2626]/20"
+              class="rounded-lg bg-danger/10 py-2.5 text-center text-sm font-medium text-danger transition-colors hover:bg-danger/20"
               @click="openAction('failed')"
             >
               No se pudo entregar
@@ -174,36 +174,36 @@ onMounted(() => load())
           </div>
         </template>
         <div v-else class="admin-card p-4 text-center">
-          <p class="text-sm text-[#64748b]">Esta parada aún no puede procesarse: el despacho está en "{{ runStatus }}".</p>
+          <p class="text-sm text-subtle">Esta parada aún no puede procesarse: el despacho está en "{{ runStatus }}".</p>
         </div>
       </div>
 
       <div v-else-if="stop.signature_data" class="admin-card p-5">
-        <p class="text-xs text-[#64748b] uppercase tracking-wide">Firma del cliente</p>
-        <img :src="stop.signature_data" alt="Firma" class="mt-2 max-h-24 w-full rounded-lg border border-[#1e293b] bg-white object-contain p-2" />
+        <p class="text-xs text-subtle uppercase tracking-wide">Firma del cliente</p>
+        <img :src="stop.signature_data" alt="Firma" class="mt-2 max-h-24 w-full rounded-lg border border-line bg-white object-contain p-2" />
       </div>
 
       <div v-if="stop.photo_url" class="admin-card p-5">
-        <p class="text-xs text-[#64748b] uppercase tracking-wide">Foto de evidencia</p>
-        <img :src="stop.photo_url" alt="Foto" class="mt-2 w-full rounded-lg border border-[#1e293b]" />
+        <p class="text-xs text-subtle uppercase tracking-wide">Foto de evidencia</p>
+        <img :src="stop.photo_url" alt="Foto" class="mt-2 w-full rounded-lg border border-line" />
       </div>
 
       <div v-if="stop.actual_arrival" class="admin-card p-5">
-        <p class="text-xs text-[#64748b] uppercase tracking-wide">Entregado a las</p>
+        <p class="text-xs text-subtle uppercase tracking-wide">Entregado a las</p>
         <p class="mt-0.5 text-sm">{{ stop.actual_arrival }}</p>
       </div>
     </template>
   </div>
 
   <!-- Observation modal (skip/failed) -->
-  <div v-if="showActionModal" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center" @click.self="showActionModal = false">
-    <div class="w-full max-w-md rounded-2xl border border-[#1e293b] bg-[#0b1326] p-5 shadow-2xl">
-      <h3 class="text-sm font-semibold text-[#dae2fd]">
+  <div v-if="showActionModal" class="fixed inset-0 z-50 flex items-end justify-center bg-primary-deep/55 p-4 sm:items-center" @click.self="showActionModal = false">
+    <div class="w-full max-w-md rounded-2xl border border-line bg-surface p-5 shadow-2xl">
+      <h3 class="text-sm font-semibold text-content">
         {{ actionStatus === 'skipped' ? 'Omitir parada' : 'No se pudo entregar' }}
       </h3>
-      <p v-if="stop" class="mt-0.5 text-xs text-[#94a3b8]">{{ stop.client_name }} · {{ stop.tracking_number }}</p>
+      <p v-if="stop" class="mt-0.5 text-xs text-muted">{{ stop.client_name }} · {{ stop.tracking_number }}</p>
       <div class="mt-4">
-        <label class="mb-1.5 block text-xs font-medium text-[#94a3b8]">
+        <label class="mb-1.5 block text-xs font-medium text-muted">
           Observación (obligatoria — se arrastrará al próximo despacho)
         </label>
         <textarea

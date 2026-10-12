@@ -308,41 +308,41 @@ onUnmounted(() => {
 
 <template>
   <div class="space-y-4">
-    <button class="flex items-center gap-2 text-sm text-[#94a3b8] hover:text-[#dae2fd]" @click="goBack">
+    <button class="flex items-center gap-2 text-sm text-muted hover:text-content" @click="goBack">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       Volver
     </button>
 
     <div v-if="loading" class="flex justify-center py-12">
-      <div class="h-8 w-8 animate-spin rounded-full border-2 border-[#69dca4] border-t-transparent" />
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
     </div>
 
     <div v-else-if="error" class="admin-card p-6 text-center">
-      <p class="text-sm text-[#DC2626]">{{ error }}</p>
+      <p class="text-sm text-danger">{{ error }}</p>
     </div>
 
     <template v-else-if="stop">
       <h1 class="text-lg font-bold">Entregar paquete</h1>
-      <p class="text-sm text-[#64748b]">Parada #{{ stop.stop_order }} — {{ stop.client_name }}</p>
+      <p class="text-sm text-subtle">Parada #{{ stop.stop_order }} — {{ stop.client_name }}</p>
 
       <!-- Step indicator -->
-      <div class="flex items-center gap-2 text-xs text-[#64748b]">
-        <span :class="step === 'form' ? 'text-[#69dca4] font-medium' : ''">1. Notas</span>
-        <span class="text-[#1e293b]">→</span>
-        <span :class="step === 'signature' ? 'text-[#69dca4] font-medium' : ''">2. Firma</span>
-        <span class="text-[#1e293b]">→</span>
-        <span :class="step === 'photo' ? 'text-[#69dca4] font-medium' : ''">3. Foto</span>
-        <span class="text-[#1e293b]">→</span>
-        <span :class="step === 'confirm' ? 'text-[#69dca4] font-medium' : ''">4. Confirmar</span>
+      <div class="flex items-center gap-2 text-xs text-subtle">
+        <span :class="step === 'form' ? 'text-primary font-medium' : ''">1. Notas</span>
+        <span class="text-content">→</span>
+        <span :class="step === 'signature' ? 'text-primary font-medium' : ''">2. Firma</span>
+        <span class="text-content">→</span>
+        <span :class="step === 'photo' ? 'text-primary font-medium' : ''">3. Foto</span>
+        <span class="text-content">→</span>
+        <span :class="step === 'confirm' ? 'text-primary font-medium' : ''">4. Confirmar</span>
       </div>
 
       <!-- Step 1: Notes -->
       <div v-if="step === 'form'" class="admin-card p-5 space-y-4">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Notas de la entrega</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Notas de la entrega</label>
           <textarea v-model="notes" class="admin-input min-h-[100px]" placeholder="Observaciones sobre la entrega..." :disabled="saving" />
         </div>
-        <button class="w-full rounded-lg bg-[#69dca4] py-3 text-sm font-semibold text-[#0b1326] transition-opacity hover:opacity-90" @click="step = 'signature'">
+        <button class="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-surface transition-opacity hover:opacity-90" @click="step = 'signature'">
           Siguiente — Firma
         </button>
       </div>
@@ -350,14 +350,14 @@ onUnmounted(() => {
       <!-- Step 2: Signature -->
       <div v-if="step === 'signature'" class="admin-card p-5 space-y-4">
         <p class="text-sm font-medium">Firma del cliente</p>
-        <div class="rounded-lg border-2 border-dashed border-[#334155] bg-white overflow-hidden">
+        <div class="rounded-lg border-2 border-dashed border-line-strong bg-white overflow-hidden">
           <canvas ref="canvasRef" class="aspect-[3/1] w-full touch-none" style="cursor: crosshair" />
         </div>
         <div class="flex gap-3">
-          <button class="flex-1 rounded-lg border border-[#334155] py-2.5 text-sm text-[#94a3b8] transition-colors hover:bg-white/[0.04]" @click="clearSignature">
+          <button class="flex-1 rounded-lg border border-line-strong py-2.5 text-sm text-muted transition-colors hover:bg-surface-raised" @click="clearSignature">
             Limpiar
           </button>
-          <button class="flex-1 rounded-lg bg-[#69dca4] py-2.5 text-sm font-semibold text-[#0b1326] transition-opacity hover:opacity-90" @click="saveSignature">
+          <button class="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-surface transition-opacity hover:opacity-90" @click="saveSignature">
             Continuar
           </button>
         </div>
@@ -368,22 +368,22 @@ onUnmounted(() => {
         <p class="text-sm font-medium">Foto de evidencia</p>
 
         <!-- Camera -->
-        <div v-if="useCamera" class="overflow-hidden rounded-lg border border-[#1e293b] bg-black">
+        <div v-if="useCamera" class="overflow-hidden rounded-lg border border-line bg-black">
           <video ref="videoRef" autoplay playsinline class="w-full" />
         </div>
 
         <div class="flex flex-wrap gap-3">
-          <button v-if="useCamera" class="flex-1 rounded-lg bg-[#69dca4] py-2.5 text-sm font-semibold text-[#0b1326]" @click="capturePhoto">
+          <button v-if="useCamera" class="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-surface" @click="capturePhoto">
             Tomar foto
           </button>
-          <button v-else class="flex-1 rounded-lg border border-[#334155] py-2.5 text-sm text-[#94a3b8]" @click="startCamera">
+          <button v-else class="flex-1 rounded-lg border border-line-strong py-2.5 text-sm text-muted" @click="startCamera">
             Activar cámara
           </button>
-          <label class="flex-1 cursor-pointer rounded-lg border border-[#334155] py-2.5 text-center text-sm text-[#94a3b8]">
+          <label class="flex-1 cursor-pointer rounded-lg border border-line-strong py-2.5 text-center text-sm text-muted">
             Subir archivo
             <input type="file" accept="image/*" class="hidden" @change="selectPhoto" />
           </label>
-          <button class="flex-1 rounded-lg border border-[#334155] py-2.5 text-sm text-[#64748b]" @click="skipPhoto">
+          <button class="flex-1 rounded-lg border border-line-strong py-2.5 text-sm text-subtle" @click="skipPhoto">
             Saltar
           </button>
         </div>
@@ -395,17 +395,17 @@ onUnmounted(() => {
           <p class="text-sm font-medium">Resumen de la entrega</p>
 
           <div class="flex items-center gap-2 text-sm">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-[#22c55e]"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-success"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Firma: {{ signatureData ? 'Capturada' : 'No incluida' }}</span>
           </div>
           <div class="flex items-center gap-2 text-sm">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="photoPreview ? 'text-[#22c55e]' : 'text-[#64748b]'"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="photoPreview ? 'text-success' : 'text-subtle'"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Foto: {{ photoPreview ? 'Capturada' : 'No incluida' }}</span>
           </div>
           <div v-if="notes" class="flex items-center gap-2 text-sm">
             <span>Notas: {{ notes }}</span>
           </div>
-          <div v-if="currentPosition" class="flex items-center gap-2 text-sm text-[#64748b]">
+          <div v-if="currentPosition" class="flex items-center gap-2 text-sm text-subtle">
             <span>GPS: {{ currentPosition.lat.toFixed(6) }}, {{ currentPosition.lng.toFixed(6) }}</span>
           </div>
         </div>
@@ -415,7 +415,7 @@ onUnmounted(() => {
         </div>
 
         <button
-          class="w-full rounded-lg bg-[#69dca4] py-3 text-sm font-semibold text-[#0b1326] transition-opacity hover:opacity-90 disabled:opacity-50"
+          class="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-surface transition-opacity hover:opacity-90 disabled:opacity-50"
           :disabled="saving"
           @click="submitDelivery"
         >

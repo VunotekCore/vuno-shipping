@@ -109,28 +109,28 @@ onMounted(() => load())
     <!-- Header -->
     <div>
       <h1 class="text-lg font-bold">Mis entregas</h1>
-      <p class="text-sm text-[#64748b]">Ruta de despacho del día</p>
+      <p class="text-sm text-subtle">Ruta de despacho del día</p>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex justify-center py-12">
-      <div class="h-8 w-8 animate-spin rounded-full border-2 border-[#69dca4] border-t-transparent" />
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
     </div>
 
     <!-- Error -->
     <div v-else-if="error" class="admin-card p-6 text-center">
-      <p class="text-sm text-[#DC2626]">{{ error }}</p>
+      <p class="text-sm text-danger">{{ error }}</p>
     </div>
 
     <!-- No route -->
     <div v-else-if="!routeData" class="admin-card p-8 text-center">
-      <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#1e293b]">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-[#64748b]">
+      <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-surface-raised">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-subtle">
           <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
         </svg>
       </div>
       <p class="font-medium">Sin ruta asignada</p>
-      <p class="mt-1 text-sm text-[#64748b]">No tenés ninguna ruta asignada hoy.</p>
+      <p class="mt-1 text-sm text-subtle">No tenés ninguna ruta asignada hoy.</p>
     </div>
 
     <!-- Active route -->
@@ -138,29 +138,29 @@ onMounted(() => load())
       <!-- Route info card -->
       <div class="admin-card overflow-hidden">
         <div class="relative p-5">
-          <div class="absolute inset-0 opacity-5" :style="{ backgroundColor: routeData.route_color || '#22c55e' }" />
+          <div class="absolute inset-0 opacity-5" :style="{ backgroundColor: routeData.route_color || '#16a34a' }" />
           <div class="relative">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <span class="inline-block h-3 w-3 rounded-full" :style="{ backgroundColor: routeData.route_color || '#22c55e' }" />
+                <span class="inline-block h-3 w-3 rounded-full" :style="{ backgroundColor: routeData.route_color || '#16a34a' }" />
                 <h2 class="font-semibold">{{ routeData.route_name }}</h2>
               </div>
               <span
                 class="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
-                :class="isDraft ? 'bg-[#eab308]/15 text-[#eab308]' : routeData.status_name === 'completed' ? 'bg-[#00A8FF]/15 text-[#00A8FF]' : 'bg-[#69dca4]/15 text-[#69dca4]'"
+                :class="isDraft ? 'bg-warning/15 text-warning' : routeData.status_name === 'completed' ? 'bg-secondary/15 text-secondary' : 'bg-primary/15 text-primary'"
               >{{ statusLabel(routeData.status_name) }}</span>
             </div>
-            <p class="mt-1.5 text-sm text-[#64748b]">{{ routeData.route_description || 'Sin descripción' }}</p>
-            <p class="mt-1 text-xs text-[#64748b]">{{ formatSchedule() }} · {{ routeData.driver_name }}</p>
+            <p class="mt-1.5 text-sm text-subtle">{{ routeData.route_description || 'Sin descripción' }}</p>
+            <p class="mt-1 text-xs text-subtle">{{ formatSchedule() }} · {{ routeData.driver_name }}</p>
           </div>
         </div>
 
         <!-- Start journey (draft) -->
-        <div v-if="isDraft" class="border-t border-[#eab308]/20 bg-[#eab308]/5 px-5 py-4">
-          <p class="text-sm text-[#dae2fd]">Tu jornada está en planificación</p>
-          <p class="mt-0.5 text-xs text-[#94a3b8]">Las entregas se habilitan cuando inicies la jornada.</p>
+        <div v-if="isDraft" class="border-t border-warning/20 bg-warning/5 px-5 py-4">
+          <p class="text-sm text-content">Tu jornada está en planificación</p>
+          <p class="mt-0.5 text-xs text-muted">Las entregas se habilitan cuando inicies la jornada.</p>
           <button
-            class="mt-3 w-full rounded-lg bg-[#69dca4] py-2.5 text-center text-sm font-semibold text-[#0b1326] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            class="mt-3 w-full rounded-lg bg-primary py-2.5 text-center text-sm font-semibold text-surface transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="starting"
             @click="startJourney"
           >
@@ -169,28 +169,28 @@ onMounted(() => load())
         </div>
 
         <!-- Progress bar -->
-        <div class="border-t border-[#1e293b] px-5 py-4">
+        <div class="border-t border-line px-5 py-4">
           <div class="mb-2 flex items-center justify-between text-sm">
-            <span class="text-[#94a3b8]">Progreso</span>
-            <span class="font-medium text-[#dae2fd]">{{ deliveredStops }} / {{ totalStops }} entregados</span>
+            <span class="text-muted">Progreso</span>
+            <span class="font-medium text-content">{{ deliveredStops }} / {{ totalStops }} entregados</span>
           </div>
-          <div class="h-2 overflow-hidden rounded-full bg-[#1e293b]">
-            <div class="h-full rounded-full bg-[#69dca4] transition-all duration-500" :style="{ width: progress + '%' }" />
+          <div class="h-2 overflow-hidden rounded-full bg-surface-raised">
+            <div class="h-full rounded-full bg-primary transition-all duration-500" :style="{ width: progress + '%' }" />
           </div>
-          <p class="mt-1.5 text-right text-xs text-[#64748b]">{{ progress }}% completado</p>
+          <p class="mt-1.5 text-right text-xs text-subtle">{{ progress }}% completado</p>
         </div>
 
         <!-- Actions -->
-        <div class="border-t border-[#1e293b] p-4 flex gap-3">
-          <button class="flex-1 rounded-lg bg-[#69dca4] py-2.5 text-center text-sm font-semibold text-[#0b1326] transition-opacity hover:opacity-90" @click="goToRoute">
+        <div class="border-t border-line p-4 flex gap-3">
+          <button class="flex-1 rounded-lg bg-primary py-2.5 text-center text-sm font-semibold text-surface transition-opacity hover:opacity-90" @click="goToRoute">
             Ver ruta en mapa
           </button>
           <button
             v-if="canOperate"
             class="flex-1 rounded-lg py-2.5 text-center text-sm font-semibold transition-colors"
             :class="canFinishJourney
-              ? 'bg-[#00A8FF] text-[#0b1326] hover:opacity-90'
-              : 'cursor-not-allowed bg-[#1e293b] text-[#64748b]'"
+              ? 'bg-secondary text-surface hover:opacity-90'
+              : 'cursor-not-allowed bg-surface-raised text-subtle'"
             :disabled="!canFinishJourney || finishing"
             :title="canFinishJourney ? 'Cerrar el despacho al finalizar todas las paradas' : `Quedan ${pendingStops} paradas pendientes`"
             @click="finishJourney"
@@ -204,30 +204,30 @@ onMounted(() => load())
       <div
         v-if="gpsWarning || geo.geoError.value"
         class="flex items-start gap-3 rounded-2xl border p-4"
-        :class="geo.geoError.value ? 'border-[#DC2626]/40 bg-[#DC2626]/10' : 'border-[#eab308]/30 bg-[#eab308]/10'"
+        :class="geo.geoError.value ? 'border-danger/40 bg-danger/10' : 'border-warning/30 bg-warning/10'"
         role="alert"
       >
-        <svg class="mt-0.5 shrink-0 text-[#eab308]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="mt-0.5 shrink-0 text-warning" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="9" />
           <path d="M12 8h.01M12 12v4" />
         </svg>
         <div class="flex-1">
-          <p class="text-sm font-semibold" :class="geo.geoError.value ? 'text-[#fca5a5]' : 'text-[#fde68a]'">
+          <p class="text-sm font-semibold" :class="geo.geoError.value ? 'text-danger' : 'text-warning'">
             {{ geo.geoError.value ? 'No se pudo activar el GPS' : 'GPS apagado' }}
           </p>
-          <p class="text-xs" :class="geo.geoError.value ? 'text-[#DC2626]' : 'text-[#ca8a04]'">
+          <p class="text-xs" :class="geo.geoError.value ? 'text-danger' : 'text-warning'">
             {{ geo.geoError.value || 'Activá tu ubicación para registrar el recorrido en tiempo real. El navegador te pedirá permiso de geolocalización.' }}
           </p>
           <button
             v-if="geo.geoError.value"
-            class="mt-2 text-xs font-medium text-[#fca5a5] underline underline-offset-2"
+            class="mt-2 text-xs font-medium text-danger underline underline-offset-2"
             @click="geo.geoError.value = ''"
           >
             Entendido
           </button>
           <button
             v-else
-            class="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#eab308] px-3 py-1.5 text-xs font-semibold text-[#0b1326] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            class="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-warning px-3 py-1.5 text-xs font-semibold text-surface transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="!geo.supported"
             @click="geo.start()"
           >
@@ -240,20 +240,20 @@ onMounted(() => load())
       <!-- Next stop -->
       <div v-if="nextStop" class="admin-card p-5">
         <div class="mb-3 flex items-center gap-2">
-          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-[#eab308]/15 text-xs font-bold text-[#eab308]">{{ nextStop.stop_order }}</span>
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-warning/15 text-xs font-bold text-warning">{{ nextStop.stop_order }}</span>
           <div>
             <p class="text-sm font-medium">Siguiente parada</p>
-            <p class="text-xs text-[#64748b]">#{{ nextStop.stop_order }} · Pendiente</p>
+            <p class="text-xs text-subtle">#{{ nextStop.stop_order }} · Pendiente</p>
           </div>
         </div>
         <p class="font-medium">{{ nextStop.client_name || 'Sin nombre' }}</p>
-        <p class="mt-0.5 text-sm text-[#64748b]">{{ nextStop.address || 'Sin dirección' }}</p>
+        <p class="mt-0.5 text-sm text-subtle">{{ nextStop.address || 'Sin dirección' }}</p>
         <div v-if="nextStop.tracking_number" class="mt-2">
-          <span class="rounded-md bg-[#1e293b] px-2 py-0.5 text-xs text-[#94a3b8]">{{ nextStop.tracking_number }}</span>
+          <span class="rounded-md bg-surface-raised px-2 py-0.5 text-xs text-muted">{{ nextStop.tracking_number }}</span>
         </div>
         <button
           class="mt-4 w-full rounded-lg py-2.5 text-sm font-medium transition-colors"
-          :class="canOperate ? 'bg-[#1e293b] text-[#dae2fd] hover:bg-[#334155]' : 'cursor-not-allowed bg-[#1e293b]/50 text-[#64748b]'"
+          :class="canOperate ? 'bg-surface-raised text-content hover:bg-line-strong' : 'cursor-not-allowed bg-surface-raised/50 text-subtle'"
           :disabled="!canOperate"
           :title="canOperate ? '' : 'El despacho debe estar en curso para entregar'"
           @click="goToStop(nextStop.id)"
@@ -264,29 +264,29 @@ onMounted(() => load())
 
       <!-- Stops list -->
       <div class="admin-card">
-        <div class="border-b border-[#1e293b] px-5 py-3">
+        <div class="border-b border-line px-5 py-3">
           <h3 class="text-sm font-semibold">Paradas ({{ totalStops }})</h3>
         </div>
-        <div class="divide-y divide-[#1e293b]">
+        <div class="divide-y divide-line">
           <div
             v-for="s in stops"
             :key="s.id"
-            class="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-white/[0.02]"
+            class="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-raised"
             @click="goToStop(s.id)"
           >
             <span
               class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-              :class="s.status_name === 'delivered' ? 'bg-[#22c55e]/15 text-[#22c55e]' : s.status_name === 'pending' ? 'bg-[#eab308]/15 text-[#eab308]' : 'bg-[#1e293b] text-[#64748b]'"
+              :class="s.status_name === 'delivered' ? 'bg-success/15 text-success' : s.status_name === 'pending' ? 'bg-warning/15 text-warning' : 'bg-surface-raised text-subtle'"
             >
               {{ s.status_name === 'delivered' ? '✓' : s.stop_order }}
             </span>
             <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium" :class="s.status_name === 'delivered' ? 'text-[#64748b] line-through' : 'text-[#dae2fd]'">
+              <p class="truncate text-sm font-medium" :class="s.status_name === 'delivered' ? 'text-subtle line-through' : 'text-content'">
                 {{ s.client_name || 'Sin nombre' }}
               </p>
-              <p class="truncate text-xs text-[#64748b]">{{ s.address || 'Sin dirección' }}</p>
+              <p class="truncate text-xs text-subtle">{{ s.address || 'Sin dirección' }}</p>
             </div>
-            <svg v-if="s.status_name === 'pending'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-[#64748b]">
+            <svg v-if="s.status_name === 'pending'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-subtle">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </div>

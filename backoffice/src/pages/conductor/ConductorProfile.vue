@@ -69,36 +69,36 @@ onMounted(() => {
 
     <div class="admin-card p-5 space-y-4">
       <div class="flex items-center gap-3">
-        <div class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#69dca4] to-[#00A8FF] font-bold text-lg text-[#0b1326]">
+        <div class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary font-bold text-lg text-surface">
           {{ (user?.name || '?')[0].toUpperCase() }}
         </div>
         <div>
           <p class="font-semibold">{{ user?.name || '—' }}</p>
-          <p class="text-sm text-[#64748b]">{{ user?.email || '—' }}</p>
+          <p class="text-sm text-subtle">{{ user?.email || '—' }}</p>
         </div>
       </div>
     </div>
 
     <div class="admin-card p-5 space-y-3">
-      <p class="text-sm font-medium text-[#94a3b8] uppercase tracking-wide">Ubicación</p>
-      <div v-if="loading" class="h-4 w-32 animate-pulse rounded bg-[#1e293b]" />
+      <p class="text-sm font-medium text-muted uppercase tracking-wide">Ubicación</p>
+      <div v-if="loading" class="h-4 w-32 animate-pulse rounded bg-surface-raised" />
       <div v-else-if="location">
         <p class="text-sm font-mono">{{ location.latitude !== null ? Number(location.latitude).toFixed(6) : '—' }}, {{ location.longitude !== null ? Number(location.longitude).toFixed(6) : '—' }}</p>
-        <p v-if="location.battery_level != null" class="mt-1 text-xs text-[#64748b]">Batería: {{ location.battery_level }}%</p>
-        <p v-if="location.last_update" class="mt-1 text-xs text-[#64748b]">Última actualización: {{ location.last_update }}</p>
+        <p v-if="location.battery_level != null" class="mt-1 text-xs text-subtle">Batería: {{ location.battery_level }}%</p>
+        <p v-if="location.last_update" class="mt-1 text-xs text-subtle">Última actualización: {{ location.last_update }}</p>
       </div>
-      <p v-else class="text-sm text-[#64748b]">No hay ubicación registrada</p>
+      <p v-else class="text-sm text-subtle">No hay ubicación registrada</p>
     </div>
 
     <div class="admin-card p-5 space-y-3">
-      <p class="text-sm font-medium text-[#94a3b8] uppercase tracking-wide">Notificaciones push</p>
-      <p v-if="push.error.value" class="text-sm text-[#DC2626]">{{ push.error.value }}</p>
-      <p v-else class="text-sm text-[#94a3b8]">{{ pushStatusText() }}</p>
+      <p class="text-sm font-medium text-muted uppercase tracking-wide">Notificaciones push</p>
+      <p v-if="push.error.value" class="text-sm text-danger">{{ push.error.value }}</p>
+      <p v-else class="text-sm text-muted">{{ pushStatusText() }}</p>
 
       <div class="flex gap-2 pt-1">
         <button
           v-if="!push.subscribed.value"
-          class="flex-1 rounded-lg bg-[#69dca4] py-2.5 text-center text-sm font-semibold text-[#0b1326] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          class="flex-1 rounded-lg bg-primary py-2.5 text-center text-sm font-semibold text-surface transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="!push.supported || push.enabling.value"
           @click="onEnable"
         >
@@ -106,7 +106,7 @@ onMounted(() => {
         </button>
         <button
           v-else
-          class="flex-1 rounded-lg border border-[#334155] py-2.5 text-center text-sm font-medium text-[#dae2fd] transition-colors hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
+          class="flex-1 rounded-lg border border-line-strong py-2.5 text-center text-sm font-medium text-content transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="push.disabling.value"
           @click="onDisable"
         >
@@ -114,22 +114,22 @@ onMounted(() => {
         </button>
         <button
           v-if="push.subscribed.value"
-          class="rounded-lg border border-[#334155] px-4 py-2.5 text-sm font-medium text-[#dae2fd] transition-colors hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
+          class="rounded-lg border border-line-strong px-4 py-2.5 text-sm font-medium text-content transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="testing"
           @click="onTest"
         >
           {{ testing ? 'Enviando...' : 'Probar' }}
         </button>
       </div>
-      <p v-if="testMsg" class="text-xs text-[#94a3b8]">{{ testMsg }}</p>
+      <p v-if="testMsg" class="text-xs text-muted">{{ testMsg }}</p>
     </div>
 
     <div class="admin-card p-5">
-      <p class="text-sm font-medium text-[#94a3b8] uppercase tracking-wide">Rol</p>
+      <p class="text-sm font-medium text-muted uppercase tracking-wide">Rol</p>
       <p class="mt-1 text-sm capitalize">{{ user?.role_name || 'Conductor' }}</p>
     </div>
 
-    <button class="w-full rounded-lg border border-[#334155] py-3 text-sm text-[#94a3b8] transition-colors hover:bg-white/[0.04]" @click="router.push('/conductor')">
+    <button class="w-full rounded-lg border border-line-strong py-3 text-sm text-muted transition-colors hover:bg-surface-raised" @click="router.push('/conductor')">
       Volver al inicio
     </button>
   </div>
