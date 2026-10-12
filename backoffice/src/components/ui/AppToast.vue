@@ -10,9 +10,9 @@ function toastIcon(type: string) {
 }
 
 function toastColor(type: string) {
-  if (type === 'success') return 'border-[#69dca4]/20 bg-[#69dca4]/10 text-[#69dca4]'
-  if (type === 'error') return 'border-[#DC2626]/20 bg-[#DC2626]/10 text-[#f87171]'
-  return 'border-[#dae2fd]/12 bg-[#dae2fd]/6 text-[#dae2fd]'
+  if (type === 'success') return 'border-primary/20 bg-primary/10 text-primary'
+  if (type === 'error') return 'border-danger/20 bg-danger/10 text-danger'
+  return 'border-content/12 bg-content/6 text-content'
 }
 </script>
 

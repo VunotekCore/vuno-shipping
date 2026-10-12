@@ -68,15 +68,15 @@ watch(() => dialogRef.value, (el) => {
           aria-modal="true"
           :aria-label="title"
           :aria-describedby="message ? 'confirm-message' : undefined"
-          class="admin-confirm-card w-full max-w-md rounded-xl border border-[#1e293b] bg-[#111d2e] p-6 shadow-2xl"
+          class="admin-confirm-card w-full max-w-md rounded-xl border border-line bg-surface p-6 shadow-2xl"
         >
           <div class="flex items-start gap-4">
             <div
               :class="[
                 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
-                variant === 'danger' ? 'bg-[#DC2626]/15 text-[#DC2626]' :
-                variant === 'warning' ? 'bg-[#f59e0b]/15 text-[#f59e0b]' :
-                'bg-[#00A8FF]/15 text-[#00A8FF]'
+                variant === 'danger' ? 'bg-danger/15 text-danger' :
+                variant === 'warning' ? 'bg-warning/15 text-warning' :
+                'bg-secondary/15 text-secondary'
               ]"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -84,8 +84,8 @@ watch(() => dialogRef.value, (el) => {
               </svg>
             </div>
             <div class="flex-1">
-              <h3 v-if="title" class="text-lg font-semibold text-[#dae2fd]">{{ title }}</h3>
-              <p v-if="message" id="confirm-message" class="mt-1.5 text-sm text-[#94a3b8] leading-relaxed">{{ message }}</p>
+              <h3 v-if="title" class="text-lg font-semibold text-content">{{ title }}</h3>
+              <p v-if="message" id="confirm-message" class="mt-1.5 text-sm text-muted leading-relaxed">{{ message }}</p>
             </div>
           </div>
           <div class="mt-6 flex justify-end gap-3">

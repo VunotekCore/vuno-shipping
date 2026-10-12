@@ -32,17 +32,17 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-[#0a1022]">
+  <div class="flex min-h-screen bg-canvas">
     <!-- Left panel - brand (hidden on mobile) -->
-    <div class="hidden lg:flex lg:w-[480px] xl:w-1/2 relative overflow-hidden flex-col bg-[#0b1326]">
+    <div class="hidden lg:flex lg:w-[480px] xl:w-1/2 relative overflow-hidden flex-col bg-primary-deep">
       <!-- Decorative background patterns -->
-      <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(circle at 1px 1px, #69dca4 1px, transparent 0); background-size: 40px 40px;"></div>
-      <div class="absolute inset-0 opacity-[0.015]" style="background-image: linear-gradient(rgba(105,220,164,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(105,220,164,0.3) 1px, transparent 1px); background-size: 40px 40px;"></div>
+      <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(circle at 1px 1px, #1ea7dc 1px, transparent 0); background-size: 40px 40px;"></div>
+      <div class="absolute inset-0 opacity-[0.015]" style="background-image: linear-gradient(rgba(30,167,220,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(30,167,220,0.35) 1px, transparent 1px); background-size: 40px 40px;"></div>
 
       <!-- Centered content -->
       <div class="relative z-10 flex flex-1 flex-col items-center justify-center gap-6 px-12 text-center">
         <!-- Logo -->
-        <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#69dca4]/10 text-[#69dca4]">
+        <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/15">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
           </svg>
@@ -50,29 +50,29 @@ async function handleLogin() {
 
         <!-- Brand -->
         <div>
-          <h1 class="text-2xl font-bold text-[#dae2fd] tracking-tight">Shipping Agency</h1>
-          <p class="mt-2 text-sm text-[#64748b] leading-relaxed">Panel de administracion</p>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Vuno Shipping</h1>
+          <p class="mt-2 text-sm text-white/60 leading-relaxed">Panel de administración</p>
         </div>
 
         <!-- Divider -->
-        <div class="h-px w-12 bg-[#69dca4]/20"></div>
+        <div class="h-px w-12 bg-white/20"></div>
 
         <!-- Features -->
-        <div class="mt-2 space-y-3 text-sm text-[#64748b]">
+        <div class="mt-2 space-y-3 text-sm text-white/70">
           <div class="flex items-center gap-2.5">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#69dca4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1ea7dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             <span>Gestion de envios Miami a Nicaragua</span>
           </div>
           <div class="flex items-center gap-2.5">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#69dca4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1ea7dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             <span>Control de usuarios y permisos</span>
           </div>
           <div class="flex items-center gap-2.5">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#69dca4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1ea7dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             <span>Tracking en tiempo real</span>
@@ -81,7 +81,7 @@ async function handleLogin() {
       </div>
 
       <!-- Footer bar — pinned to bottom, spread to edges -->
-      <div class="relative z-10 flex items-center justify-between px-6 py-4 text-xs text-[#64748b]">
+      <div class="relative z-10 flex items-center justify-between px-6 py-4 text-xs text-subtle">
         <div class="flex items-center gap-1.5">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
@@ -97,37 +97,37 @@ async function handleLogin() {
       <div class="w-full max-w-sm">
         <!-- Mobile-only logo -->
         <div class="mb-8 flex flex-col items-center gap-3 lg:hidden">
-          <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#69dca4]/10 text-[#69dca4]">
+          <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
             </svg>
           </div>
-          <h1 class="text-xl font-bold text-[#dae2fd]">Shipping Agency</h1>
-          <p class="text-xs text-[#69dca4]">admin panel</p>
+          <h1 class="text-xl font-bold text-content">Vuno Shipping</h1>
+          <p class="text-xs text-primary">admin panel</p>
         </div>
 
         <!-- Glass card -->
         <div class="admin-glass-card">
           <!-- Desktop card header -->
           <div class="mb-6 hidden flex-col items-center gap-2 lg:flex">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#69dca4]/10 text-[#69dca4]">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
               </svg>
             </div>
-            <h2 class="text-lg font-bold text-[#dae2fd]">Bienvenido a Shipping Agency</h2>
-            <p class="text-center text-sm text-[#64748b]">Ingresa tus credenciales para acceder al panel de administracion.</p>
+            <h2 class="text-lg font-bold text-content">Bienvenido a Vuno Shipping</h2>
+            <p class="text-center text-sm text-subtle">Ingresa tus credenciales para acceder al panel de administracion.</p>
           </div>
 
           <!-- Mobile heading -->
           <div class="mb-6 lg:hidden">
-            <h2 class="text-lg font-bold text-[#dae2fd]">Iniciar sesion</h2>
-            <p class="mt-1.5 text-sm text-[#64748b]">Ingresa tus credenciales para acceder</p>
+            <h2 class="text-lg font-bold text-content">Iniciar sesion</h2>
+            <p class="mt-1.5 text-sm text-subtle">Ingresa tus credenciales para acceder</p>
           </div>
 
           <!-- Error -->
           <Transition name="fade">
-            <div v-if="error" class="mb-5 flex items-center gap-2.5 rounded-lg border border-[#DC2626]/20 bg-[#DC2626]/10 px-3 py-2.5 text-sm text-[#f87171]">
+            <div v-if="error" class="mb-5 flex items-center gap-2.5 rounded-lg border border-danger/20 bg-danger-soft px-3 py-2.5 text-sm text-danger">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
                 <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
@@ -139,7 +139,7 @@ async function handleLogin() {
           <form class="space-y-4" @submit.prevent="handleLogin">
             <!-- Email -->
             <div>
-              <label for="email" class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Email</label>
+              <label for="email" class="mb-1.5 block text-sm font-medium text-muted">Email</label>
               <div class="admin-input-group">
                 <span class="admin-input-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -161,7 +161,7 @@ async function handleLogin() {
 
             <!-- Password -->
             <div>
-              <label for="password" class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Contrasena</label>
+              <label for="password" class="mb-1.5 block text-sm font-medium text-muted">Contrasena</label>
               <div class="admin-input-group">
                 <span class="admin-input-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -217,7 +217,7 @@ async function handleLogin() {
         </div>
 
         <!-- Mobile footer -->
-        <div class="mt-6 flex flex-col items-center gap-2 text-xs text-[#64748b] lg:hidden">
+        <div class="mt-6 flex flex-col items-center gap-2 text-xs text-subtle lg:hidden">
           <div class="flex items-center gap-1.5">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />

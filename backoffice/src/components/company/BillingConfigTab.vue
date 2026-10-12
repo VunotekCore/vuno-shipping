@@ -87,21 +87,21 @@ onMounted(() => load())
 
 <template>
   <div class="admin-card p-6">
-    <h2 class="text-sm font-semibold text-[#dae2fd] mb-4">Parámetros de facturación</h2>
+    <h2 class="text-sm font-semibold text-content mb-4">Parámetros de facturación</h2>
 
     <div class="space-y-5">
       <!-- IVA toggle -->
-      <div class="flex items-center justify-between rounded-xl border border-[#1e293b] p-4">
+      <div class="flex items-center justify-between rounded-xl border border-line p-4">
         <div>
-          <p class="text-sm font-medium text-[#dae2fd]">Aplicar IVA</p>
-          <p class="text-xs text-[#64748b] mt-0.5">Agrega el impuesto al total de cada factura</p>
+          <p class="text-sm font-medium text-content">Aplicar IVA</p>
+          <p class="text-xs text-subtle mt-0.5">Agrega el impuesto al total de cada factura</p>
         </div>
         <button
           type="button"
           role="switch"
           :aria-checked="configForm.tax_enabled"
           class="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-          :class="configForm.tax_enabled ? 'bg-[#22c55e]' : 'bg-[#334155]'"
+          :class="configForm.tax_enabled ? 'bg-success' : 'bg-line-strong'"
           @click="configForm.tax_enabled = !configForm.tax_enabled"
         >
           <span
@@ -123,17 +123,17 @@ onMounted(() => load())
       </div>
 
       <!-- RUC toggle -->
-      <div class="flex items-center justify-between rounded-xl border border-[#1e293b] p-4">
+      <div class="flex items-center justify-between rounded-xl border border-line p-4">
         <div>
-          <p class="text-sm font-medium text-[#dae2fd]">Mostrar RUC del cliente</p>
-          <p class="text-xs text-[#64748b] mt-0.5">Imprime el RUC del cliente en la factura si fue cargado</p>
+          <p class="text-sm font-medium text-content">Mostrar RUC del cliente</p>
+          <p class="text-xs text-subtle mt-0.5">Imprime el RUC del cliente en la factura si fue cargado</p>
         </div>
         <button
           type="button"
           role="switch"
           :aria-checked="configForm.show_client_ruc"
           class="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-          :class="configForm.show_client_ruc ? 'bg-[#22c55e]' : 'bg-[#334155]'"
+          :class="configForm.show_client_ruc ? 'bg-success' : 'bg-line-strong'"
           @click="configForm.show_client_ruc = !configForm.show_client_ruc"
         >
           <span
@@ -155,11 +155,11 @@ onMounted(() => load())
       />
 
       <!-- Prefijo de factura (solo lectura, fuente: document_sequence) -->
-      <div class="rounded-xl border border-[#1e293b] p-4 space-y-2">
+      <div class="rounded-xl border border-line p-4 space-y-2">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p class="text-sm font-medium text-[#dae2fd]">Prefijo de factura</p>
-            <p class="text-xs text-[#64748b] mt-0.5">La numeración de facturas se gestiona en Secuencias.</p>
+            <p class="text-sm font-medium text-content">Prefijo de factura</p>
+            <p class="text-xs text-subtle mt-0.5">La numeración de facturas se gestiona en Secuencias.</p>
           </div>
           <button
             v-if="auth.hasPermission('document_sequence', 'read')"
@@ -170,13 +170,13 @@ onMounted(() => load())
           </button>
         </div>
         <div class="flex flex-wrap items-center gap-2 text-sm">
-          <span class="inline-flex items-center rounded-lg bg-[#1e293b] px-2.5 py-1 font-mono text-[#dae2fd]">
+          <span class="inline-flex items-center rounded-lg bg-surface-raised px-2.5 py-1 font-mono text-content">
             {{ invoiceSeq.prefix || 'FAC' }}
           </span>
-          <span class="text-[#64748b]">Próxima factura:</span>
-          <span class="font-mono text-[#69dca4]">{{ invoiceSeq.next_preview }}</span>
+          <span class="text-subtle">Próxima factura:</span>
+          <span class="font-mono text-primary">{{ invoiceSeq.next_preview }}</span>
         </div>
-        <p v-if="!invoiceSeq.exists" class="text-xs text-[#DC2626]">
+        <p v-if="!invoiceSeq.exists" class="text-xs text-danger">
           No se encontró la secuencia "invoice". Creála en Secuencias.
         </p>
       </div>

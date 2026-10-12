@@ -185,7 +185,7 @@ const hasError = computed(() => !!props.error)
   margin-bottom: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #94a3b8;
+  color: #374151;
   line-height: 1;
 }
 .app-form-field__icon {
@@ -193,7 +193,7 @@ const hasError = computed(() => !!props.error)
   flex-shrink: 0;
 }
 .app-form-field__required {
-  color: #f87171;
+  color: #dc2626;
   font-weight: 600;
 }
 .app-form-field__footer {
@@ -210,7 +210,7 @@ const hasError = computed(() => !!props.error)
   line-height: 1.3;
 }
 .app-form-field__helper--error {
-  color: #f87171;
+  color: #dc2626;
 }
 .app-form-field__charcount {
   font-size: 0.6875rem;
@@ -221,12 +221,12 @@ const hasError = computed(() => !!props.error)
   transition: color 0.15s;
 }
 .app-form-field__charcount--warn {
-  color: #fbbf24;
+  color: #d97706;
 }
 .app-form-field__error {
   margin-top: 0.375rem;
   font-size: 0.75rem;
-  color: #f87171;
+  color: #dc2626;
   line-height: 1.3;
 }
 
@@ -234,18 +234,18 @@ const hasError = computed(() => !!props.error)
   display: flex;
   align-items: stretch;
   border-radius: 0.375rem;
-  border: 1.5px solid #404944;
-  background: #1e293b;
+  border: 1.5px solid #cbd5e1;
+  background: #eef2f7;
   overflow: hidden;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .app-phone-input:focus-within {
-  border-color: #69dca4;
-  box-shadow: 0 0 0 2px rgba(105, 220, 164, 0.25);
+  border-color: #1ea7dc;
+  box-shadow: 0 0 0 3px rgba(30, 167, 220, 0.2);
 }
 .app-phone-input--error {
-  border-color: #f87171 !important;
-  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.25) !important;
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
 }
 .app-phone-input--disabled {
   opacity: 0.55;
@@ -257,8 +257,8 @@ const hasError = computed(() => !!props.error)
   padding: 0 0.625rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #69dca4;
-  background: #111d2e;
+  color: #1e4b88;
+  background: #f1f5f9;
   white-space: nowrap;
   user-select: none;
 }
@@ -268,12 +268,12 @@ const hasError = computed(() => !!props.error)
   background: transparent;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  color: #dae2fd;
+  color: #1e293b;
   outline: none;
   min-width: 0;
 }
 .app-phone-input__input::placeholder {
-  color: #64748b;
+  color: #8492a6;
 }
 .app-phone-input__input:disabled {
   cursor: not-allowed;

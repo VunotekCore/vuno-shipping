@@ -242,7 +242,7 @@ const describedBy = computed(() =>
   margin-bottom: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #94a3b8;
+  color: #374151;
   line-height: 1;
 }
 .app-form-field__icon {
@@ -250,7 +250,7 @@ const describedBy = computed(() =>
   flex-shrink: 0;
 }
 .app-form-field__required {
-  color: #f87171;
+  color: #dc2626;
   font-weight: 600;
 }
 .app-form-field__footer {
@@ -267,10 +267,10 @@ const describedBy = computed(() =>
   line-height: 1.3;
 }
 .app-form-field__helper--accent {
-  color: #69dca4;
+  color: #1e4b88;
 }
 .app-form-field__helper--error {
-  color: #f87171;
+  color: #dc2626;
 }
 .app-form-field__charcount {
   font-size: 0.6875rem;
@@ -281,12 +281,12 @@ const describedBy = computed(() =>
   transition: color 0.15s;
 }
 .app-form-field__charcount--warn {
-  color: #fbbf24;
+  color: #d97706;
 }
 .app-form-field__error {
   margin-top: 0.375rem;
   font-size: 0.75rem;
-  color: #f87171;
+  color: #dc2626;
   line-height: 1.3;
 }
 /* Pista de formatos: mas apagada que el error, va debajo. */
@@ -298,28 +298,28 @@ const describedBy = computed(() =>
 }
 .app-ruc-input__sample {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .app-ruc-input__input {
   width: 100%;
   border-radius: 0.375rem;
-  border: 1.5px solid #404944;
-  background: #1e293b;
+  border: 1.5px solid #cbd5e1;
+  background: #eef2f7;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  color: #dae2fd;
+  color: #1e293b;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
 .app-ruc-input__input:focus {
-  border-color: #69dca4;
-  box-shadow: 0 0 0 2px rgba(105, 220, 164, 0.25);
+  border-color: #1ea7dc;
+  box-shadow: 0 0 0 3px rgba(30, 167, 220, 0.2);
 }
 .app-ruc-input__input::placeholder {
-  color: #64748b;
+  color: #8492a6;
 }
 .app-ruc-input__input:disabled {
   opacity: 0.55;

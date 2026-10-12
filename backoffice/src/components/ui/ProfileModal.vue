@@ -88,7 +88,7 @@ async function handleSave() {
   <AppModal :visible="visible" title="Editar perfil" size="sm" @close="emit('close')">
     <form class="space-y-4" @submit.prevent="handleSave">
       <!-- Error -->
-      <div v-if="error" class="flex items-center gap-2 rounded-lg border border-[#DC2626]/20 bg-[#DC2626]/10 px-3 py-2.5 text-sm text-[#f87171]">
+      <div v-if="error" class="flex items-center gap-2 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2.5 text-sm text-danger">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0">
           <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
@@ -96,7 +96,7 @@ async function handleSave() {
       </div>
 
       <!-- Success -->
-      <div v-if="success" class="flex items-center gap-2 rounded-lg border border-[#69dca4]/20 bg-[#69dca4]/10 px-3 py-2.5 text-sm text-[#69dca4]">
+      <div v-if="success" class="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2.5 text-sm text-primary">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0">
           <polyline points="20 6 9 17 4 12" />
         </svg>
@@ -105,7 +105,7 @@ async function handleSave() {
 
       <!-- Name -->
       <div>
-        <label for="profile-name" class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Nombre</label>
+        <label for="profile-name" class="mb-1.5 block text-sm font-medium text-muted">Nombre</label>
         <input
           id="profile-name"
           v-model="name"
@@ -118,7 +118,7 @@ async function handleSave() {
 
       <!-- Email -->
       <div>
-        <label for="profile-email" class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Email</label>
+        <label for="profile-email" class="mb-1.5 block text-sm font-medium text-muted">Email</label>
         <input
           id="profile-email"
           v-model="email"
@@ -133,7 +133,7 @@ async function handleSave() {
       <div>
         <button
           type="button"
-          class="flex items-center gap-2 text-sm text-[#64748b] transition-colors hover:text-[#94a3b8]"
+          class="flex items-center gap-2 text-sm text-subtle transition-colors hover:text-muted"
           @click="showPasswordSection = !showPasswordSection"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" :class="{ 'rotate-90': showPasswordSection }" class="transition-transform">
@@ -147,7 +147,7 @@ async function handleSave() {
       <Transition name="fade">
         <div v-if="showPasswordSection" class="space-y-4">
           <div>
-            <label for="profile-current-pw" class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Contraseña actual</label>
+            <label for="profile-current-pw" class="mb-1.5 block text-sm font-medium text-muted">Contraseña actual</label>
             <input
               id="profile-current-pw"
               v-model="currentPassword"
@@ -158,7 +158,7 @@ async function handleSave() {
             />
           </div>
           <div>
-            <label for="profile-new-pw" class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Nueva contraseña</label>
+            <label for="profile-new-pw" class="mb-1.5 block text-sm font-medium text-muted">Nueva contraseña</label>
             <input
               id="profile-new-pw"
               v-model="newPassword"

@@ -172,7 +172,7 @@ const icons: Record<string, string> = {
   margin-bottom: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #94a3b8;
+  color: #374151;
   line-height: 1;
 }
 .app-form-field__icon {
@@ -180,7 +180,7 @@ const icons: Record<string, string> = {
   flex-shrink: 0;
 }
 .app-form-field__required {
-  color: #f87171;
+  color: #dc2626;
   font-weight: 600;
 }
 .app-form-field__textarea {
@@ -208,22 +208,22 @@ const icons: Record<string, string> = {
   transition: color 0.15s;
 }
 .app-form-field__charcount--warn {
-  color: #fbbf24;
+  color: #d97706;
 }
 .app-form-field__charcount--limit {
-  color: #f87171;
+  color: #dc2626;
   font-weight: 600;
 }
 .app-form-field__error {
   margin-top: 0.375rem;
   font-size: 0.75rem;
-  color: #f87171;
+  color: #dc2626;
   line-height: 1.3;
 }
 
 /* Error state border */
 .admin-input--error {
-  border-color: #f87171 !important;
-  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15) !important;
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
 }
 </style>

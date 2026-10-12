@@ -1,13 +1,13 @@
 {
-  "name": "Shipping Agency — Conductor",
-  "short_name": "Shipping",
-  "description": "App de despacho para conductores de Shipping Agency",
+  "name": "Vuno Shipping — Conductor",
+  "short_name": "Vuno",
+  "description": "App de despacho para conductores de Vuno Shipping",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a1022",
-  "theme_color": "#0a1022",
+  "background_color": "#f8fafc",
+  "theme_color": "#1e4b88",
   "lang": "es",
   "icons": [
     {

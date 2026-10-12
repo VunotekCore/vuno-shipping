@@ -66,7 +66,7 @@ watch(() => modalRef.value, (el) => {
     <Transition name="modal">
       <div
         v-if="visible"
-        class="admin-modal-overlay fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        class="admin-modal-overlay fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-primary-deep/45 backdrop-blur-sm"
         @click="onBackdrop"
         @keydown="onKeydown"
       >
@@ -76,18 +76,18 @@ watch(() => modalRef.value, (el) => {
           aria-modal="true"
           :aria-label="title"
           :class="[
-            'w-full rounded-xl border border-[#1e293b] bg-[#111d2e] shadow-2xl max-h-[90vh] flex flex-col',
+            'w-full rounded-xl border border-line bg-surface shadow-2xl max-h-[90vh] flex flex-col',
             size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg'
           ]"
           @click.stop
         >
           <!-- Header -->
-          <div v-if="title || $slots.header" class="flex items-center justify-between border-b border-[#1e293b] px-6 py-4">
+          <div v-if="title || $slots.header" class="flex items-center justify-between border-b border-line px-6 py-4">
             <slot name="header">
-              <h2 class="text-lg font-semibold text-[#dae2fd]">{{ title }}</h2>
+              <h2 class="text-lg font-semibold text-content">{{ title }}</h2>
             </slot>
             <button
-              class="rounded-lg p-1.5 text-[#64748b] transition-colors hover:bg-white/[0.06] hover:text-[#dae2fd]"
+              class="rounded-lg p-1.5 text-subtle transition-colors hover:bg-surface-raised hover:text-content"
               @click="$emit('close')"
               aria-label="Cerrar"
             >
@@ -101,7 +101,7 @@ watch(() => modalRef.value, (el) => {
           </div>
 
           <!-- Footer -->
-          <div v-if="$slots.footer" class="border-t border-[#1e293b] px-6 py-4">
+          <div v-if="$slots.footer" class="border-t border-line px-6 py-4">
             <slot name="footer" />
           </div>
         </div>

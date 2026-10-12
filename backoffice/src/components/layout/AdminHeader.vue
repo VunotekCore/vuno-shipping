@@ -83,10 +83,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <header class="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b border-[#1e293b] bg-[#111d2e]/80 backdrop-blur-md px-6">
-    <div class="flex items-center gap-3">
+  <header class="admin-appbar sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 px-4 sm:px-6">
+    <div class="flex min-w-0 items-center gap-3">
       <button
-        class="flex items-center justify-center rounded-lg p-1.5 text-[#94a3b8] transition-colors hover:bg-white/[0.06] hover:text-[#dae2fd] lg:hidden"
+        class="flex items-center justify-center rounded-lg p-1.5 text-muted transition-colors hover:bg-surface-raised hover:text-content lg:hidden"
         aria-label="Abrir menu"
         @click="emit('toggle-sidebar')"
       >
@@ -94,13 +94,26 @@ onUnmounted(() => {
           <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
         </svg>
       </button>
-      <h1 class="text-lg font-semibold text-[#dae2fd] max-sm:text-base">{{ pageTitle }}</h1>
+      <span class="hidden h-6 w-px bg-line lg:block" />
+      <div class="min-w-0">
+        <div class="admin-breadcrumb hidden lg:flex">
+          <span>Vuno Shipping</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+          <span class="admin-breadcrumb-current">{{ pageTitle }}</span>
+        </div>
+        <h1 class="truncate text-base font-semibold text-content-strong lg:text-lg">{{ pageTitle }}</h1>
+      </div>
     </div>
 
     <div class="ml-auto flex items-center gap-2" data-notif-dropdown>
+      <button class="admin-appbar-search hidden sm:flex" type="button" aria-label="Buscar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+        <span>Buscar…</span>
+        <span class="admin-kbd ml-2">⌘K</span>
+      </button>
       <div class="relative">
         <button
-          class="relative flex items-center justify-center rounded-lg p-2 text-[#94a3b8] transition-colors hover:bg-white/[0.06] hover:text-[#dae2fd]"
+          class="relative flex items-center justify-center rounded-lg p-2 text-muted transition-colors hover:bg-surface-raised hover:text-content"
           aria-label="Notificaciones"
           @click.stop="toggleDropdown"
         >
@@ -109,33 +122,33 @@ onUnmounted(() => {
           </svg>
           <span
             v-if="notifStore.unreadCount > 0"
-            class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#DC2626] px-1 text-[9px] font-bold text-white"
+            class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold text-white"
           >
             {{ notifStore.unreadCount > 99 ? '99+' : notifStore.unreadCount }}
           </span>
         </button>
 
         <transition enter-active-class="transition ease-out duration-150" enter-from-class="opacity-0 translate-y-1" leave-active-class="transition ease-in duration-100" leave-to-class="opacity-0 translate-y-1">
-          <div v-if="showDropdown" class="absolute right-0 top-full mt-2 w-80 rounded-xl border border-[#1e293b] bg-[#0f1729] shadow-xl shadow-black/40 overflow-hidden">
-            <div class="px-4 py-3 border-b border-[#1e293b]">
-              <p class="text-sm font-semibold text-[#dae2fd]">Notificaciones</p>
+          <div v-if="showDropdown" class="absolute right-0 top-full mt-2 w-80 rounded-xl border border-line bg-surface shadow-lg shadow-primary-deep/10 overflow-hidden">
+            <div class="px-4 py-3 border-b border-line">
+              <p class="text-sm font-semibold text-content">Notificaciones</p>
             </div>
 
-            <div v-if="notifStore.notifications.length === 0" class="px-4 py-8 text-center text-sm text-[#64748b]">
+            <div v-if="notifStore.notifications.length === 0" class="px-4 py-8 text-center text-sm text-subtle">
               Sin notificaciones
             </div>
 
             <div
               v-for="n in notifStore.notifications"
               :key="n.id"
-              :class="['px-4 py-3 border-b border-[#1e293b] cursor-pointer transition-colors hover:bg-white/[0.04]', !n.is_read ? 'bg-white/[0.02]' : '']"
+              :class="['px-4 py-3 border-b border-line cursor-pointer transition-colors hover:bg-surface-raised', !n.is_read ? 'bg-surface-raised' : '']"
               @click="markRead(n)"
             >
-              <p class="text-sm text-[#dae2fd]">{{ n.title }}</p>
-              <p class="text-xs text-[#64748b] mt-0.5">{{ n.message }}</p>
+              <p class="text-sm text-content">{{ n.title }}</p>
+              <p class="text-xs text-subtle mt-0.5">{{ n.message }}</p>
               <div class="flex items-center gap-2 mt-1">
-                <span v-if="n.tracking_number" class="text-xs font-mono text-[#69dca4]">{{ n.tracking_number }}</span>
-                <span class="text-xs text-[#475569]">{{ timeAgo(n.created_at) }}</span>
+                <span v-if="n.tracking_number" class="text-xs font-mono text-primary">{{ n.tracking_number }}</span>
+                <span class="text-xs text-muted">{{ timeAgo(n.created_at) }}</span>
               </div>
             </div>
           </div>

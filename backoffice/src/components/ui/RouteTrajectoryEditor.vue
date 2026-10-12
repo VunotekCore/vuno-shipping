@@ -10,7 +10,7 @@ const props = withDefaults(defineProps<{
   disabled?: boolean
   zoneMarkers?: Array<{ id: number; name: string; lat: number; lng: number }>
 }>(), {
-  color: '#22c55e',
+  color: '#16a34a',
   disabled: false,
   zoneMarkers: () => [],
 })
@@ -66,7 +66,7 @@ function redrawZoneMarkers() {
 
   const layer = L.layerGroup().addTo(map)
   props.zoneMarkers.forEach((z, idx) => {
-    const color = idx === 0 ? '#22c55e' : idx === props.zoneMarkers.length - 1 ? '#ef4444' : '#3b82f6'
+    const color = idx === 0 ? '#16a34a' : idx === props.zoneMarkers.length - 1 ? '#dc2626' : '#0284c7'
     const marker = L.circleMarker([z.lat, z.lng], {
       radius: 8,
       fillColor: color,
@@ -101,7 +101,7 @@ function redraw(fitBounds = false) {
     const first = toLatLng(points.value[0])
     startMarker = L.circleMarker(first, {
       radius: 7,
-      fillColor: '#22c55e',
+      fillColor: '#16a34a',
       color: '#fff',
       weight: 2,
       fillOpacity: 1,
@@ -110,7 +110,7 @@ function redraw(fitBounds = false) {
     const last = toLatLng(points.value[points.value.length - 1])
     endMarker = L.circleMarker(last, {
       radius: 7,
-      fillColor: '#ef4444',
+      fillColor: '#dc2626',
       color: '#fff',
       weight: 2,
       fillOpacity: 1,
@@ -156,7 +156,7 @@ onBeforeUnmount(() => {
 <template>
   <div>
     <div class="mb-2 flex items-center justify-between gap-3">
-      <p class="text-xs text-[#64748b]">
+      <p class="text-xs text-subtle">
         {{ points.length === 0 ? 'Hacé clic en el mapa para dibujar la trayectoria' : `${points.length} punto${points.length === 1 ? '' : 's'}` }}
       </p>
       <div class="flex shrink-0 gap-2">
@@ -164,18 +164,18 @@ onBeforeUnmount(() => {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Deshacer
         </button>
-        <button type="button" class="admin-btn admin-btn-ghost admin-btn-sm text-[#DC2626]" :disabled="disabled || points.length === 0" @click="clear">
+        <button type="button" class="admin-btn admin-btn-ghost admin-btn-sm text-danger" :disabled="disabled || points.length === 0" @click="clear">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           Limpiar
         </button>
       </div>
     </div>
-    <div ref="mapContainer" class="h-[280px] w-full overflow-hidden rounded-xl border border-[#1e293b]" />
-    <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#94a3b8]">
+    <div ref="mapContainer" class="h-[280px] w-full overflow-hidden rounded-xl border border-line" />
+    <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
       <span class="inline-flex items-center gap-1.5"><span class="h-1 w-5 rounded" :style="{ background: color }" /> Trayectoria</span>
-      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#22c55e" /> Inicio</span>
-      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#3b82f6" /> Zona (parada)</span>
-      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#ef4444" /> Fin</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#16a34a" /> Inicio</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#0284c7" /> Zona (parada)</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full" style="background:#dc2626" /> Fin</span>
     </div>
   </div>
 </template>

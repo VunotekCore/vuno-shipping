@@ -133,7 +133,7 @@ onBeforeUnmount(() => {
     <div class="space-y-4">
       <!-- Formato -->
       <div>
-        <p class="mb-1.5 text-sm font-medium text-[#94a3b8]">Formato</p>
+        <p class="mb-1.5 text-sm font-medium text-muted">Formato</p>
         <div class="grid grid-cols-2 gap-2">
           <button
             v-for="opt in ([
@@ -145,23 +145,23 @@ onBeforeUnmount(() => {
             :class="[
               'rounded-xl border px-3 py-2.5 text-left transition-colors',
               format === opt.value
-                ? 'border-[#00A8FF] bg-[#00A8FF]/10'
-                : 'border-[#1e293b] hover:border-[#334155]',
+                ? 'border-secondary bg-secondary/10'
+                : 'border-line hover:border-line-strong',
             ]"
             :aria-pressed="format === opt.value"
             @click="format = opt.value"
           >
-            <span class="block text-sm font-medium" :class="format === opt.value ? 'text-[#00A8FF]' : 'text-[#dae2fd]'">
+            <span class="block text-sm font-medium" :class="format === opt.value ? 'text-secondary' : 'text-content'">
               {{ opt.label }}
             </span>
-            <span class="block text-xs text-[#64748b]">{{ opt.hint }}</span>
+            <span class="block text-xs text-subtle">{{ opt.hint }}</span>
           </button>
         </div>
       </div>
 
       <!-- Moneda del documento -->
       <div>
-        <p class="mb-1.5 text-sm font-medium text-[#94a3b8]">Moneda</p>
+        <p class="mb-1.5 text-sm font-medium text-muted">Moneda</p>
         <div class="grid grid-cols-2 gap-2">
           <button
             v-for="opt in ([
@@ -183,7 +183,7 @@ onBeforeUnmount(() => {
       <div class="relative">
         <div
           ref="stageRef"
-          class="flex max-h-[52vh] items-start justify-center overflow-auto rounded-xl border border-[#1e293b] bg-[#0f172a] p-4"
+          class="flex max-h-[52vh] items-start justify-center overflow-auto rounded-xl border border-line bg-surface-sunken p-4"
         >
           <div v-if="url" class="relative shrink-0" :style="canvasStyle">
             <iframe
@@ -199,22 +199,22 @@ onBeforeUnmount(() => {
 
         <div
           v-if="!loaded"
-          class="absolute inset-0 flex items-center justify-center rounded-xl bg-[#0f172a]/80"
+          class="absolute inset-0 flex items-center justify-center rounded-xl bg-surface-sunken/80"
         >
-          <div class="flex items-center gap-2 text-sm text-[#94a3b8]">
-            <span class="h-4 w-4 animate-spin rounded-full border-2 border-[#334155] border-t-[#00A8FF]" />
+          <div class="flex items-center gap-2 text-sm text-muted">
+            <span class="h-4 w-4 animate-spin rounded-full border-2 border-line-strong border-t-secondary" />
             Generando vista previa...
           </div>
         </div>
       </div>
 
-      <p class="text-xs text-[#64748b]">
+      <p class="text-xs text-subtle">
         <template v-if="format === 'ticket'">
           Importes y total convertidos a córdobas. Si tu impresora es térmica, seleccioná la bobina de
-          <strong class="text-[#94a3b8]">80 mm</strong> en el diálogo de impresión.
+          <strong class="text-muted">80 mm</strong> en el diálogo de impresión.
         </template>
         <template v-else>
-          Tamaño de papel <strong class="text-[#94a3b8]">Carta</strong>. En el diálogo de impresión podés
+          Tamaño de papel <strong class="text-muted">Carta</strong>. En el diálogo de impresión podés
           elegir “Guardar como PDF”.
         </template>
       </p>

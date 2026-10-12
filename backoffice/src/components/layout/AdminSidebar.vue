@@ -219,16 +219,16 @@ function handleLogout() {
 <template>
   <aside
     v-bind="attrs"
-    class="fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-[#1e293b] bg-[#0b1326] transition-transform duration-300 max-lg:-translate-x-full max-lg:shadow-xl"
+    class="sidebar-shell fixed inset-y-0 left-0 z-40 flex w-60 flex-col transition-transform duration-300 max-lg:-translate-x-full max-lg:shadow-2xl"
   >
     <!-- Logo -->
-    <div class="flex h-16 shrink-0 items-center gap-2 border-b border-[#1e293b] px-4">
-      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#69dca4]/15 text-[#69dca4]">
+    <div class="sidebar-brand flex h-16 shrink-0 items-center gap-2 px-4">
+      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white ring-1 ring-white/15">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
         </svg>
       </div>
-      <span class="text-sm font-semibold text-[#dae2fd] tracking-wide">Shipping</span>
+      <span class="text-sm font-bold text-white tracking-tight">Vuno Shipping</span>
     </div>
 
     <!-- Nav -->
@@ -238,19 +238,14 @@ function handleLogout() {
         <button
           :class="[
             'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
-            isActive(dashboardItem.route)
-              ? 'sidebar-link-active'
-              : 'text-[#94a3b8] hover:bg-white/[0.04] hover:text-[#dae2fd]'
+            isActive(dashboardItem.route) ? 'sidebar-link-active' : 'sidebar-link'
           ]"
           @click="navigate(dashboardItem.route)"
         >
           <svg
             width="20" height="20" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-            :class="[
-              'shrink-0 transition-colors',
-              isActive(dashboardItem.route) ? 'text-[#69dca4]' : 'text-[#64748b] group-hover:text-[#94a3b8]'
-            ]"
+            class="shrink-0"
           >
             <path :d="dashboardItem.icon" />
           </svg>
@@ -294,41 +289,36 @@ function handleLogout() {
                 :key="item.route"
                 :class="[
                   'group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150',
-                  isActive(item.route)
-                    ? 'sidebar-link-active'
-                    : 'text-[#94a3b8] hover:bg-white/[0.04] hover:text-[#dae2fd]'
+                  isActive(item.route) ? 'sidebar-link-active' : 'sidebar-link'
                 ]"
                 @click="navigate(item.route)"
               >
                 <svg
                   width="18" height="18" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                  :class="[
-                    'shrink-0 transition-colors',
-                    isActive(item.route) ? 'text-[#69dca4]' : 'text-[#64748b] group-hover:text-[#94a3b8]'
-                  ]"
+                  class="shrink-0"
                 >
                   <path :d="item.icon" />
                 </svg>
                 <span>{{ item.label }}</span>
               </button>
             </template>
-            <p v-else class="px-3 py-2 text-xs text-[#475569] italic">Próximamente</p>
+            <p v-else class="px-3 py-2 text-xs italic" style="color: rgba(148,163,184,0.6)">Próximamente</p>
           </div>
         </div>
       </div>
     </nav>
 
     <!-- Bottom: ver sitio web + user -->
-    <div class="shrink-0 border-t border-[#1e293b] p-3 space-y-1">
+    <div class="shrink-0 border-t sidebar-divider p-3 space-y-1">
       <!-- Ver sitio web -->
       <a
         href="/"
         target="_blank"
         rel="noopener noreferrer"
-        class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#94a3b8] transition-colors hover:bg-white/[0.04] hover:text-[#dae2fd]"
+        class="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-[#64748b]">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
           <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
         </svg>
         <span>Ver sitio web</span>
@@ -337,17 +327,17 @@ function handleLogout() {
       <!-- User (clickable → popover) -->
       <div ref="menuRef" class="relative">
         <button
-          class="flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-white/[0.04]"
+          class="sidebar-link flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors"
           @click="openUserMenu"
         >
-          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#69dca4]/15 text-[10px] font-bold text-[#69dca4]">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-[10px] font-bold text-white">
             {{ userInitials }}
           </div>
           <div class="min-w-0 flex-1 text-left">
-            <p class="truncate text-sm font-medium text-[#dae2fd] leading-tight">{{ auth.user?.name }}</p>
-            <p class="truncate text-xs text-[#64748b] leading-tight">{{ auth.user?.role_name }}</p>
+            <p class="truncate text-sm font-medium text-white leading-tight">{{ auth.user?.name }}</p>
+            <p class="truncate text-xs text-white/55 leading-tight">{{ auth.user?.role_name }}</p>
           </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-[#64748b]" :class="{ 'rotate-90': showUserMenu }">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-white/55" :class="{ 'rotate-90': showUserMenu }">
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </button>
@@ -356,16 +346,16 @@ function handleLogout() {
         <Transition name="pop">
           <div
             v-if="showUserMenu"
-            class="absolute bottom-full left-0 right-0 mb-2 rounded-lg border border-[#1e293b] bg-[#111d2e] shadow-xl z-50"
+            class="absolute bottom-full left-0 right-0 mb-2 rounded-lg border border-line bg-surface shadow-xl z-50"
           >
             <!-- User info -->
-            <div class="flex items-center gap-3 border-b border-[#1e293b] px-3 py-3">
-              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#69dca4]/15 text-[11px] font-bold text-[#69dca4]">
+            <div class="flex items-center gap-3 border-b border-line px-3 py-3">
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
                 {{ userInitials }}
               </div>
               <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-[#dae2fd]">{{ auth.user?.name }}</p>
-                <p class="truncate text-xs text-[#64748b]">{{ auth.user?.email }}</p>
+                <p class="truncate text-sm font-medium text-content">{{ auth.user?.name }}</p>
+                <p class="truncate text-xs text-subtle">{{ auth.user?.email }}</p>
               </div>
             </div>
 
@@ -373,13 +363,13 @@ function handleLogout() {
             <div class="p-1.5">
               <!-- Role badge -->
               <div class="flex items-center justify-between rounded-md px-2.5 py-2">
-                <span class="text-xs text-[#64748b]">Rol</span>
-                <span class="rounded-full bg-[#69dca4]/15 px-2 py-0.5 text-[10px] font-medium text-[#69dca4]">{{ auth.user?.role_name }}</span>
+                <span class="text-xs text-subtle">Rol</span>
+                <span class="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">{{ auth.user?.role_name }}</span>
               </div>
 
               <!-- Edit profile -->
               <button
-                class="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs text-[#94a3b8] transition-colors hover:bg-white/[0.04] hover:text-[#dae2fd]"
+                class="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs text-muted transition-colors hover:bg-surface-raised hover:text-content"
                 @click="showUserMenu = false; showProfileModal = true"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
@@ -390,7 +380,7 @@ function handleLogout() {
 
               <!-- Logout -->
               <button
-                class="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs text-[#DC2626] transition-colors hover:bg-[#DC2626]/10"
+                class="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs text-danger transition-colors hover:bg-danger/10"
                 @click="handleLogout"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">

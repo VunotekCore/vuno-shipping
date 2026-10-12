@@ -167,36 +167,36 @@ onMounted(() => load())
 <template>
   <div class="admin-card">
     <div class="admin-card-header">
-      <h3 class="text-sm font-semibold text-[#dae2fd]">Datos de la empresa</h3>
+      <h3 class="text-sm font-semibold text-content">Datos de la empresa</h3>
     </div>
     <div class="admin-card-body">
       <div class="flex flex-col gap-6 lg:flex-row">
         <!-- Logo -->
         <div class="shrink-0 lg:w-48">
-          <label class="mb-1.5 block text-sm font-medium text-[#94a3b8]">Logo</label>
+          <label class="mb-1.5 block text-sm font-medium text-muted">Logo</label>
           <div
             v-if="!form.logo"
             class="relative flex h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed transition-colors lg:h-32 lg:w-48"
-            :class="dragover ? 'border-[#69dca4] bg-[#69dca4]/5' : 'border-[#1e293b] hover:border-[#334155]'"
+            :class="dragover ? 'border-primary bg-primary/5' : 'border-line hover:border-line-strong'"
             @click="openFilePicker" @drop.prevent="onDrop" @dragover="onDragOver" @dragleave="onDragLeave"
           >
             <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" class="hidden" @change="onFileChange" />
             <template v-if="uploading">
-              <svg class="h-6 w-6 animate-spin text-[#69dca4]" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-              <span class="text-xs text-[#64748b]">Subiendo...</span>
+              <svg class="h-6 w-6 animate-spin text-primary" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+              <span class="text-xs text-subtle">Subiendo...</span>
             </template>
             <template v-else>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-[#64748b]"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
-              <span class="text-center text-xs text-[#64748b]">Subir logo</span>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-subtle"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+              <span class="text-center text-xs text-subtle">Subir logo</span>
             </template>
           </div>
           <div v-else class="group relative h-24 w-full overflow-hidden rounded-lg lg:h-32 lg:w-48">
             <img :src="form.logo" alt="Logo" class="h-full w-full object-contain" />
-            <div class="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+            <div class="absolute inset-0 flex items-center justify-center gap-1.5 bg-primary-deep/55 opacity-0 transition-opacity group-hover:opacity-100">
               <button type="button" @click.stop="openFilePicker" class="rounded-md bg-white/20 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-white/30" title="Cambiar">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
-              <button type="button" @click.stop="removeLogo" class="rounded-md bg-[#DC2626]/80 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-[#DC2626]" title="Eliminar">
+              <button type="button" @click.stop="removeLogo" class="rounded-md bg-danger/80 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-danger" title="Eliminar">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               </button>
             </div>

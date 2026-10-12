@@ -16,7 +16,10 @@ function closeSidebar() {
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-[#0a1022]">
+  <div class="relative flex min-h-screen">
+    <!-- Atmospheric canvas -->
+    <div class="admin-atmosphere" aria-hidden="true" />
+
     <!-- Sidebar (fixed) -->
     <AdminSidebar :class="{ 'max-lg:translate-x-0': sidebarOpen }" @close="closeSidebar" />
 
@@ -24,16 +27,18 @@ function closeSidebar() {
     <Transition name="fade">
       <div
         v-if="sidebarOpen"
-        class="fixed inset-0 z-30 bg-black/50 lg:hidden"
+        class="fixed inset-0 z-30 bg-primary-deep/45 lg:hidden"
         @click="closeSidebar"
       />
     </Transition>
 
     <!-- Content -->
-    <div class="flex flex-1 flex-col pl-60 transition-all duration-300 max-lg:pl-0">
+    <div class="relative z-10 flex flex-1 flex-col pl-60 transition-all duration-300 max-lg:pl-0">
       <AdminHeader @toggle-sidebar="toggleSidebar" />
-      <main class="flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
-        <RouterView />
+      <main class="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+        <div class="mx-auto w-full max-w-[1400px]">
+          <RouterView />
+        </div>
       </main>
     </div>
 

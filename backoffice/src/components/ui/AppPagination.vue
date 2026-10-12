@@ -63,7 +63,7 @@ function setLimit(e: Event) {
 <template>
   <div v-if="total > 0" class="admin-pagination">
     <div class="admin-pagination-info">
-      <span class="text-sm text-[#94a3b8]">
+      <span class="text-sm text-muted">
         Mostrando {{ showingFrom }}–{{ showingTo }} de {{ total }}
       </span>
       <select :value="limit" class="admin-pagination-select" @change="setLimit">

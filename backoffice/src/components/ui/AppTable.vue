@@ -35,7 +35,7 @@ defineProps<{
         <template v-if="loading">
           <tr v-for="i in 5" :key="i">
             <td v-for="col in columns" :key="col.key">
-              <div class="h-4 w-3/4 animate-pulse rounded bg-[#1e293b]" />
+              <div class="h-4 w-3/4 animate-pulse rounded bg-surface-raised" />
             </td>
           </tr>
         </template>

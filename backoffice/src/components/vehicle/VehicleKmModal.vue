@@ -123,15 +123,15 @@ async function submit() {
     <form class="space-y-4" @submit.prevent="submit">
       <div
         v-if="vehicle"
-        class="rounded-xl border border-[#1e293b] bg-[#0f172a] px-4 py-3 text-sm"
+        class="rounded-xl border border-line bg-surface-sunken px-4 py-3 text-sm"
       >
         <div class="flex items-center justify-between">
-          <span class="text-[#64748b]">Vehículo</span>
-          <span class="font-medium text-[#dae2fd]">{{ vehicle.plate }}</span>
+          <span class="text-subtle">Vehículo</span>
+          <span class="font-medium text-content">{{ vehicle.plate }}</span>
         </div>
         <div class="mt-1 flex items-center justify-between">
-          <span class="text-[#64748b]">Kilometraje actual</span>
-          <span class="text-[#94a3b8]">{{ previousKm.toLocaleString('es-NI') }} km</span>
+          <span class="text-subtle">Kilometraje actual</span>
+          <span class="text-muted">{{ previousKm.toLocaleString('es-NI') }} km</span>
         </div>
       </div>
 
@@ -158,7 +158,7 @@ async function submit() {
         :disabled="saving"
       />
 
-      <p v-if="delta != null" class="text-sm" :class="isCorrection ? 'text-[#f59e0b]' : 'text-[#64748b]'">
+      <p v-if="delta != null" class="text-sm" :class="isCorrection ? 'text-warning' : 'text-subtle'">
         Variación: <span class="font-medium">{{ delta > 0 ? '+' : '' }}{{ delta.toLocaleString('es-NI') }} km</span>
         <template v-if="isCorrection"> · corrección hacia abajo</template>
       </p>
@@ -175,7 +175,7 @@ async function submit() {
         :rows="3"
       />
 
-      <p v-if="error" class="rounded-lg border border-[#7f1d1d] bg-[#450a0a] px-3 py-2 text-sm text-[#fca5a5]">
+      <p v-if="error" class="rounded-lg border border-danger bg-danger px-3 py-2 text-sm text-danger">
         {{ error }}
       </p>
     </form>

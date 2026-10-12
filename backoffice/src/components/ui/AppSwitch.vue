@@ -16,8 +16,8 @@ defineEmits<{
     :aria-checked="modelValue"
     :disabled="disabled"
     :class="[
-      'admin-toggle relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#69dca4]/50 disabled:cursor-not-allowed disabled:opacity-50',
-      modelValue ? 'bg-[#69dca4]' : 'bg-[#2a3038]'
+      'admin-toggle relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50',
+      modelValue ? 'bg-primary' : 'bg-line-strong'
     ]"
     @click="$emit('update:modelValue', !modelValue)"
   >
