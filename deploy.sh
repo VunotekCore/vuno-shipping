@@ -14,6 +14,7 @@ cp -r dist/* "$DEPLOY_DIR/"
 
 cp -r api "$DEPLOY_DIR/api/"
 rm -f "$DEPLOY_DIR/api/.env"
+rm -f "$DEPLOY_DIR/api/testlight.php"
 
 mkdir -p "$DEPLOY_DIR/backoffice"
 cp -r backoffice/dist/* "$DEPLOY_DIR/backoffice/"

@@ -11,6 +11,10 @@
   Require all denied
 </Files>
 
+<Files "testlight.php">
+  Require all denied
+</Files>
+
 # Bloquear archivos de datos y configuración
 <FilesMatch "\.(sql|env|json|lock|example)$">
   Require all denied

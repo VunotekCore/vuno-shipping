@@ -36,8 +36,9 @@ AGENTS.md
 # Design references
 html-designs/
 
-# Deploy artifact
+# Deploy artifacts
 shipping-deploy.tar.gz
+shipping-deploy/
 
 # Dev/test scripts
 api/testlight.php
