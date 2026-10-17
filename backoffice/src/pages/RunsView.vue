@@ -132,17 +132,17 @@ const columns: TableColumn[] = [
       <template #actions>
         <div class="flex flex-wrap items-end gap-3">
           <div>
-            <label class="mb-1.5 block text-xs font-medium text-subtle">Fecha</label>
+            <label class="mb-1.5 block text-xs font-medium text-content">Fecha</label>
             <input v-model="filters.date" type="date" class="admin-input h-10" @change="applyFilters" />
           </div>
           <div>
-            <label class="mb-1.5 block text-xs font-medium text-subtle">Estado</label>
+            <label class="mb-1.5 block text-xs font-medium text-content">Estado</label>
             <select v-model="filters.status" class="admin-input h-10">
               <option v-for="o in statusOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
             </select>
           </div>
           <div>
-            <label class="mb-1.5 block text-xs font-medium text-subtle">Ruta</label>
+            <label class="mb-1.5 block text-xs font-medium text-content">Ruta</label>
             <select v-model="filters.route_id" class="admin-input h-10">
               <option value="">Todas las rutas</option>
               <option v-for="r in routes" :key="r.id" :value="String(r.id)">{{ r.name }}</option>

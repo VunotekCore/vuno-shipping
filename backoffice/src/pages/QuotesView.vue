@@ -647,34 +647,34 @@ onMounted(async () => {
           <div class="admin-form-section">Configuración de envío</div>
           <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Origen</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Origen</label>
               <AppDropdown :model-value="form.origin" @update:model-value="(v: string | number | null) => form.origin = (v === 'local' ? 'local' : 'online')" :options="originOptions" :disabled="saving" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Cliente (opcional)</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Cliente (opcional)</label>
               <AppDropdown :model-value="form.client_id" @update:model-value="(v: string | number | null) => form.client_id = v == null || v === '' ? null : Number(v)" :options="clientOptions" placeholder="Sin cliente asociado" :disabled="saving" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Zona</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Zona</label>
               <AppDropdown :model-value="form.zone_id" @update:model-value="(v: string | number | null) => form.zone_id = v == null || v === '' ? null : Number(v)" :options="zoneOptions" placeholder="Seleccionar zona" :disabled="saving" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Tipo de entrega</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Tipo de entrega</label>
               <AppDropdown :model-value="form.delivery_type || null" @update:model-value="(v: string | number | null) => form.delivery_type = String(v ?? '')" :options="deliveryTypeOpts" placeholder="Seleccionar tipo" :disabled="saving" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Servicio</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Servicio</label>
               <AppDropdown :model-value="form.shipping_service || null" @update:model-value="(v: string | number | null) => form.shipping_service = String(v ?? '')" :options="serviceOpts" placeholder="Seleccionar servicio" :disabled="saving" />
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Opción de entrega</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Opción de entrega</label>
               <AppDropdown :model-value="form.delivery_option || null" @update:model-value="(v: string | number | null) => form.delivery_option = String(v ?? '')" :options="optionOpts" placeholder="Seleccionar opción" :disabled="saving" />
             </div>
             <div>
               <AppFormField :model-value="fv('valid_until')" @update:model-value="(v: string | number | null) => form.valid_until = String(v ?? '')" label="Válida hasta" type="date" icon="calendar" :disabled="saving" />
             </div>
             <div v-if="!isVendor">
-              <label class="mb-1.5 block text-sm font-medium text-muted">Vendedor asignado</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Vendedor asignado</label>
               <AppDropdown :model-value="form.agent_id" @update:model-value="(v: string | number | null) => form.agent_id = v == null || v === '' ? null : Number(v)" :options="agentOptions" placeholder="Sin asignar" :disabled="saving" />
             </div>
             <div class="flex items-end">
@@ -684,7 +684,7 @@ onMounted(async () => {
               </label>
             </div>
             <div v-if="form.pickup_required">
-              <label class="mb-1.5 block text-sm font-medium text-muted">Vehículo de recolección</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Vehículo de recolección</label>
               <AppDropdown
                 :model-value="form.pickup_vehicle_id"
                 @update:model-value="(v: string | number | null) => form.pickup_vehicle_id = v == null || v === '' ? null : Number(v)"

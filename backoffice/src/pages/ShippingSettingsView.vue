@@ -473,7 +473,7 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
     <div v-show="activeTab === 'mapping'" class="space-y-4">
       <!-- Select service -->
       <div class="admin-card p-5">
-        <label class="mb-1.5 block text-sm font-medium text-muted">Servicio de envío</label>
+        <label class="mb-1.5 block text-sm font-medium text-content">Servicio de envío</label>
         <AppDropdown
           :model-value="mappingServiceId"
           @update:model-value="(v: string | number | null) => mappingServiceId = v as number | null"
@@ -556,22 +556,22 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
     <AppModal :visible="showModal" :title="modalTitle" @close="showModal = false" size="sm">
       <form class="space-y-4" @submit.prevent="handleSave">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Nombre *</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Nombre *</label>
           <input v-model="form.name" class="admin-input" placeholder="Nombre" required :disabled="saving" maxlength="100" />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Descripción</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Descripción</label>
           <textarea v-model="form.description" class="admin-input" rows="2" placeholder="Descripción opcional" :disabled="saving" maxlength="500" />
         </div>
         <div v-if="activeTab === 'delivery_types'">
-          <label class="mb-1.5 block text-sm font-medium text-muted">Categoría</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Categoría</label>
           <select v-model="form.category" class="admin-input" :disabled="saving">
             <option value="international">Internacional</option>
             <option value="local">Local</option>
           </select>
         </div>
         <div v-if="activeTab === 'services'">
-          <label class="mb-1.5 block text-sm font-medium text-muted">Tipo de entrega asociado</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Tipo de entrega asociado</label>
           <select v-model="form.delivery_type_id" class="admin-input" :disabled="saving">
             <option :value="null">Ninguno</option>
             <option v-for="dt in deliveryTypeOptions" :key="dt.id" :value="dt.id">{{ dt.name }} — {{ dt.description || '' }}</option>

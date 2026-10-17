@@ -187,7 +187,7 @@ onMounted(() => load())
               @input="clearError('name')"
             />
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Área <span class="text-danger">*</span></label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Área <span class="text-danger">*</span></label>
               <AppDropdown
                 :model-value="fv('area_id')"
                 @update:model-value="(v: string | number | null) => { form.area_id = v; clearError('area_id') }"

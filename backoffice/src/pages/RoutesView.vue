@@ -228,7 +228,7 @@ onMounted(() => load())
             </td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">
-                <button class="admin-btn admin-btn-primary admin-btn-sm" :disabled="openingRun !== null" @click="openTodayRun(r)">
+                <button class="admin-btn admin-btn-accent admin-btn-sm" :disabled="openingRun !== null" @click="openTodayRun(r)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   {{ openingRun === r.id ? 'Creando...' : (r.open_run_id ? 'Abrir' : 'Despacho de hoy') }}
                 </button>
@@ -277,7 +277,7 @@ onMounted(() => load())
           <p class="text-sm text-muted">{{ r.zone_count ?? 0 }} zonas · {{ r.runs_count ?? 0 }} despachos</p>
           <p v-if="!r.open_run_status" class="text-xs text-subtle">Sin despacho para hoy</p>
           <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">
-            <button class="admin-btn admin-btn-primary admin-btn-sm" :disabled="openingRun !== null" @click="openTodayRun(r)">
+            <button class="admin-btn admin-btn-accent admin-btn-sm" :disabled="openingRun !== null" @click="openTodayRun(r)">
               {{ openingRun === r.id ? 'Creando...' : (r.open_run_id ? 'Abrir despacho' : 'Despacho de hoy') }}
             </button>
             <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEdit(r)">Editar</button>
@@ -319,7 +319,7 @@ onMounted(() => load())
               :maxlength="255"
             />
             <div class="flex items-center gap-3">
-              <label class="text-sm text-muted">Color:</label>
+              <label class="text-sm text-content">Color:</label>
               <input v-model="form.color" type="color" class="h-9 w-16 rounded border border-line bg-transparent cursor-pointer" :disabled="saving" />
             </div>
           </div>
@@ -406,7 +406,7 @@ onMounted(() => load())
           <div v-if="loadingAssign" class="mt-3 text-sm text-subtle">Cargando conductores y vehículos...</div>
           <div v-else class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Conductor por defecto</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Conductor por defecto</label>
               <select
                 v-model="form.default_driver_id"
                 class="admin-input w-full"
@@ -417,7 +417,7 @@ onMounted(() => load())
               </select>
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Vehículo por defecto</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Vehículo por defecto</label>
               <select
                 v-model="form.default_vehicle_id"
                 class="admin-input w-full"

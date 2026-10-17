@@ -311,7 +311,7 @@ onMounted(async () => {
             />
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-muted">Tipo de cálculo</label>
+                <label class="mb-1.5 block text-sm font-medium text-content">Tipo de cálculo</label>
                 <select
                   :value="form.type_id ?? ''"
                   @change="onTypeChange"
@@ -323,7 +323,7 @@ onMounted(async () => {
                 </select>
               </div>
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-muted">Tipo de entrega</label>
+                <label class="mb-1.5 block text-sm font-medium text-content">Tipo de entrega</label>
                 <select
                   :value="form.delivery_type_id ?? ''"
                   @change="form.delivery_type_id = ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null"

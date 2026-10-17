@@ -350,7 +350,7 @@ onMounted(() => load())
               @input="clearError('password')"
             />
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Rol <span class="text-danger">*</span></label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Rol <span class="text-danger">*</span></label>
               <AppDropdown
                 :model-value="fv('role_id')"
                 @update:model-value="(v: string | number | null) => { form.role_id = v; clearError('role_id') }"
@@ -362,7 +362,7 @@ onMounted(() => load())
               <p v-if="fieldErrors.role_id" class="mt-1.5 text-xs text-danger">{{ fieldErrors.role_id }}</p>
             </div>
             <div v-if="selectedRoleSlug === 'vendedor'">
-              <label class="mb-1.5 block text-sm font-medium text-muted">Comisión por venta</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Comisión por venta</label>
               <div class="grid grid-cols-2 gap-3">
                 <AppDropdown
                   :model-value="fv('commission_type') ?? 'none'"

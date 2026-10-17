@@ -173,7 +173,7 @@ onMounted(() => load())
       <div class="flex flex-col gap-6 lg:flex-row">
         <!-- Logo -->
         <div class="shrink-0 lg:w-48">
-          <label class="mb-1.5 block text-sm font-medium text-muted">Logo</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Logo</label>
           <div
             v-if="!form.logo"
             class="relative flex h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed transition-colors lg:h-32 lg:w-48"

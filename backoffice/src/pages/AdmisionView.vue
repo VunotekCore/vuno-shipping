@@ -724,7 +724,7 @@ onMounted(() => loadReferenceData())
             <div class="space-y-3">
               <!-- Search existing -->
               <div class="relative" v-if="!showClientCreate">
-                <label class="mb-1.5 block text-sm font-medium text-muted">Buscar cliente existente</label>
+                <label class="mb-1.5 block text-sm font-medium text-content">Buscar cliente existente</label>
                 <input
                   v-model="clientSearch"
                   class="admin-input w-full"
@@ -951,7 +951,7 @@ onMounted(() => loadReferenceData())
               </div>
               <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div class="max-w-sm" style="overflow: visible">
-                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Departamento</label>
+                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Departamento</label>
                   <AppDropdown
                     :model-value="form.recipient_department"
                     @update:model-value="(v: string | number | null) => form.recipient_department = String(v ?? '')"
@@ -961,7 +961,7 @@ onMounted(() => loadReferenceData())
                   />
                 </div>
                 <div class="max-w-sm" style="overflow: visible">
-                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Ciudad</label>
+                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Ciudad</label>
                   <AppDropdown
                     :model-value="form.recipient_city"
                     @update:model-value="(v: string | number | null) => form.recipient_city = String(v ?? '')"
@@ -994,7 +994,7 @@ onMounted(() => loadReferenceData())
                 :rows="2"
               />
               <div>
-                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Regla de precio</label>
+                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Regla de precio</label>
                 <AppDropdown
                   :model-value="form.pricing_rule_id"
                   @update:model-value="(v: string | number | null) => form.pricing_rule_id = v as number | null"
@@ -1003,7 +1003,7 @@ onMounted(() => loadReferenceData())
                 />
               </div>
               <div v-if="form.delivery_option === 'door'" class="max-w-md" style="overflow: visible">
-                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Zona de entrega</label>
+                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Zona de entrega</label>
                 <AppDropdown
                   :model-value="form.zone_id"
                   @update:model-value="(v: string | number | null) => form.zone_id = v as number | null"
@@ -1079,7 +1079,7 @@ onMounted(() => loadReferenceData())
               Almacenaje
             </p>
             <div>
-              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Clasificación <span class="text-danger">*</span></label>
+              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Clasificación <span class="text-danger">*</span></label>
               <AppDropdown
                 :model-value="form.storage_category_id"
                 @update:model-value="(v: string | number | null) => form.storage_category_id = v as number | null"
@@ -1089,7 +1089,7 @@ onMounted(() => loadReferenceData())
               />
             </div>
             <div>
-              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">
+              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">
                 Ubicación · {{ form.origin === 'local' ? 'Bodega Nicaragua' : 'Bodega Miami' }}
               </label>
               <AppDropdown

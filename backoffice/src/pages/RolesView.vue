@@ -285,7 +285,7 @@ onMounted(() => load())
             <span class="text-sm font-semibold text-content uppercase tracking-wide">{{ module }}</span>
           </div>
           <div class="grid grid-cols-2 gap-2 pl-8 sm:grid-cols-3 md:grid-cols-4">
-            <label v-for="p in perms" :key="p.id" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-raised">
+            <label v-for="p in perms" :key="p.id" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-content transition-colors hover:bg-surface-raised">
               <input type="checkbox" :checked="selectedPerms.has(p.id)" @change="togglePerm(p.id)" class="h-4 w-4 rounded border-line-strong bg-surface-raised text-primary focus:ring-primary/50" />
               {{ p.action }}
             </label>

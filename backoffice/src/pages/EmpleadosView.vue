@@ -290,7 +290,7 @@ onMounted(() => load())
           </div>
           <div class="mt-3 space-y-4">
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Puesto <span class="text-danger">*</span></label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Puesto <span class="text-danger">*</span></label>
               <AppDropdown
                 :model-value="fv('puesto_id')"
                 @update:model-value="(v: string | number | null) => { form.puesto_id = v; clearError('puesto_id') }"
@@ -302,7 +302,7 @@ onMounted(() => load())
               <p v-if="fieldErrors.puesto_id" class="mt-1.5 text-xs text-danger">{{ fieldErrors.puesto_id }}</p>
             </div>
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Usuario de acceso</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Usuario de acceso</label>
               <AppDropdown
                 :model-value="fv('user_id')"
                 @update:model-value="(v: string | number | null) => form.user_id = v"

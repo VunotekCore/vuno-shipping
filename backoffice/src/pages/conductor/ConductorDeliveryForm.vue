@@ -339,7 +339,7 @@ onUnmounted(() => {
       <!-- Step 1: Notes -->
       <div v-if="step === 'form'" class="admin-card p-5 space-y-4">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Notas de la entrega</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Notas de la entrega</label>
           <textarea v-model="notes" class="admin-input min-h-[100px]" placeholder="Observaciones sobre la entrega..." :disabled="saving" />
         </div>
         <button class="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-surface transition-opacity hover:opacity-90" @click="step = 'signature'">
@@ -379,7 +379,7 @@ onUnmounted(() => {
           <button v-else class="flex-1 rounded-lg border border-line-strong py-2.5 text-sm text-muted" @click="startCamera">
             Activar cámara
           </button>
-          <label class="flex-1 cursor-pointer rounded-lg border border-line-strong py-2.5 text-center text-sm text-muted">
+          <label class="flex-1 cursor-pointer rounded-lg border border-line-strong py-2.5 text-center text-sm text-content">
             Subir archivo
             <input type="file" accept="image/*" class="hidden" @change="selectPhoto" />
           </label>

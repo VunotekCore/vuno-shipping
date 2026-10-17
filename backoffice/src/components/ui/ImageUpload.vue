@@ -105,7 +105,7 @@ function removeImage() {
 
 <template>
   <div>
-    <label v-if="label" class="mb-1.5 block text-sm font-medium text-muted">{{ label }}</label>
+    <label v-if="label" class="mb-1.5 block text-sm font-medium text-content">{{ label }}</label>
 
     <div
       v-if="!preview"

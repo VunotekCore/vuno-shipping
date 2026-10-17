@@ -558,7 +558,7 @@ onMounted(() => loadPackage())
     <AppModal :visible="showStatusModal" title="Actualizar estado" @close="showStatusModal = false">
       <form class="space-y-4" @submit.prevent="updateStatus">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Nuevo estado</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Nuevo estado</label>
           <select
             v-model="statusForm.status"
             class="admin-input"
@@ -572,7 +572,7 @@ onMounted(() => loadPackage())
           </select>
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Descripción (opcional)</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Descripción (opcional)</label>
           <textarea
             v-model="statusForm.description"
             class="admin-input"
@@ -602,7 +602,7 @@ onMounted(() => loadPackage())
     <AppModal :visible="showStorageModal" title="Gestionar almacenaje" @close="showStorageModal = false">
       <div class="space-y-4">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Clasificación</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Clasificación</label>
           <AppDropdown
             :model-value="storageForm.storage_category_id"
             :options="storageCategories.map((c) => ({ value: c.id, label: c.name }))"
@@ -612,7 +612,7 @@ onMounted(() => loadPackage())
           />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Ubicación</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Ubicación</label>
           <AppDropdown
             :model-value="storageForm.storage_location_id"
             :options="storageLocationOptions"

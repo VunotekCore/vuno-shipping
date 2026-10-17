@@ -433,7 +433,7 @@ onMounted(async () => {
           </div>
 
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Moneda del cobro</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Moneda del cobro</label>
             <div class="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -449,7 +449,7 @@ onMounted(async () => {
           </div>
 
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Método de pago</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Método de pago</label>
             <AppDropdown
               :model-value="payForm.payment_method_id"
               @update:model-value="(v: string | number | null) => payForm.payment_method_id = Number(v ?? 0)"
@@ -466,7 +466,7 @@ onMounted(async () => {
           </div>
 
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Referencia (opcional)</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Referencia (opcional)</label>
             <input
               v-model="payForm.payment_reference"
               class="admin-input"

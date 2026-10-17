@@ -360,7 +360,7 @@ onMounted(() => load())
           </div>
           <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-muted">Estado</label>
+              <label class="mb-1.5 block text-sm font-medium text-content">Estado</label>
               <select v-model="form.status" class="admin-input" :disabled="saving">
                 <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>

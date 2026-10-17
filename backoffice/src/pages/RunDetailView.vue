@@ -815,7 +815,7 @@ onBeforeUnmount(() => {
           <span class="text-sm text-subtle">{{ selectedPackageIds.length }} seleccionados</span>
           <div class="flex gap-3">
             <button class="admin-btn admin-btn-ghost" @click="showAssignModal = false">Cancelar</button>
-            <button class="admin-btn admin-btn-primary" :disabled="selectedPackageIds.length === 0 || saving" @click="generateStops">
+            <button class="admin-btn admin-btn-accent" :disabled="selectedPackageIds.length === 0 || saving" @click="generateStops">
               {{ saving ? 'Generando...' : `Generar ${selectedPackageIds.length} paradas` }}
             </button>
           </div>
@@ -831,7 +831,7 @@ onBeforeUnmount(() => {
           <p class="mt-0.5 text-xs text-muted">{{ stopActionTarget?.tracking_number }} · {{ stopActionTarget?.address }}</p>
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Observación (se arrastrará al próximo despacho)</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Observación (se arrastrará al próximo despacho)</label>
           <textarea
             v-model="stopActionNotes"
             class="admin-input min-h-[90px]"
@@ -861,14 +861,14 @@ onBeforeUnmount(() => {
           Los valores por defecto de la ruta se copian al crear el despacho; acá podés cambiarlos para este día.
         </p>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Conductor</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Conductor</label>
           <select v-model="assignDriverId" class="admin-input w-full" :disabled="savingAssignment">
             <option :value="null">Sin conductor</option>
             <option v-for="d in driverOptions" :key="d.id" :value="d.id">{{ d.name }}</option>
           </select>
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Vehículo</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Vehículo</label>
           <select v-model="assignVehicleId" class="admin-input w-full" :disabled="savingAssignment">
             <option :value="null">Sin vehículo</option>
             <option v-for="v in vehicleOptions" :key="v.id" :value="v.id">{{ v.plate }}{{ v.brand ? ` · ${v.brand}` : '' }}</option>

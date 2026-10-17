@@ -497,7 +497,7 @@ onMounted(() => load())
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
             Agregar paquetes
           </button>
-          <button v-if="canDispatch" class="admin-btn admin-btn-primary admin-btn-sm" :disabled="busyAction" @click="dispatch">
+          <button v-if="canDispatch" class="admin-btn admin-btn-accent admin-btn-sm" :disabled="busyAction" @click="dispatch">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M2 12l4-4m-4 4l4 4M22 12l-4-4m4 4l-4 4"/></svg>
             Despachar desde Miami
           </button>

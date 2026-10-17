@@ -285,7 +285,7 @@ onMounted(async () => {
             />
           </div>
           <div v-if="!isVendor" class="mt-4 max-w-sm" style="overflow: visible">
-            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Vendedor asignado</label>
+            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Vendedor asignado</label>
             <AppDropdown
               :model-value="fv('agent_id')"
               @update:model-value="(v: string | number | null) => form.agent_id = v == null || v === '' ? null : Number(v)"
@@ -320,7 +320,7 @@ onMounted(async () => {
               @input="clearError('address')"
             />
             <div class="max-w-sm" style="overflow: visible">
-              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Departamento</label>
+              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Departamento</label>
               <AppDropdown
                 :model-value="fv('department')"
                 @update:model-value="(v: string | number | null) => form.department = v"

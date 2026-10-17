@@ -75,7 +75,7 @@
 
 .admin-input {
   width: 100%;
-  background: #eef2f7;
+  background: #ffffff;
   border: 1.5px solid #cbd5e1;
   color: #1e293b;
   padding: 0.5rem 0.75rem;
@@ -92,13 +92,13 @@
 .admin-select:disabled {
   opacity: 1;
   cursor: not-allowed;
-  background: #e9eef5;
+  background: #f1f5f9;
   color: #64748b;
   border-color: #e2e8f0 !important;
   box-shadow: none !important;
 }
 .admin-input::placeholder {
-  color: #8492a6;
+  color: #64748b;
 }
 select.admin-input {
   appearance: none;
@@ -109,7 +109,7 @@ select.admin-input {
 }
 .admin-select {
   width: 100%;
-  background: #eef2f7;
+  background: #ffffff;
   border: 1.5px solid #cbd5e1;
   color: #1e293b;
   padding: 0.5rem 0.75rem;
@@ -150,17 +150,17 @@ select.admin-input {
   cursor: not-allowed;
 }
 .admin-btn-primary {
-  background: #eb5a28;
+  background: #1e4b88;
   color: #fff;
-  border-color: #eb5a28;
+  border-color: #1e4b88;
 }
 .admin-btn-primary:hover:not(:disabled) {
-  background: #c94519;
-  border-color: #c94519;
+  background: #0f294d;
+  border-color: #0f294d;
 }
 .admin-btn-primary:active:not(:disabled) {
-  background: #a8390f;
-  border-color: #a8390f;
+  background: #0a1c36;
+  border-color: #0a1c36;
 }
 .admin-btn-danger {
   background: #dc2626;
@@ -469,21 +469,6 @@ select.admin-input {
   color: #1ea7dc;
 }
 
-/* ── Login card ────────────────────────────────────────────────────────── */
-
-.admin-glass-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 12px -1px rgba(15, 41, 77, 0.12);
-  padding: 1.5rem;
-}
-@media (min-width: 640px) {
-  .admin-glass-card {
-    padding: 2rem;
-  }
-}
-
 /* ── Password input with toggle ───────────────────────────────────────── */
 
 .admin-input-group {
@@ -498,7 +483,7 @@ select.admin-input {
 .admin-input-group .admin-input-icon {
   position: absolute;
   left: 0.75rem;
-  color: #94a3b8;
+  color: #64748b;
   pointer-events: none;
   display: flex;
   align-items: center;
@@ -510,7 +495,7 @@ select.admin-input {
   align-items: center;
   justify-content: center;
   padding: 0.25rem;
-  color: #94a3b8;
+  color: #64748b;
   cursor: pointer;
   border: none;
   background: transparent;
@@ -547,7 +532,7 @@ a:focus-visible {
   gap: 0.75rem;
 }
 .admin-pagination-select {
-  background: #eef2f7;
+  background: #ffffff;
   border: 1.5px solid #cbd5e1;
   color: #1e293b;
   padding: 0.25rem 1.75rem 0.25rem 0.5rem;
@@ -608,7 +593,7 @@ a:focus-visible {
   min-width: 2rem;
   height: 2rem;
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: #64748b;
   user-select: none;
 }
 

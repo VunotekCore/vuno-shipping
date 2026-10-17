@@ -128,27 +128,27 @@ onMounted(() => load())
     <AppModal :visible="showModal" :title="editing ? 'Editar zona' : 'Crear zona'" @close="showModal = false">
       <form class="space-y-4" @submit.prevent="save">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Nombre</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Nombre</label>
           <input v-model="form.name" class="admin-input" placeholder="Nombre de la zona" required :disabled="saving" />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Descripción</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Descripción</label>
           <textarea :value="String(form.description ?? '')" @input="form.description = ($event.target as HTMLTextAreaElement).value" class="admin-input" placeholder="Descripción de la zona" rows="3" :disabled="saving" />
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Sobrecosto ($)</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Sobrecosto ($)</label>
             <input v-model.number="form.surcharge" type="number" step="0.01" min="0" class="admin-input" placeholder="0.00" :disabled="saving" />
             <p class="mt-1 text-xs text-subtle">Costo fijo adicional por destino</p>
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Latitud</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Latitud</label>
             <input v-model.number="form.lat" type="number" step="any" class="admin-input" placeholder="12.8654" :disabled="saving" />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Longitud</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Longitud</label>
             <input v-model.number="form.lng" type="number" step="any" class="admin-input" placeholder="-85.2072" :disabled="saving" />
           </div>
           <div />

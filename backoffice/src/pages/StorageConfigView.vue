@@ -356,7 +356,7 @@ onMounted(async () => {
     <!-- TAB 3: LOCATIONS -->
     <div v-show="activeTab === 'locations'" class="space-y-4">
       <div class="admin-card p-4 max-w-sm">
-        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-subtle">Filtrar por bodega</label>
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Filtrar por bodega</label>
         <AppDropdown
           :model-value="locationFilter"
           @update:model-value="(v: string | number | null) => { locationFilter = v as number | null; loadLocations() }"
@@ -399,15 +399,15 @@ onMounted(async () => {
     <AppModal :visible="showWarehouseModal" :title="editingWarehouse ? 'Editar bodega' : 'Crear bodega'" @close="showWarehouseModal = false">
       <form class="space-y-4" @submit.prevent="saveWarehouse">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Nombre</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Nombre</label>
           <input v-model="warehouseForm.name" class="admin-input" placeholder="Almacén Miami" :disabled="saving" required />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Código</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Código</label>
           <input v-model="warehouseForm.code" class="admin-input font-mono uppercase" placeholder="MIAMI" :disabled="saving" required />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Origen</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Origen</label>
           <AppDropdown
             :model-value="warehouseForm.origin"
             @update:model-value="(v: string | number | null) => warehouseForm.origin = (v as 'online' | 'local')"
@@ -415,7 +415,7 @@ onMounted(async () => {
           />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Dirección</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Dirección</label>
           <input v-model="warehouseForm.address" class="admin-input" placeholder="Opcional" :disabled="saving" />
         </div>
         <div class="flex items-center justify-between rounded-lg border border-line bg-canvas/50 px-4 py-3">
@@ -437,18 +437,18 @@ onMounted(async () => {
     <AppModal :visible="showCategoryModal" :title="editingCategory ? 'Editar clasificación' : 'Crear clasificación'" @close="showCategoryModal = false">
       <form class="space-y-4" @submit.prevent="saveCategory">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Nombre</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Nombre</label>
           <input v-model="categoryForm.name" class="admin-input" placeholder="Frágil" :disabled="saving" required />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Color</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Color</label>
           <div class="flex items-center gap-3">
             <input v-model="categoryForm.color" type="color" class="h-10 w-14 cursor-pointer rounded-lg border border-line bg-canvas" :disabled="saving" />
             <input v-model="categoryForm.color" class="admin-input font-mono" placeholder="#dc2626" :disabled="saving" />
           </div>
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Descripción</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Descripción</label>
           <input v-model="categoryForm.description" class="admin-input" placeholder="Opcional" :disabled="saving" />
         </div>
         <div class="flex items-center justify-between rounded-lg border border-line bg-canvas/50 px-4 py-3">
@@ -470,33 +470,33 @@ onMounted(async () => {
     <AppModal :visible="showLocationModal" :title="editingLocation ? 'Editar ubicación' : 'Nueva ubicación'" @close="showLocationModal = false">
       <form class="space-y-4" @submit.prevent="saveLocation">
         <div v-if="!editingLocation">
-          <label class="mb-1.5 block text-sm font-medium text-muted">Bodega</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Bodega</label>
           <AppDropdown :model-value="locationForm.warehouse_id" @update:model-value="(v: string | number | null) => locationForm.warehouse_id = v as number | null" :options="warehouseOptions" placeholder="Seleccionar bodega..." />
         </div>
         <div v-if="editingLocation">
-          <label class="mb-1.5 block text-sm font-medium text-muted">Código</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Código</label>
           <input v-model="locationForm.code" class="admin-input font-mono uppercase" :disabled="saving" />
         </div>
         <template v-else>
           <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div><label class="mb-1.5 block text-xs text-subtle">Pasillo</label><input v-model="locationForm.aisle" class="admin-input font-mono uppercase" placeholder="A" :disabled="saving" /></div>
-            <div><label class="mb-1.5 block text-xs text-subtle">Estante</label><input v-model="locationForm.rack" class="admin-input font-mono uppercase" placeholder="01" :disabled="saving" /></div>
-            <div><label class="mb-1.5 block text-xs text-subtle">Nivel</label><input v-model="locationForm.level" class="admin-input font-mono" placeholder="1" :disabled="saving" /></div>
-            <div><label class="mb-1.5 block text-xs text-subtle">Posición</label><input v-model="locationForm.position" class="admin-input font-mono" placeholder="1" :disabled="saving" /></div>
+            <div><label class="mb-1.5 block text-xs text-content">Pasillo</label><input v-model="locationForm.aisle" class="admin-input font-mono uppercase" placeholder="A" :disabled="saving" /></div>
+            <div><label class="mb-1.5 block text-xs text-content">Estante</label><input v-model="locationForm.rack" class="admin-input font-mono uppercase" placeholder="01" :disabled="saving" /></div>
+            <div><label class="mb-1.5 block text-xs text-content">Nivel</label><input v-model="locationForm.level" class="admin-input font-mono" placeholder="1" :disabled="saving" /></div>
+            <div><label class="mb-1.5 block text-xs text-content">Posición</label><input v-model="locationForm.position" class="admin-input font-mono" placeholder="1" :disabled="saving" /></div>
           </div>
           <p class="text-xs text-subtle">Dejá los campos vacíos y escribí un código manual abajo si preferís.</p>
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Código manual (opcional)</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Código manual (opcional)</label>
             <input v-model="locationForm.code" class="admin-input font-mono uppercase" placeholder="A-01-01-01" :disabled="saving" />
           </div>
         </template>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Clasificación</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Clasificación</label>
             <AppDropdown :model-value="locationForm.category_id" @update:model-value="(v: string | number | null) => locationForm.category_id = v as number | null" :options="categoryOptions" placeholder="— Sin clasificación —" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Capacidad</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Capacidad</label>
             <input v-model.number="locationForm.capacity" type="number" min="1" class="admin-input" :disabled="saving" />
           </div>
         </div>
@@ -519,22 +519,22 @@ onMounted(async () => {
     <AppModal :visible="showGenerateModal" title="Generar ubicaciones" @close="showGenerateModal = false">
       <form class="space-y-4" @submit.prevent="saveGenerate">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-muted">Bodega</label>
+          <label class="mb-1.5 block text-sm font-medium text-content">Bodega</label>
           <AppDropdown :model-value="generateForm.warehouse_id" @update:model-value="(v: string | number | null) => generateForm.warehouse_id = v as number | null" :options="warehouseOptions" placeholder="Seleccionar bodega..." />
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="mb-1.5 block text-sm font-medium text-muted">Pasillo</label><input v-model="generateForm.aisle" class="admin-input font-mono uppercase" placeholder="A" :disabled="saving" /></div>
-          <div><label class="mb-1.5 block text-sm font-medium text-muted">Estante</label><input v-model="generateForm.rack" class="admin-input font-mono uppercase" placeholder="01" :disabled="saving" /></div>
-          <div><label class="mb-1.5 block text-sm font-medium text-muted">Niveles</label><input v-model.number="generateForm.levels" type="number" min="1" max="50" class="admin-input" :disabled="saving" /></div>
-          <div><label class="mb-1.5 block text-sm font-medium text-muted">Posiciones</label><input v-model.number="generateForm.positions" type="number" min="1" max="100" class="admin-input" :disabled="saving" /></div>
+          <div><label class="mb-1.5 block text-sm font-medium text-content">Pasillo</label><input v-model="generateForm.aisle" class="admin-input font-mono uppercase" placeholder="A" :disabled="saving" /></div>
+          <div><label class="mb-1.5 block text-sm font-medium text-content">Estante</label><input v-model="generateForm.rack" class="admin-input font-mono uppercase" placeholder="01" :disabled="saving" /></div>
+          <div><label class="mb-1.5 block text-sm font-medium text-content">Niveles</label><input v-model.number="generateForm.levels" type="number" min="1" max="50" class="admin-input" :disabled="saving" /></div>
+          <div><label class="mb-1.5 block text-sm font-medium text-content">Posiciones</label><input v-model.number="generateForm.positions" type="number" min="1" max="100" class="admin-input" :disabled="saving" /></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Clasificación</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Clasificación</label>
             <AppDropdown :model-value="generateForm.category_id" @update:model-value="(v: string | number | null) => generateForm.category_id = v as number | null" :options="categoryOptions" placeholder="— Sin clasificación —" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted">Capacidad</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Capacidad</label>
             <input v-model.number="generateForm.capacity" type="number" min="1" class="admin-input" :disabled="saving" />
           </div>
         </div>

@@ -203,7 +203,7 @@ onMounted(() => load())
       </h3>
       <p v-if="stop" class="mt-0.5 text-xs text-muted">{{ stop.client_name }} · {{ stop.tracking_number }}</p>
       <div class="mt-4">
-        <label class="mb-1.5 block text-xs font-medium text-muted">
+        <label class="mb-1.5 block text-xs font-medium text-content">
           Observación (obligatoria — se arrastrará al próximo despacho)
         </label>
         <textarea

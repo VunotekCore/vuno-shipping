@@ -302,7 +302,7 @@ onMounted(() => {
           </p>
 
           <div class="mt-4">
-            <label class="mb-1.5 block text-sm font-medium text-muted">Nota (opcional)</label>
+            <label class="mb-1.5 block text-sm font-medium text-content">Nota (opcional)</label>
             <textarea
               v-model="statusNote"
               class="admin-input w-full"

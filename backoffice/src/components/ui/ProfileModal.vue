@@ -105,7 +105,7 @@ async function handleSave() {
 
       <!-- Name -->
       <div>
-        <label for="profile-name" class="mb-1.5 block text-sm font-medium text-muted">Nombre</label>
+        <label for="profile-name" class="mb-1.5 block text-sm font-medium text-content">Nombre</label>
         <input
           id="profile-name"
           v-model="name"
@@ -118,7 +118,7 @@ async function handleSave() {
 
       <!-- Email -->
       <div>
-        <label for="profile-email" class="mb-1.5 block text-sm font-medium text-muted">Email</label>
+        <label for="profile-email" class="mb-1.5 block text-sm font-medium text-content">Email</label>
         <input
           id="profile-email"
           v-model="email"
@@ -147,7 +147,7 @@ async function handleSave() {
       <Transition name="fade">
         <div v-if="showPasswordSection" class="space-y-4">
           <div>
-            <label for="profile-current-pw" class="mb-1.5 block text-sm font-medium text-muted">Contraseña actual</label>
+            <label for="profile-current-pw" class="mb-1.5 block text-sm font-medium text-content">Contraseña actual</label>
             <input
               id="profile-current-pw"
               v-model="currentPassword"
@@ -158,7 +158,7 @@ async function handleSave() {
             />
           </div>
           <div>
-            <label for="profile-new-pw" class="mb-1.5 block text-sm font-medium text-muted">Nueva contraseña</label>
+            <label for="profile-new-pw" class="mb-1.5 block text-sm font-medium text-content">Nueva contraseña</label>
             <input
               id="profile-new-pw"
               v-model="newPassword"
