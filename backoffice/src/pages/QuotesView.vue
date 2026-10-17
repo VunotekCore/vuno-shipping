@@ -490,29 +490,29 @@ onMounted(async () => {
         <div v-for="i in 3" :key="i" class="h-9 animate-pulse rounded bg-surface-raised" />
       </div>
       <div v-else-if="commissions.length" class="mt-4 overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="admin-table">
           <thead>
-            <tr class="text-left text-xs uppercase tracking-wider text-subtle">
-              <th class="py-2 pr-3 font-medium">Vendedor</th>
-              <th class="px-3 py-2 text-right font-medium">Conversiones</th>
-              <th class="px-3 py-2 text-right font-medium">Monto convertido</th>
-              <th class="py-2 pl-3 text-right font-medium">Comisión</th>
+            <tr>
+              <th>Vendedor</th>
+              <th class="text-right">Conversiones</th>
+              <th class="text-right">Monto convertido</th>
+              <th class="text-right">Comisión</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in commissions" :key="row.agent_id ?? 'none'" class="border-t border-line">
-              <td class="py-2 pr-3 text-content">{{ row.agent_name || 'Sin vendedor' }}</td>
-              <td class="px-3 py-2 text-right text-muted">{{ row.converted_count }}</td>
-              <td class="px-3 py-2 text-right text-muted">{{ formatUSD(row.converted_total) }}</td>
-              <td class="py-2 pl-3 text-right font-medium text-primary">{{ formatUSD(row.commission_total) }}</td>
+            <tr v-for="row in commissions" :key="row.agent_id ?? 'none'">
+              <td class="text-content">{{ row.agent_name || 'Sin vendedor' }}</td>
+              <td class="text-right text-muted">{{ row.converted_count }}</td>
+              <td class="text-right text-muted">{{ formatUSD(row.converted_total) }}</td>
+              <td class="text-right font-medium text-primary">{{ formatUSD(row.commission_total) }}</td>
             </tr>
           </tbody>
           <tfoot>
             <tr class="border-t border-line-strong">
-              <td class="py-2 pr-3 font-medium text-content">Total</td>
-              <td class="px-3 py-2 text-right text-content">{{ commissionTotals.count }}</td>
-              <td class="px-3 py-2 text-right text-content">{{ formatUSD(commissionTotals.converted) }}</td>
-              <td class="py-2 pl-3 text-right font-semibold text-primary">{{ formatUSD(commissionTotals.commission) }}</td>
+              <td class="font-medium text-content">Total</td>
+              <td class="text-right text-content">{{ commissionTotals.count }}</td>
+              <td class="text-right text-content">{{ formatUSD(commissionTotals.converted) }}</td>
+              <td class="text-right font-semibold text-primary">{{ formatUSD(commissionTotals.commission) }}</td>
             </tr>
           </tfoot>
         </table>

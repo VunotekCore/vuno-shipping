@@ -259,7 +259,7 @@ onMounted(() => {
                 <span class="text-sm font-medium text-content">
                   {{ statusLabels[ev.status]?.label || ev.status }}
                 </span>
-                <span :class="['admin-badge', statusColor(ev.status), 'text-[10px]']">{{ ev.status }}</span>
+                <span :class="['admin-badge', statusColor(ev.status)]">{{ ev.status }}</span>
               </div>
               <p v-if="ev.description" class="mt-0.5 text-xs text-muted">{{ ev.description }}</p>
               <div class="mt-0.5 flex items-center gap-2 text-[10px] text-subtle">

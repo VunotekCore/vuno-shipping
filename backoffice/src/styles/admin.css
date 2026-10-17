@@ -208,8 +208,12 @@ select.admin-input {
   color: #0f294d;
 }
 .admin-btn-sm {
-  padding: 0.3125rem 0.625rem;
+  padding: 0.3125rem 0.5rem;
   font-size: 0.75rem;
+}
+.admin-btn-sm svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 /* ── Badges ────────────────────────────────────────────────────────────── */
@@ -219,7 +223,7 @@ select.admin-input {
   align-items: center;
   gap: 0.3rem;
   padding: 0.1875rem 0.625rem;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -497,6 +501,10 @@ select.admin-input {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #1e4b88;
+}
+.admin-form-section svg {
+  width: 0.875rem;
+  height: 0.875rem;
 }
 .admin-form-section-icon {
   color: #1ea7dc;

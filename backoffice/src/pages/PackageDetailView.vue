@@ -483,7 +483,7 @@ onMounted(() => loadPackage())
                     <p class="text-sm font-medium text-content">{{ statusLabel(event.status) }}</p>
                     <span
                       v-if="idx === 0"
-                      class="admin-badge admin-badge-success text-[10px] py-0 px-1.5"
+                      class="admin-badge admin-badge-success"
                     >
                       Actual
                     </span>

@@ -728,44 +728,44 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-else class="overflow-x-auto">
-          <table class="w-full text-sm">
+          <table class="admin-table">
             <thead>
-              <tr class="border-b border-line text-left text-subtle">
-                <th class="px-5 py-3 font-medium">#</th>
-                <th class="px-5 py-3 font-medium">Cliente</th>
-                <th class="px-5 py-3 font-medium">Dirección</th>
-                <th class="px-5 py-3 font-medium">Tracking</th>
-                <th class="px-5 py-3 font-medium">Ubicación</th>
-                <th class="px-5 py-3 font-medium">Estado</th>
-                <th class="px-5 py-3 font-medium">Observación</th>
-                <th class="px-5 py-3 font-medium">Acciones</th>
+              <tr>
+                <th>#</th>
+                <th>Cliente</th>
+                <th>Dirección</th>
+                <th>Tracking</th>
+                <th>Ubicación</th>
+                <th>Estado</th>
+                <th>Observación</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="s in stops" :key="s.id" class="border-b border-line transition-colors hover:bg-surface-raised">
-                <td class="px-5 py-3 text-muted">
+              <tr v-for="s in stops" :key="s.id">
+                <td class="text-muted">
                   {{ s.stop_order }}
                   <span v-if="s.carried_over" class="ml-1 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent" title="Arrastrado del despacho anterior">↻</span>
                 </td>
-                <td class="px-5 py-3 font-medium text-content">{{ s.client_name || '—' }}</td>
-                <td class="px-5 py-3 text-muted max-w-[200px] truncate" :title="s.address || ''">{{ s.address || '—' }}</td>
-                <td class="px-5 py-3 text-muted">{{ s.tracking_number || '—' }}</td>
-                <td class="px-5 py-3">
+                <td class="font-medium text-content">{{ s.client_name || '—' }}</td>
+                <td class="text-muted max-w-[200px] truncate" :title="s.address || ''">{{ s.address || '—' }}</td>
+                <td class="text-muted">{{ s.tracking_number || '—' }}</td>
+                <td>
                   <span v-if="s.storage_location_code" class="inline-flex items-center gap-1.5 font-mono text-xs text-muted">
                     <span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: s.storage_category_color || '#0284c7' }" />
                     {{ s.storage_location_code }}
                   </span>
                   <span v-else class="text-xs text-subtle">—</span>
                 </td>
-                <td class="px-5 py-3">
+                <td>
                   <span :class="['admin-badge', stopStatusBadge(s.status_name)]">{{ statusLabel(s.status_name) }}</span>
                 </td>
-                <td class="px-5 py-3 text-xs text-muted max-w-[220px] truncate" :title="s.notes || ''">{{ s.notes || '—' }}</td>
-                <td class="px-5 py-3">
+                <td class="text-xs text-muted max-w-[220px] truncate" :title="s.notes || ''">{{ s.notes || '—' }}</td>
+                <td>
                   <div v-if="s.status_name === 'pending'" class="flex gap-1">
-                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-success" :disabled="!isRunActive" :title="isRunActive ? 'Entregar' : 'El despacho debe estar activo'" @click="markDelivered(s.id)">✔</button>
-                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-muted" :disabled="!isRunActive" :title="isRunActive ? 'Saltar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'skipped')">→</button>
-                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" :disabled="!isRunActive" :title="isRunActive ? 'Fallar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'failed')">✕</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-base text-success" :disabled="!isRunActive" :title="isRunActive ? 'Entregar' : 'El despacho debe estar activo'" @click="markDelivered(s.id)">✔</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-base text-muted" :disabled="!isRunActive" :title="isRunActive ? 'Saltar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'skipped')">→</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm text-base text-danger" :disabled="!isRunActive" :title="isRunActive ? 'Fallar' : 'El despacho debe estar activo'" @click="openStopAction(s, 'failed')">✕</button>
                   </div>
                   <span v-else class="text-xs text-subtle">—</span>
                 </td>
