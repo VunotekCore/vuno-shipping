@@ -269,6 +269,39 @@ CREATE TABLE IF NOT EXISTS package_status (
     UNIQUE KEY name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS vehicle_status (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS vehicle (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    plate VARCHAR(20) NOT NULL,
+    brand VARCHAR(100) NULL,
+    model VARCHAR(100) NULL,
+    year INT NULL,
+    color VARCHAR(50) NULL,
+    fuel_type VARCHAR(20) NULL,
+    capacity_kg DECIMAL(10,2) NULL,
+    capacity_m3 DECIMAL(10,2) NULL,
+    current_driver_id INT NULL,
+    status ENUM('disponible','en_ruta','en_espera','en_mantenimiento','en_reparacion','fuera_de_servicio','accidentado','dado_de_baja') NOT NULL DEFAULT 'disponible',
+    current_km DECIMAL(10,1) NOT NULL DEFAULT 0.00,
+    km_last_updated_at DATETIME NULL,
+    km_last_updated_by INT NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_vehicles_plate (plate),
+    FOREIGN KEY (current_driver_id) REFERENCES `user`(id) ON DELETE SET NULL,
+    FOREIGN KEY (km_last_updated_by) REFERENCES `user`(id) ON DELETE SET NULL,
+    INDEX idx_vehicle_status (status),
+    INDEX idx_vehicle_driver (current_driver_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS quote (
     id INT AUTO_INCREMENT PRIMARY KEY,
     quote_number VARCHAR(30) NOT NULL,
@@ -429,7 +462,6 @@ CREATE TABLE IF NOT EXISTS package (
     route_id INT NULL,
     notes TEXT NULL,
     origin ENUM('online','local') DEFAULT 'online',
-    origin ENUM('online','local') DEFAULT 'online',
     pickup_required TINYINT(1) NOT NULL DEFAULT 0,
     pickup_vehicle_id INT NULL,
     storage_category_id INT NULL,
@@ -564,39 +596,6 @@ CREATE TABLE IF NOT EXISTS push_subscription (
     FOREIGN KEY (user_id) REFERENCES `user`(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS vehicle_status (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    description VARCHAR(255) NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS vehicle (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    plate VARCHAR(20) NOT NULL,
-    brand VARCHAR(100) NULL,
-    model VARCHAR(100) NULL,
-    year INT NULL,
-    color VARCHAR(50) NULL,
-    fuel_type VARCHAR(20) NULL,
-    capacity_kg DECIMAL(10,2) NULL,
-    capacity_m3 DECIMAL(10,2) NULL,
-    current_driver_id INT NULL,
-    status ENUM('disponible','en_ruta','en_espera','en_mantenimiento','en_reparacion','fuera_de_servicio','accidentado','dado_de_baja') NOT NULL DEFAULT 'disponible',
-    current_km DECIMAL(10,1) NOT NULL DEFAULT 0.00,
-    km_last_updated_at DATETIME NULL,
-    km_last_updated_by INT NULL,
-    notes TEXT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_vehicles_plate (plate),
-    FOREIGN KEY (current_driver_id) REFERENCES `user`(id) ON DELETE SET NULL,
-    FOREIGN KEY (km_last_updated_by) REFERENCES `user`(id) ON DELETE SET NULL,
-    INDEX idx_vehicle_status (status),
-    INDEX idx_vehicle_driver (current_driver_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- === Phase 4: Dispatch & Driver Tables ===
 
 CREATE TABLE IF NOT EXISTS route_status (
@@ -618,12 +617,18 @@ CREATE TABLE IF NOT EXISTS delivery_route (
     description TEXT NULL,
     trajectory JSON NULL,
     color VARCHAR(7) DEFAULT '#22c55e',
+    default_driver_id INT NULL,
+    default_vehicle_id INT NULL,
     start_latitude DECIMAL(10,8) NULL,
     start_longitude DECIMAL(11,8) NULL,
     end_latitude DECIMAL(10,8) NULL,
     end_longitude DECIMAL(11,8) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_route_default_driver FOREIGN KEY (default_driver_id) REFERENCES `user`(id) ON DELETE SET NULL,
+    CONSTRAINT fk_route_default_vehicle FOREIGN KEY (default_vehicle_id) REFERENCES vehicle(id) ON DELETE SET NULL,
+    INDEX idx_route_default_driver (default_driver_id),
+    INDEX idx_route_default_vehicle (default_vehicle_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS route_zone (
