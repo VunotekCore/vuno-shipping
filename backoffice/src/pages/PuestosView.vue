@@ -107,7 +107,7 @@ onMounted(() => load())
         <AppTable :columns="columns" :loading="loading" :is-empty="puestos.length === 0" empty-title="Sin puestos" empty-desc="Creá el primer puesto de trabajo.">
           <tr v-for="p in puestos" :key="p.id">
             <td class="font-medium text-content">{{ p.name }}</td>
-            <td><span class="admin-badge admin-badge-info">{{ p.area_name }}</span></td>
+            <td><span class="admin-badge admin-badge-code">{{ p.area_name }}</span></td>
             <td class="text-muted">{{ p.description || '—' }}</td>
             <td class="text-center text-muted">{{ p.empleado_count }}</td>
             <td class="text-right">
@@ -139,7 +139,7 @@ onMounted(() => load())
         <div v-for="p in puestos" :key="p.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
             <p class="font-medium text-content truncate">{{ p.name }}</p>
-            <span class="admin-badge admin-badge-info shrink-0">{{ p.area_name }}</span>
+            <span class="admin-badge admin-badge-code shrink-0">{{ p.area_name }}</span>
           </div>
           <p class="text-sm text-muted truncate">{{ p.description || '—' }} · {{ p.empleado_count }} empleados</p>
           <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">

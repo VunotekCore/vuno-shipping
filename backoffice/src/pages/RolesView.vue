@@ -168,7 +168,7 @@ onMounted(() => load())
         <AppTable :columns="columns" :loading="loading" :is-empty="roles.length === 0" empty-title="Sin roles" empty-desc="Creá el primer rol del sistema.">
           <tr v-for="r in roles" :key="r.id">
             <td class="font-medium text-content">{{ r.name }}</td>
-            <td><span class="admin-badge admin-badge-info">{{ r.slug }}</span></td>
+            <td><span class="admin-badge admin-badge-code">{{ r.slug }}</span></td>
             <td class="text-center text-muted">{{ r.permission_count }}</td>
             <td class="text-center text-muted">{{ r.user_count }}</td>
             <td class="text-right">
@@ -203,7 +203,7 @@ onMounted(() => load())
         <div v-for="r in roles" :key="r.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
             <p class="font-medium text-content truncate">{{ r.name }}</p>
-            <span class="admin-badge admin-badge-info shrink-0">{{ r.slug }}</span>
+            <span class="admin-badge admin-badge-code shrink-0">{{ r.slug }}</span>
           </div>
           <p class="text-sm text-muted">P: {{ r.permission_count }} · U: {{ r.user_count }}</p>
           <div class="border-t border-line pt-3 flex flex-wrap items-center gap-2">

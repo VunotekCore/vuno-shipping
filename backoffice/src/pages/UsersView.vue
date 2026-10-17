@@ -236,7 +236,7 @@ onMounted(() => load())
           <tr v-for="u in users" :key="u.id">
             <td class="font-medium text-content">{{ u.name }}</td>
             <td class="text-muted">{{ u.email }}</td>
-            <td><span class="admin-badge admin-badge-info">{{ u.role_name }}</span></td>
+            <td><span class="admin-badge admin-badge-code">{{ u.role_name }}</span></td>
             <td class="text-subtle">{{ u.created_at ? formatDate(u.created_at) : '—' }}</td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-1">

@@ -195,7 +195,7 @@ onMounted(async () => {
         <div v-for="c in clients" :key="c.id" class="admin-card p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
             <p class="font-medium text-content truncate">{{ c.name }}</p>
-            <span class="admin-badge admin-badge-info shrink-0">{{ c.package_count ?? 0 }} paquetes</span>
+            <span class="admin-badge admin-badge-neutral shrink-0">{{ c.package_count ?? 0 }} paquetes</span>
           </div>
           <p class="text-sm text-muted truncate">{{ c.email || '—' }}</p>
           <p class="text-xs text-subtle">{{ c.phone || '—' }} · {{ c.ruc || 'Sin RUC' }}</p>

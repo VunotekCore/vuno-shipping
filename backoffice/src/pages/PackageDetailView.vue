@@ -399,7 +399,7 @@ onMounted(() => loadPackage())
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p class="text-xs text-subtle mb-1">Requiere recolección</p>
-                    <span class="admin-badge admin-badge-info">Sí</span>
+                    <span class="admin-badge admin-badge-neutral">Sí</span>
                   </div>
                   <div>
                     <p class="text-xs text-subtle mb-1">Vehículo</p>
