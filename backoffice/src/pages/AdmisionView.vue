@@ -85,7 +85,7 @@ function pricingRuleLabel(rule: PricingRule): string {
 // Form data
 const form = reactive({
   client_id: null as number | null,
-  origin: 'online' as 'online' | 'local',
+  origin: 'local' as 'online' | 'local',
   sender_name: '',
   sender_phone: '',
   recipient_name: '',
@@ -645,7 +645,7 @@ function goToDetail() {
 
 function resetForm() {
   form.client_id = null
-  form.origin = 'online'
+  form.origin = 'local'
   form.use_client_data = true
   form.sender_name = ''
   form.sender_phone = ''
@@ -808,22 +808,6 @@ onMounted(() => loadReferenceData())
               <button
                 type="button"
                 class="flex items-center gap-3 rounded-xl border p-4 text-left transition-colors"
-                :class="form.origin === 'online'
-                  ? 'border-primary/60 bg-primary/10'
-                  : 'border-line bg-transparent hover:border-line-strong'"
-                @click="form.origin = 'online'"
-              >
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-                </span>
-                <span>
-                  <span class="block text-sm font-semibold text-content">Compra EEUU</span>
-                  <span class="mt-0.5 block text-xs text-subtle">Recibido en el almacén de Miami, viaja en embarque a Nicaragua</span>
-                </span>
-              </button>
-              <button
-                type="button"
-                class="flex items-center gap-3 rounded-xl border p-4 text-left transition-colors"
                 :class="form.origin === 'local'
                   ? 'border-primary/60 bg-primary/10'
                   : 'border-line bg-transparent hover:border-line-strong'"
@@ -835,6 +819,22 @@ onMounted(() => loadReferenceData())
                 <span>
                   <span class="block text-sm font-semibold text-content">Ingreso local</span>
                   <span class="mt-0.5 block text-xs text-subtle">Cliente lo entrega en la oficina, listo para distribución</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                class="flex items-center gap-3 rounded-xl border p-4 text-left transition-colors"
+                :class="form.origin === 'online'
+                  ? 'border-primary/60 bg-primary/10'
+                  : 'border-line bg-transparent hover:border-line-strong'"
+                @click="form.origin = 'online'"
+              >
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                </span>
+                <span>
+                  <span class="block text-sm font-semibold text-content">Compra EEUU</span>
+                  <span class="mt-0.5 block text-xs text-subtle">Recibido en el almacén de Miami, viaja en embarque a Nicaragua</span>
                 </span>
               </button>
             </div>
