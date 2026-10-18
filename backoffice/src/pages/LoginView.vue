@@ -410,7 +410,7 @@
                 type="email"
                 required
                 autocomplete="email"
-                placeholder="tu.correo@vunoshipping.com"
+                placeholder="tu.correo@mundocargo.com"
                 class="admin-input shadow-sm"
                 :disabled="loading"
               />
@@ -565,7 +565,10 @@
           </svg>
           <span>Conexión segura · SSL</span>
         </div>
-        <span>&copy; {{ new Date().getFullYear() }} <a href="http://vunotek.com">Vunotek</a></span>
+        <span
+          >&copy; {{ new Date().getFullYear() }} <a href="http://vunotek.com">Vunotek</a>- Todos los
+          derechos reservados</span
+        >
       </div>
     </div>
 
