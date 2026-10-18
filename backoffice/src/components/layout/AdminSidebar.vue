@@ -346,10 +346,10 @@ function handleLogout() {
         <Transition name="pop">
           <div
             v-if="showUserMenu"
-            class="absolute bottom-full left-0 right-0 mb-2 rounded-lg border border-line bg-surface shadow-xl z-50"
+            class="absolute bottom-full left-0 right-0 mb-2 rounded-xl border border-[#E2E8F0] bg-[#EDF2FA] shadow-[var(--shadow-card)] z-50"
           >
             <!-- User info -->
-            <div class="flex items-center gap-3 border-b border-line px-3 py-3">
+            <div class="flex items-center gap-3 border-b border-[#E2E8F0] bg-[#E7EFF9] px-3 py-3">
               <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
                 {{ userInitials }}
               </div>
@@ -364,12 +364,12 @@ function handleLogout() {
               <!-- Role badge -->
               <div class="flex items-center justify-between rounded-md px-2.5 py-2">
                 <span class="text-xs text-subtle">Rol</span>
-                <span class="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">{{ auth.user?.role_name }}</span>
+                <span class="admin-badge admin-badge-code">{{ auth.user?.role_name }}</span>
               </div>
 
               <!-- Edit profile -->
               <button
-                class="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs text-muted transition-colors hover:bg-surface-raised hover:text-content"
+                class="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs text-muted transition-colors hover:bg-[#E7EFF9] hover:text-content"
                 @click="showUserMenu = false; showProfileModal = true"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">

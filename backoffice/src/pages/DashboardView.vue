@@ -10,13 +10,13 @@ const auth = useAuthStore()
 const router = useRouter()
 
 const stats = ref([
-  { label: 'Envíos activos', value: '—', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', color: '#1ea7dc' },
-  { label: 'Clientes', value: '—', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', color: '#1e4b88' },
-  { label: 'En tránsito', value: '—', icon: 'M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0', color: '#d97706' },
-  { label: 'Entregados hoy', value: '—', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: '#16a34a' },
-  { label: 'Por cobrar (USD)', value: '—', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', color: '#d97706' },
-  { label: 'Cobrado hoy (USD)', value: '—', icon: 'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z', color: '#16a34a' },
-  { label: 'Cobrado hoy (C$)', value: '—', icon: 'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z', color: '#16a34a' },
+  { label: 'Envíos activos', value: '—', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', accent: '#1e4b88' },
+  { label: 'Clientes', value: '—', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', accent: '#1e4b88' },
+  { label: 'En tránsito', value: '—', icon: 'M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0', accent: '#0284c7' },
+  { label: 'Entregados hoy', value: '—', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', accent: '#16a34a' },
+  { label: 'Por cobrar (USD)', value: '—', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', accent: '#d97706' },
+  { label: 'Cobrado hoy (USD)', value: '—', icon: 'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z', accent: '#16a34a' },
+  { label: 'Cobrado hoy (C$)', value: '—', icon: 'M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z', accent: '#16a34a' },
 ])
 
 const quickActions = [
@@ -60,21 +60,18 @@ onMounted(() => loadStats())
       <div
         v-for="stat in stats"
         :key="stat.label"
-        class="admin-card-sm relative overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
+        class="admin-card-sm admin-stat transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
       >
-        <span class="absolute inset-y-0 left-0 w-1" :style="{ backgroundColor: stat.color }" />
+        <span class="admin-stat-accent" :style="{ backgroundColor: stat.accent }" />
         <div class="flex items-center gap-4">
-          <div
-            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-            :style="{ backgroundColor: stat.color + '15', color: stat.color }"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <div class="admin-stat-chip">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path :d="stat.icon" />
             </svg>
           </div>
           <div class="min-w-0">
-            <p class="text-2xl font-bold leading-none text-content-strong">{{ stat.value }}</p>
-            <p class="mt-1.5 text-xs text-subtle">{{ stat.label }}</p>
+            <p class="admin-stat-value">{{ stat.value }}</p>
+            <p class="admin-stat-label">{{ stat.label }}</p>
           </div>
         </div>
       </div>
@@ -90,7 +87,7 @@ onMounted(() => loadStats())
           <button
             v-for="action in quickActions"
             :key="action.label"
-            class="flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-colors hover:border-line hover:bg-surface-raised"
+            class="admin-quick-item flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left"
             @click="router.push(action.route)"
           >
             <span

@@ -196,31 +196,34 @@ onMounted(async () => {
     <!-- Summary cards: el cobrado va separado por moneda porque `paid_amount`
          esta expresado en la moneda del cobro y sumarlos mezclaria USD con C$ -->
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <div class="admin-card p-4 flex items-center gap-4">
-        <div class="h-10 w-10 rounded-xl bg-warning/20 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      <div class="admin-card admin-stat p-4 flex items-center gap-4">
+        <span class="admin-stat-accent" :style="{ backgroundColor: '#d97706' }" />
+        <div class="admin-stat-chip">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
         </div>
-        <div>
-          <p class="text-xs text-subtle">Por cobrar (pendiente, USD)</p>
-          <p class="text-lg font-bold text-warning">{{ formatUSD(summary.pending_total) }}</p>
-        </div>
-      </div>
-      <div class="admin-card p-4 flex items-center gap-4">
-        <div class="h-10 w-10 rounded-xl bg-success/20 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-        </div>
-        <div>
-          <p class="text-xs text-subtle">Cobrado hoy (USD)</p>
-          <p class="text-lg font-bold text-success">{{ formatUSD(summary.paid_today_usd) }}</p>
+        <div class="min-w-0">
+          <p class="admin-stat-value">{{ formatUSD(summary.pending_total) }}</p>
+          <p class="admin-stat-label">Por cobrar (pendiente, USD)</p>
         </div>
       </div>
-      <div class="admin-card p-4 flex items-center gap-4">
-        <div class="h-10 w-10 rounded-xl bg-success/20 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      <div class="admin-card admin-stat p-4 flex items-center gap-4">
+        <span class="admin-stat-accent" :style="{ backgroundColor: '#16a34a' }" />
+        <div class="admin-stat-chip">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         </div>
-        <div>
-          <p class="text-xs text-subtle">Cobrado hoy (Córdobas)</p>
-          <p class="text-lg font-bold text-success">{{ formatCord(summary.paid_today_cord) }}</p>
+        <div class="min-w-0">
+          <p class="admin-stat-value">{{ formatUSD(summary.paid_today_usd) }}</p>
+          <p class="admin-stat-label">Cobrado hoy (USD)</p>
+        </div>
+      </div>
+      <div class="admin-card admin-stat p-4 flex items-center gap-4">
+        <span class="admin-stat-accent" :style="{ backgroundColor: '#16a34a' }" />
+        <div class="admin-stat-chip">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </div>
+        <div class="min-w-0">
+          <p class="admin-stat-value">{{ formatCord(summary.paid_today_cord) }}</p>
+          <p class="admin-stat-label">Cobrado hoy (Córdobas)</p>
         </div>
       </div>
     </div>

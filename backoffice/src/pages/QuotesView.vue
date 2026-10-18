@@ -452,21 +452,25 @@ onMounted(async () => {
 
     <!-- Summary cards -->
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <div class="admin-card p-4">
-        <p class="text-xs text-subtle">Borradores</p>
-        <p class="mt-1 text-lg font-bold text-content">{{ summary.draft }}</p>
+      <div class="admin-card admin-stat p-4">
+        <span class="admin-stat-accent" :style="{ backgroundColor: '#1e4b88' }" />
+        <p class="admin-stat-value">{{ summary.draft }}</p>
+        <p class="admin-stat-label">Borradores</p>
       </div>
-      <div class="admin-card p-4">
-        <p class="text-xs text-subtle">Enviadas</p>
-        <p class="mt-1 text-lg font-bold text-warning">{{ summary.sent }}</p>
+      <div class="admin-card admin-stat p-4">
+        <span class="admin-stat-accent" :style="{ backgroundColor: '#d97706' }" />
+        <p class="admin-stat-value">{{ summary.sent }}</p>
+        <p class="admin-stat-label">Enviadas</p>
       </div>
-      <div class="admin-card p-4">
-        <p class="text-xs text-subtle">Aceptadas</p>
-        <p class="mt-1 text-lg font-bold text-primary">{{ summary.accepted }}</p>
+      <div class="admin-card admin-stat p-4">
+        <span class="admin-stat-accent" :style="{ backgroundColor: '#1e4b88' }" />
+        <p class="admin-stat-value">{{ summary.accepted }}</p>
+        <p class="admin-stat-label">Aceptadas</p>
       </div>
-      <div class="admin-card p-4">
-        <p class="text-xs text-subtle">Convertidas</p>
-        <p class="mt-1 text-lg font-bold text-primary">{{ summary.converted }}</p>
+      <div class="admin-card admin-stat p-4">
+        <span class="admin-stat-accent" :style="{ backgroundColor: '#1e4b88' }" />
+        <p class="admin-stat-value">{{ summary.converted }}</p>
+        <p class="admin-stat-label">Convertidas</p>
       </div>
     </div>
 
