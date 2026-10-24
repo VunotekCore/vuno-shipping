@@ -7,7 +7,7 @@ import { clientService, type Client } from '../services/clientService'
 import { zoneService, type Zone } from '../services/zoneService'
 import { subzoneService, type Subzone } from '../services/subzoneService'
 import { pricingRuleService, type PricingRule } from '../services/pricingRuleService'
-import type { StorageCategory } from '../services/storageCategoryService'
+import { storageCategoryService, type StorageCategory } from '../services/storageCategoryService'
 import type { DeliveryOption, Invoice } from '../types'
 import { useToast } from '../composables/useToast'
 import { formatCurrency } from '../utils/format'
@@ -304,6 +304,14 @@ async function loadReferenceData() {
   zones.value = zonesData
   pricingRules.value = rulesData.map(normalizePricingRule)
   storageCategories.value = (categoriesRes.data.data?.storage_categories as StorageCategory[]) ?? []
+  if (storageCategories.value.length === 0) {
+    try {
+      const res = await storageCategoryService.listAll()
+      storageCategories.value = res.data.data?.storage_categories ?? []
+    } catch {
+      storageCategories.value = []
+    }
+  }
   filteredDeliveryOptions.value = []
   loadingReferences.value = false
   await nextTick()
