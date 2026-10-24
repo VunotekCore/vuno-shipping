@@ -7,10 +7,10 @@ export const deliveryTypeService = {
   list() {
     return api.get<{ success: boolean; data: { delivery_types: DeliveryType[] } }>('/delivery_type/list.php')
   },
-  create(data: { name: string; description?: string; category?: string }) {
+  create(data: { name: string; description?: string; delivery_frequency?: string | null; category?: string }) {
     return api.post('/delivery_type/create.php', data)
   },
-  update(data: { id: number; name?: string; description?: string | null; category?: string }) {
+  update(data: { id: number; name?: string; description?: string | null; delivery_frequency?: string | null; category?: string }) {
     return api.put('/delivery_type/update.php', data)
   },
   delete(id: number) {

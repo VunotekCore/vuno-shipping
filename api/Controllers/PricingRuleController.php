@@ -323,7 +323,18 @@ class PricingRuleController
         }
 
         $db = Database::getConnection();
-        $stmt = $db->query('SELECT id, name, description, category FROM delivery_type ORDER BY name ASC');
+        try {
+            $stmt = $db->query("SHOW COLUMNS FROM delivery_type LIKE 'delivery_frequency'");
+            $hasFreq = $stmt !== false && $stmt->fetch() !== false;
+        } catch (\Throwable $e) {
+            $hasFreq = false;
+        }
+
+        if ($hasFreq) {
+            $stmt = $db->query('SELECT id, name, description, delivery_frequency, category FROM delivery_type ORDER BY name ASC');
+        } else {
+            $stmt = $db->query('SELECT id, name, description, NULL AS delivery_frequency, category FROM delivery_type ORDER BY name ASC');
+        }
         jsonSuccess(['delivery_types' => $stmt->fetchAll()]);
     }
 

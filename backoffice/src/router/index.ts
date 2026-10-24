@@ -127,6 +127,12 @@ const router = createRouter({
           meta: { permission: 'pricing_rule', action: 'read' },
         },
         {
+          path: 'lista-precios',
+          name: 'price-list',
+          component: () => import('../pages/PriceListView.vue'),
+          meta: { permission: 'pricing_rule', action: 'read' },
+        },
+        {
           path: 'routes',
           name: 'routes',
           component: () => import('../pages/RoutesView.vue'),

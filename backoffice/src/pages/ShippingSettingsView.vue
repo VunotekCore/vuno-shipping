@@ -20,7 +20,7 @@ const showModal = ref(false)
 const showDelete = ref(false)
 const editing = ref<ShippingService | DeliveryOption | DeliveryType | null>(null)
 const deleting = ref<ShippingService | DeliveryOption | DeliveryType | null>(null)
-const form = ref({ name: '', description: '', is_active: true, category: 'international', delivery_type_id: null as number | null })
+const form = ref({ name: '', description: '', delivery_frequency: '', is_active: true, category: 'international', delivery_type_id: null as number | null })
 
 // Delivery types lookup for service form
 const deliveryTypeOptions = ref<DeliveryType[]>([])
@@ -49,13 +49,13 @@ async function loadServices() {
 
 function openCreateService() {
   editing.value = null
-  form.value = { name: '', description: '', is_active: true, category: 'international', delivery_type_id: null }
+  form.value = { name: '', description: '', delivery_frequency: '', is_active: true, category: 'international', delivery_type_id: null }
   showModal.value = true
 }
 
 function openEditService(s: ShippingService) {
   editing.value = s
-  form.value = { name: s.name, description: s.description ?? '', is_active: !!s.is_active, category: 'international', delivery_type_id: s.delivery_type_id ?? null }
+  form.value = { name: s.name, description: s.description ?? '', delivery_frequency: '', is_active: !!s.is_active, category: 'international', delivery_type_id: s.delivery_type_id ?? null }
   showModal.value = true
 }
 
@@ -116,13 +116,13 @@ async function loadOptions() {
 
 function openCreateOption() {
   editing.value = null
-  form.value = { name: '', description: '', is_active: true, category: 'international', delivery_type_id: null }
+  form.value = { name: '', description: '', delivery_frequency: '', is_active: true, category: 'international', delivery_type_id: null }
   showModal.value = true
 }
 
 function openEditOption(o: DeliveryOption) {
   editing.value = o
-  form.value = { name: o.name, description: o.description ?? '', is_active: !!o.is_active, category: 'international', delivery_type_id: null }
+  form.value = { name: o.name, description: o.description ?? '', delivery_frequency: '', is_active: !!o.is_active, category: 'international', delivery_type_id: null }
   showModal.value = true
 }
 
@@ -243,6 +243,7 @@ const deliveryTypesLoading = ref(false)
 const deliveryTypeColumns: TableColumn[] = [
   { key: 'name', label: 'Nombre', width: '160px' },
   { key: 'description', label: 'Descripción' },
+  { key: 'delivery_frequency', label: 'Frecuencia de entrega', width: '200px' },
   { key: 'category', label: 'Categoría', width: '140px' },
   { key: 'actions', label: '', width: '100px', align: 'right' },
 ]
@@ -258,13 +259,13 @@ async function loadDeliveryTypes() {
 
 function openCreateDeliveryType() {
   editing.value = null
-  form.value = { name: '', description: '', is_active: true, category: 'international', delivery_type_id: null }
+  form.value = { name: '', description: '', delivery_frequency: '', is_active: true, category: 'international', delivery_type_id: null }
   showModal.value = true
 }
 
 function openEditDeliveryType(dt: DeliveryType) {
   editing.value = dt
-  form.value = { name: dt.name, description: dt.description ?? '', is_active: true, category: dt.category, delivery_type_id: null }
+  form.value = { name: dt.name, description: dt.description ?? '', delivery_frequency: dt.delivery_frequency ?? '', is_active: true, category: dt.category, delivery_type_id: null }
   showModal.value = true
 }
 
@@ -278,10 +279,10 @@ async function saveDeliveryType() {
   saving.value = true
   try {
     if (editing.value) {
-      await deliveryTypeService.update({ id: (editing.value as DeliveryType).id, name: form.value.name, description: form.value.description || null, category: form.value.category })
+      await deliveryTypeService.update({ id: (editing.value as DeliveryType).id, name: form.value.name, description: form.value.description || null, delivery_frequency: form.value.delivery_frequency || null, category: form.value.category })
       toast.success('Tipo de entrega actualizado')
     } else {
-      await deliveryTypeService.create({ name: form.value.name, description: form.value.description || undefined, category: form.value.category })
+      await deliveryTypeService.create({ name: form.value.name, description: form.value.description || undefined, delivery_frequency: form.value.delivery_frequency || null, category: form.value.category })
       toast.success('Tipo de entrega creado')
     }
     showModal.value = false
@@ -385,25 +386,26 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
         empty-title="Sin tipos de entrega"
         empty-desc="Creá el primer tipo de entrega."
       >
-        <tr v-for="dt in deliveryTypes" :key="dt.id">
-          <td class="font-medium text-content">{{ dt.name }}</td>
-          <td class="text-muted">{{ dt.description || '—' }}</td>
-          <td>
-            <span :class="dt.category === 'international' ? 'admin-badge admin-badge-info' : 'admin-badge admin-badge-success'">
-              {{ dt.category === 'international' ? 'Internacional' : 'Local' }}
-            </span>
-          </td>
-          <td class="text-right">
-            <div class="flex items-center justify-end gap-1">
-              <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEditDeliveryType(dt)" title="Editar">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDeleteDeliveryType(dt)" title="Eliminar">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              </button>
-            </div>
-          </td>
-        </tr>
+            <tr v-for="dt in deliveryTypes" :key="dt.id">
+              <td class="font-medium text-content">{{ dt.name }}</td>
+              <td class="text-muted">{{ dt.description || '—' }}</td>
+              <td class="text-muted">{{ dt.delivery_frequency || '—' }}</td>
+              <td>
+                <span :class="dt.category === 'international' ? 'admin-badge admin-badge-info' : 'admin-badge admin-badge-success'">
+                  {{ dt.category === 'international' ? 'Internacional' : 'Local' }}
+                </span>
+              </td>
+              <td class="text-right">
+                <div class="flex items-center justify-end gap-1">
+                  <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openEditDeliveryType(dt)" title="Editar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="admin-btn admin-btn-ghost admin-btn-sm text-danger" @click="openDeleteDeliveryType(dt)" title="Eliminar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
       </AppTable>
     </div>
 
@@ -560,8 +562,13 @@ watch(options, (val) => { allDeliveryOptions.value = val }, { immediate: true })
           <input v-model="form.name" class="admin-input" placeholder="Nombre" required :disabled="saving" maxlength="100" />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-content">Descripción</label>
-          <textarea v-model="form.description" class="admin-input" rows="2" placeholder="Descripción opcional" :disabled="saving" maxlength="500" />
+          <label class="mb-1.5 block text-sm font-medium text-muted">Descripción</label>
+          <input v-model="form.description" class="admin-input" placeholder="Descripción opcional" :disabled="saving" />
+        </div>
+        <div v-if="activeTab === 'delivery_types'">
+          <label class="mb-1.5 block text-sm font-medium text-muted">Frecuencia de entrega</label>
+          <input v-model="form.delivery_frequency" class="admin-input" placeholder="Ej: Lunes, Miércoles y Viernes / Diario / Semanal" :disabled="saving" />
+          <p class="mt-1 text-xs text-subtle">Campo informativo. Se mostrará en la Lista de precios.</p>
         </div>
         <div v-if="activeTab === 'delivery_types'">
           <label class="mb-1.5 block text-sm font-medium text-content">Categoría</label>

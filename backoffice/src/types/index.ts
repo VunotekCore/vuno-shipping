@@ -243,7 +243,8 @@ export interface DeliveryType {
   id: number
   name: string
   description: string | null
-  category: string
+  delivery_frequency?: string | null
+  category?: string
 }
 
 export interface PricingRule {

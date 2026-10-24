@@ -183,6 +183,7 @@ CREATE TABLE IF NOT EXISTS delivery_type (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     description VARCHAR(255) NULL,
+    delivery_frequency VARCHAR(255) NULL,
     category VARCHAR(20) DEFAULT 'international',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY name (name)

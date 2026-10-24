@@ -43,9 +43,14 @@ class DeliveryTypeController
         if (!in_array($category, ['international', 'local'], true)) {
             $category = 'international';
         }
+        $frequency = array_key_exists('delivery_frequency', $data) ? sanitizeString($data['delivery_frequency'] ?? '', 255) : null;
+        if ($frequency === '') {
+            $frequency = null;
+        }
         $id = $this->model->create([
             'name' => $name,
             'description' => sanitizeString($data['description'] ?? '', 255) ?: null,
+            'delivery_frequency' => $frequency,
             'category' => $category,
         ]);
         jsonSuccess(['delivery_type' => ['id' => $id, 'name' => $name]], 201);
@@ -76,10 +81,15 @@ class DeliveryTypeController
         if (!in_array($category, ['international', 'local'], true)) {
             $category = $existing['category'];
         }
+        $frequency = $existing['delivery_frequency'] ?? null;
+        if (array_key_exists('delivery_frequency', $data)) {
+            $frequency = sanitizeString($data['delivery_frequency'] ?? '', 255) ?: null;
+        }
         $this->model->update([
             'id' => $id,
             'name' => $name,
             'description' => array_key_exists('description', $data) ? (sanitizeString($data['description'] ?? '', 255) ?: null) : $existing['description'],
+            'delivery_frequency' => $frequency,
             'category' => $category,
         ]);
         jsonSuccess(['message' => 'Actualizado']);
