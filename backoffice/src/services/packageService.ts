@@ -28,6 +28,12 @@ export const packageService = {
       `/package/list.php${qs ? '?' + qs : ''}`
     )
   },
+  storageOptions(origin?: 'online' | 'local') {
+    const qs = origin ? `?origin=${origin}` : ''
+    return api.get<{ success: boolean; data: { storage_categories: import('../types').StorageCategory[]; suggested_location_id?: number | null; suggested_location_code?: string | null } }>(
+      `/package/storage-options.php${qs}`
+    )
+  },
 
   get(id: number) {
     return api.get<{ success: boolean; data: { package: Package; events: TrackingEvent[] } }>('/package/get.php', { params: { id } })

@@ -61,7 +61,7 @@ class PackageStorageController
         requireMethod('PUT');
         $payload = requireAuthMiddleware(true);
         rateLimit('package_storage_update', 30, 900);
-        if (!hasPermission($payload, 'package', 'edit')) {
+        if (!hasPermission($payload, 'storage_location', 'edit')) {
             jsonError('No tenés permiso', 403);
         }
 

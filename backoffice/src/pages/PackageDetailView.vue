@@ -6,6 +6,7 @@ import { storageCategoryService, type StorageCategory } from '../services/storag
 import { storageLocationService, type StorageLocation } from '../services/storageLocationService'
 import { useToast } from '../composables/useToast'
 import { formatCurrency, statusColor, statusLabel } from '../utils/format'
+import { useAuthStore } from '../stores/auth'
 import AppModal from '../components/ui/AppModal.vue'
 import AppDropdown from '../components/ui/AppDropdown.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
@@ -13,6 +14,8 @@ import PageHeader from '../components/ui/PageHeader.vue'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const auth: any = useAuthStore()
+const canManageStorage = computed(() => typeof auth?.hasPermission === 'function' && (auth.hasPermission('storage_location', 'edit') || auth.hasPermission('warehouse', 'edit')))
 const backofficeUrl = window.location.origin
 const trackingUrl = computed(() => pkg.value
   ? `${backofficeUrl}/scan?tracking=${pkg.value.tracking_number}`
@@ -422,7 +425,7 @@ onMounted(() => loadPackage())
               <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
                 <div class="mb-2 flex items-center justify-between">
                   <p class="text-xs text-subtle">Almacenaje</p>
-                  <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="openStorageModal">Gestionar</button>
+                  <button v-if="canManageStorage" class="admin-btn admin-btn-ghost admin-btn-sm" @click="openStorageModal">Gestionar</button>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>

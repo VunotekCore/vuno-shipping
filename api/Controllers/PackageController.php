@@ -94,6 +94,37 @@ class PackageController
         jsonSuccess(['package' => $package, 'events' => $events]);
     }
 
+    public function storageOptions(): never
+    {
+        requireMethod('GET');
+        $payload = requireAuthMiddleware();
+        if (!hasPermission($payload, 'package', 'create')) {
+            jsonError('No tenés permiso', 403);
+        }
+
+        $db = Database::getConnection();
+        $categoryModel = new StorageCategoryModel($db);
+        $categories = $categoryModel->listAll();
+
+        $origin = isset($_GET['origin']) ? sanitizeString($_GET['origin'], 20) : 'local';
+        if (!in_array($origin, ['online', 'local'], true)) {
+            $origin = 'local';
+        }
+        $categoryId = isset($_GET['category_id']) && $_GET['category_id'] !== '' ? (int) $_GET['category_id'] : null;
+
+        $suggested = null;
+        $warehouse = (new WarehouseModel($db))->findByOrigin($origin);
+        if ($warehouse !== null) {
+            $suggested = (new PackageStorageService($db))->autoSuggest((int) $warehouse['id'], $categoryId);
+        }
+
+        jsonSuccess([
+            'storage_categories' => $categories,
+            'suggested_location_id' => $suggested ? (int) $suggested['id'] : null,
+            'suggested_location_code' => $suggested['code'] ?? null,
+        ]);
+    }
+
     public function create(): never
     {
         requireMethod('POST');
@@ -105,6 +136,12 @@ class PackageController
         }
 
         $data = getJsonInput();
+
+        if (isset($data['storage_location_id']) && $data['storage_location_id'] !== '' && $data['storage_location_id'] !== null) {
+            if (!hasPermission($payload, 'storage_location', 'edit')) {
+                unset($data['storage_location_id']);
+            }
+        }
 
         $service = new PackageService(Database::getConnection());
         $result = $service->create($data, $payload);

@@ -141,9 +141,36 @@ SELECT 4, id FROM permission WHERE
   (module = 'pricing_rule' AND action IN ('read')) OR
   (module = 'delivery_type' AND action IN ('read')) OR
   (module = 'shipping_service' AND action IN ('read')) OR
-  (module = 'delivery_option' AND action IN ('read')) OR
-  (module IN ('warehouse', 'storage_category', 'storage_location') AND action = 'read')
+  (module = 'delivery_option' AND action IN ('read'))
 ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
+
+INSERT IGNORE INTO role (name, slug) VALUES
+('Recepción / Admisión', 'recepcion'),
+('Almacenista', 'almacenista');
+
+INSERT IGNORE INTO role_permission (role_id, permission_id)
+SELECT r.id, p.id
+FROM role r
+JOIN permission p ON (
+  (p.module = 'package' AND p.action IN ('create','read','edit')) OR
+  (p.module = 'client' AND p.action IN ('create','read')) OR
+  (p.module = 'zone' AND p.action IN ('read')) OR
+  (p.module = 'pricing_rule' AND p.action IN ('read')) OR
+  (p.module = 'delivery_type' AND p.action IN ('read')) OR
+  (p.module = 'shipping_service' AND p.action IN ('read')) OR
+  (p.module = 'delivery_option' AND p.action IN ('read')) OR
+  (p.module = 'invoice' AND p.action IN ('read'))
+)
+WHERE r.slug = 'recepcion';
+
+INSERT IGNORE INTO role_permission (role_id, permission_id)
+SELECT r.id, p.id
+FROM role r
+JOIN permission p ON (
+  (p.module IN ('warehouse','storage_category','storage_location') AND p.action IN ('create','read','edit','delete')) OR
+  (p.module = 'package' AND p.action IN ('read','edit'))
+)
+WHERE r.slug = 'almacenista';
 
 -- Operador Escáner: package (read/edit), delivery_type (read), shipping_service (read), delivery_option (read)
 INSERT INTO role_permission (role_id, permission_id)
