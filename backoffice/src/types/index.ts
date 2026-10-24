@@ -102,6 +102,7 @@ export interface Empleado {
 export interface Client {
   id: number
   name: string
+  company?: string | null
   email: string | null
   phone: string | null
   address: string | null
@@ -277,10 +278,12 @@ export interface Package {
   tracking_number: string
   tracking_token?: string
   client_id: number | null
-  client_name: string | null
+  client_name?: string | null
+  client?: { id: number; name: string; company?: string | null; phone?: string | null; email?: string | null } | null
   sender_name: string
   sender_phone: string | null
   recipient_name: string
+  recipient_company?: string | null
   recipient_phone: string
   recipient_address: string
   recipient_city: string | null
@@ -342,6 +345,7 @@ export interface ShipmentPackage {
   client_id: number | null
   client_name: string | null
   recipient_name: string
+  recipient_company?: string | null
   recipient_address: string | null
   recipient_city: string | null
   recipient_department: string | null
@@ -653,6 +657,7 @@ export interface Quote {
   client_id: number | null
   client_name_ref: string | null
   recipient_name: string
+  recipient_company?: string | null
   recipient_phone: string | null
   recipient_email: string | null
   recipient_address: string | null

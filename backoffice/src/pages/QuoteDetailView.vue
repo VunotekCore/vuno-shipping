@@ -236,6 +236,7 @@ onMounted(load)
             <h2 class="text-sm font-semibold text-content">Destinatario</h2>
             <div class="space-y-1.5 text-sm">
               <p class="text-content font-medium">{{ quote.recipient_name }}</p>
+              <p v-if="quote.recipient_company" class="text-muted">{{ quote.recipient_company }}</p>
               <p class="text-muted">{{ quote.recipient_phone || '—' }}</p>
               <p class="text-muted">{{ quote.recipient_email || '—' }}</p>
               <p class="text-muted">{{ quote.recipient_address || '—' }}</p>

@@ -15,7 +15,7 @@ export const clientService = {
     return api.get<{ success: boolean; data: { clients: Client[] } }>('/client/listAll.php')
   },
 
-  create(data: { name: string; email?: string; phone?: string; ruc?: string; address?: string; department?: string; notes?: string; agent_id?: number | null }) {
+  create(data: { name: string; company?: string; email?: string; phone?: string; ruc?: string; address?: string; department?: string; notes?: string; agent_id?: number | null }) {
     return api.post('/client/create.php', data)
   },
 

@@ -91,7 +91,7 @@ class QuoteModel
     {
         $stmt = $this->db->prepare(
             'INSERT INTO quote
-                (quote_number, client_id, recipient_name, recipient_phone, recipient_email,
+                (quote_number, client_id, recipient_name, recipient_company, recipient_phone, recipient_email,
                  recipient_address, recipient_city, recipient_department, recipient_ruc,
                  latitude, longitude,
                  agent_id, status, origin, zone_id, delivery_type_id, shipping_service_id,
@@ -99,7 +99,7 @@ class QuoteModel
                  subtotal, delivery_total, base_amount, tax_rate, tax_amount, total_amount, currency,
                  valid_until, notes, created_by)
              VALUES
-                (:quote_number, :client_id, :recipient_name, :recipient_phone, :recipient_email,
+                (:quote_number, :client_id, :recipient_name, :recipient_company, :recipient_phone, :recipient_email,
                  :recipient_address, :recipient_city, :recipient_department, :recipient_ruc,
                  :latitude, :longitude,
                  :agent_id, :status, :origin, :zone_id, :delivery_type_id, :shipping_service_id,
@@ -111,6 +111,7 @@ class QuoteModel
             'quote_number' => $data['quote_number'],
             'client_id' => $data['client_id'] ?? null,
             'recipient_name' => $data['recipient_name'],
+            'recipient_company' => $data['recipient_company'] ?? null,
             'recipient_phone' => $data['recipient_phone'] ?? null,
             'recipient_email' => $data['recipient_email'] ?? null,
             'recipient_address' => $data['recipient_address'] ?? null,

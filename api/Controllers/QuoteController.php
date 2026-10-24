@@ -438,6 +438,10 @@ class QuoteController
 
         $out = ['recipient_name' => sanitizeString($recipientName, 255)];
 
+        if (array_key_exists('recipient_company', $data)) {
+            $out['recipient_company'] = ($data['recipient_company'] !== null && $data['recipient_company'] !== '')
+                ? sanitizeString((string) $data['recipient_company'], 150) : null;
+        }
         if (isset($data['client_id']) && $data['client_id'] !== '') {
             $out['client_id'] = (int) $data['client_id'];
         }

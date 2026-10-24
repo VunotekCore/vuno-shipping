@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS empleado (
 CREATE TABLE IF NOT EXISTS client (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    company VARCHAR(150) NULL,
     email VARCHAR(255) NULL,
     phone VARCHAR(50) NULL,
     ruc VARCHAR(30) NULL,
@@ -308,6 +309,7 @@ CREATE TABLE IF NOT EXISTS quote (
     quote_number VARCHAR(30) NOT NULL,
     client_id INT NULL,
     recipient_name VARCHAR(255) NOT NULL,
+    recipient_company VARCHAR(150) NULL,
     recipient_phone VARCHAR(50) NULL,
     recipient_email VARCHAR(255) NULL,
     recipient_address VARCHAR(500) NULL,
@@ -433,6 +435,7 @@ CREATE TABLE IF NOT EXISTS package (
     sender_name VARCHAR(255) NOT NULL,
     sender_phone VARCHAR(50) NULL,
     recipient_name VARCHAR(255) NOT NULL,
+    recipient_company VARCHAR(150) NULL,
     recipient_phone VARCHAR(50) NOT NULL,
     recipient_address TEXT NOT NULL,
     recipient_city VARCHAR(100) NULL,

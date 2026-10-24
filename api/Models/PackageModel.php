@@ -126,7 +126,7 @@ class PackageModel
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare("
-            SELECT p.*, c.name AS client_name, c.email AS client_email, c.phone AS client_phone, ps.name AS status_name,
+            SELECT p.*, c.name AS client_name, c.company AS client_company, c.email AS client_email, c.phone AS client_phone, ps.name AS status_name,
                    dt.name AS delivery_type_name, ldt.name AS local_delivery_type_name,
                    ss.name AS shipping_service_name, dopt.name AS delivery_option_name,
                    u.name AS assigned_to_name,
@@ -184,7 +184,7 @@ class PackageModel
     {
         $stmt = $this->db->prepare(
             'INSERT INTO package (tracking_number, tracking_token, client_id, quote_id, sender_name, sender_phone,
-             recipient_name, recipient_phone, recipient_address, recipient_city, recipient_department,
+             recipient_name, recipient_company, recipient_phone, recipient_address, recipient_city, recipient_department,
              latitude, longitude,
              zone_id, description, weight, length, width, height,
              volumetric_weight, chargeable_weight, declared_value, flete_cost, delivery_cost, shipping_cost,
@@ -193,7 +193,7 @@ class PackageModel
              storage_category_id, storage_location_id,
              pickup_required, pickup_vehicle_id, created_by)
              VALUES (:tracking_number, :tracking_token, :client_id, :quote_id, :sender_name, :sender_phone,
-             :recipient_name, :recipient_phone, :recipient_address, :recipient_city, :recipient_department,
+             :recipient_name, :recipient_company, :recipient_phone, :recipient_address, :recipient_city, :recipient_department,
              :latitude, :longitude,
              :zone_id, :description, :weight, :length, :width, :height,
              :volumetric_weight, :chargeable_weight, :declared_value, :flete_cost, :delivery_cost, :shipping_cost,
@@ -210,6 +210,7 @@ class PackageModel
             'sender_name' => $data['sender_name'],
             'sender_phone' => $data['sender_phone'] ?? null,
             'recipient_name' => $data['recipient_name'],
+            'recipient_company' => $data['recipient_company'] ?? null,
             'recipient_phone' => $data['recipient_phone'],
             'recipient_address' => $data['recipient_address'],
             'recipient_city' => $data['recipient_city'] ?? null,

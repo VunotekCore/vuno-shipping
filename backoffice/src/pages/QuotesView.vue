@@ -94,6 +94,7 @@ interface QuoteForm {
   client_id: number | null
   agent_id: number | null
   recipient_name: string
+  recipient_company: string
   recipient_phone: string
   recipient_email: string
   recipient_address: string
@@ -121,6 +122,7 @@ function defaultForm(): QuoteForm {
     client_id: null,
     agent_id: isVendor.value ? (auth.user?.id ?? null) : null,
     recipient_name: '',
+    recipient_company: '',
     recipient_phone: '',
     recipient_email: '',
     recipient_address: '',
@@ -277,6 +279,7 @@ async function openEdit(q: Quote) {
       client_id: quote.client_id,
       agent_id: quote.agent_id,
       recipient_name: quote.recipient_name ?? '',
+      recipient_company: (quote as any).recipient_company ?? '',
       recipient_phone: quote.recipient_phone ?? '',
       recipient_email: quote.recipient_email ?? '',
       recipient_address: quote.recipient_address ?? '',
@@ -331,6 +334,7 @@ function buildPayload() {
     client_id: form.client_id ?? null,
     agent_id: isVendor.value ? null : (form.agent_id ?? null),
     recipient_name: form.recipient_name.trim(),
+    recipient_company: form.recipient_company || null,
     recipient_phone: form.recipient_phone || null,
     recipient_email: form.recipient_email || null,
     recipient_address: form.recipient_address || null,

@@ -265,7 +265,7 @@ function openCreateDeliveryType() {
 
 function openEditDeliveryType(dt: DeliveryType) {
   editing.value = dt
-  form.value = { name: dt.name, description: dt.description ?? '', delivery_frequency: dt.delivery_frequency ?? '', is_active: true, category: dt.category, delivery_type_id: null }
+  form.value = { name: dt.name, description: dt.description ?? '', delivery_frequency: dt.delivery_frequency ?? '', is_active: true, category: dt.category ?? 'international', delivery_type_id: null }
   showModal.value = true
 }
 

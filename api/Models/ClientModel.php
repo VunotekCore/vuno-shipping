@@ -45,12 +45,12 @@ class ClientModel
     {
         if ($agentId !== null) {
             $stmt = $this->db->prepare(
-                'SELECT id, name, email, phone, ruc, is_active, agent_id FROM client WHERE is_active = 1 AND agent_id = :agent_id ORDER BY name ASC'
+                'SELECT id, name, company, email, phone, ruc, is_active, agent_id FROM client WHERE is_active = 1 AND agent_id = :agent_id ORDER BY name ASC'
             );
             $stmt->execute(['agent_id' => $agentId]);
             return $stmt->fetchAll();
         }
-        $stmt = $this->db->query('SELECT id, name, email, phone, ruc, is_active, agent_id FROM client WHERE is_active = 1 ORDER BY name ASC');
+        $stmt = $this->db->query('SELECT id, name, company, email, phone, ruc, is_active, agent_id FROM client WHERE is_active = 1 ORDER BY name ASC');
         return $stmt->fetchAll();
     }
 
@@ -65,11 +65,12 @@ class ClientModel
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO client (name, email, phone, ruc, address, department, notes, agent_id, is_active)
-             VALUES (:name, :email, :phone, :ruc, :address, :department, :notes, :agent_id, :is_active)'
+            'INSERT INTO client (name, company, email, phone, ruc, address, department, notes, agent_id, is_active)
+             VALUES (:name, :company, :email, :phone, :ruc, :address, :department, :notes, :agent_id, :is_active)'
         );
         $stmt->execute([
             'name' => $data['name'],
+            'company' => $data['company'] ?? null,
             'email' => $data['email'] ?? null,
             'phone' => $data['phone'] ?? null,
             'ruc' => $data['ruc'] ?? null,
@@ -87,7 +88,7 @@ class ClientModel
         $fields = [];
         $params = ['id' => $id];
 
-        foreach (['name', 'email', 'phone', 'ruc', 'address', 'department', 'notes', 'agent_id', 'is_active'] as $field) {
+        foreach (['name', 'company', 'email', 'phone', 'ruc', 'address', 'department', 'notes', 'agent_id', 'is_active'] as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = :$field";
                 $params[$field] = $data[$field];

@@ -89,6 +89,7 @@ const form = reactive({
   sender_name: '',
   sender_phone: '',
   recipient_name: '',
+  recipient_company: '',
   recipient_phone: '',
   // El destinatario es la misma persona que el remitente: se copian nombre y
   // teléfono. NO se copia la dirección (la del remitente es la de Amazon en
@@ -118,6 +119,7 @@ const form = reactive({
 // New client form
 const newClient = reactive({
   name: '',
+  company: '',
   email: '',
   phone: '',
   address: '',
@@ -366,6 +368,9 @@ function syncRecipientFromSender() {
   if (!form.use_client_data) return
   form.recipient_name = form.sender_name
   form.recipient_phone = form.sender_phone
+  if (selectedClient.value?.company) {
+    form.recipient_company = selectedClient.value.company
+  }
 }
 
 /** Solo aplica si hay cliente: sin él no hay de dónde copiar. */
@@ -408,21 +413,25 @@ async function createClient() {
   try {
     const res = await clientService.create({
       name: newClient.name,
+      company: newClient.company || undefined,
       email: newClient.email || undefined,
       phone: newClient.phone || undefined,
       address: newClient.address || undefined,
     })
-    const created = res.data.data?.client
-    if (created) {
+    const created = res.data?.data?.client || res.data?.client
+    if (created?.id) {
       clients.value.unshift(created)
+      form.client_id = created.id
       selectClient(created)
-      newClient.name = ''
-      newClient.email = ''
-      newClient.phone = ''
-      newClient.address = ''
-      newClient.showExtra = false
-      toast.success('Cliente creado')
     }
+    showClientCreate.value = false
+    newClient.name = ''
+    newClient.company = ''
+    newClient.email = ''
+    newClient.phone = ''
+    newClient.address = ''
+    newClient.showExtra = false
+    toast.success('Cliente creado')
   } catch {
     toast.error('Error al crear cliente')
   } finally {
@@ -588,6 +597,7 @@ async function handleCreate() {
       sender_name: form.sender_name,
       sender_phone: form.sender_phone || undefined,
       recipient_name: form.recipient_name,
+      recipient_company: form.recipient_company || null,
       recipient_phone: form.recipient_phone,
       recipient_address: form.recipient_address,
       delivery_option: form.delivery_option,
@@ -650,6 +660,7 @@ function resetForm() {
   form.sender_name = ''
   form.sender_phone = ''
   form.recipient_name = ''
+  form.recipient_company = ''
   form.recipient_phone = ''
   form.recipient_address = ''
   form.recipient_city = ''
@@ -764,6 +775,7 @@ onMounted(() => loadReferenceData())
               <div v-if="showClientCreate" class="rounded-lg border border-line p-3 space-y-3">
                 <p class="text-sm font-medium text-content">Nuevo cliente</p>
                 <input v-model="newClient.name" class="admin-input w-full" placeholder="Nombre *" />
+                <input v-model="newClient.company" class="admin-input w-full" placeholder="Empresa / Razón Social" />
                 <div class="grid grid-cols-2 gap-3">
                   <input v-model="newClient.email" class="admin-input w-full" placeholder="Email" type="email" />
                   <AppPhoneInput
@@ -864,6 +876,14 @@ onMounted(() => loadReferenceData())
                 :disabled="creating"
               />
             </div>
+            <div v-if="selectedClient?.company" class="mt-3">
+              <AppFormField
+                :model-value="selectedClient.company"
+                label="Empresa / Razón Social"
+                icon="building"
+                :disabled="true"
+              />
+            </div>
           </div>
 
           <!-- Destinatario -->
@@ -900,27 +920,47 @@ onMounted(() => loadReferenceData())
                 <p v-if="form.use_client_data" class="mt-2 text-xs text-subtle">
                   La dirección de entrega se escribe igual: es en Nicaragua, no la de Amazon en Miami.
                 </p>
+                <div v-if="form.use_client_data" class="mt-3">
+                  <AppFormField
+                    :model-value="form.recipient_company"
+                    @update:model-value="(v: string | number | null) => form.recipient_company = String(v ?? '')"
+                    label="Empresa / Razón Social"
+                    icon="building"
+                    placeholder="Opcional"
+                    :disabled="creating"
+                  />
+                </div>
               </div>
 
               <!-- Los campos se ocultan SOLO si hay cliente y el switch está
                    activo: sin cliente no hay nada que copiar y el operador
                    tiene que poder escribirlos. -->
-              <div v-if="!canReuseClient || !form.use_client_data" class="grid gap-3 sm:grid-cols-2">
+              <div v-if="!canReuseClient || !form.use_client_data" class="space-y-3">
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <AppFormField
+                    :model-value="form.recipient_name"
+                    @update:model-value="(v: string | number | null) => form.recipient_name = String(v ?? '')"
+                    label="Nombre *"
+                    icon="user"
+                    placeholder="Nombre completo"
+                    :required="true"
+                    :disabled="creating"
+                  />
+                  <AppPhoneInput
+                    :model-value="form.recipient_phone"
+                    @update:model-value="(v: string) => form.recipient_phone = v"
+                    label="Teléfono *"
+                    placeholder="1234-5678"
+                    :required="true"
+                    :disabled="creating"
+                  />
+                </div>
                 <AppFormField
-                  :model-value="form.recipient_name"
-                  @update:model-value="(v: string | number | null) => form.recipient_name = String(v ?? '')"
-                  label="Nombre *"
-                  icon="user"
-                  placeholder="Nombre completo"
-                  :required="true"
-                  :disabled="creating"
-                />
-                <AppPhoneInput
-                  :model-value="form.recipient_phone"
-                  @update:model-value="(v: string) => form.recipient_phone = v"
-                  label="Teléfono *"
-                  placeholder="1234-5678"
-                  :required="true"
+                  :model-value="form.recipient_company"
+                  @update:model-value="(v: string | number | null) => form.recipient_company = String(v ?? '')"
+                  label="Empresa / Razón Social"
+                  icon="building"
+                  placeholder="Opcional"
                   :disabled="creating"
                 />
               </div>

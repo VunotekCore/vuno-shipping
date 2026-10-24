@@ -216,7 +216,9 @@ onMounted(() => loadPackage())
               </div>
               <div>
                 <p class="text-xs text-subtle mb-1">Cliente</p>
-                <p class="text-sm text-muted">{{ pkg.client_name || '—' }}</p>
+                <p class="text-sm text-muted">{{ pkg.client_name || pkg.client?.name || pkg.sender_name || '—' }}</p>
+                <p v-if="pkg.client?.company" class="text-xs text-subtle mt-1 mb-0.5">Empresa / Razón Social</p>
+                <p v-if="pkg.client?.company" class="text-sm text-muted">{{ pkg.client.company }}</p>
               </div>
               <div>
                 <p class="text-xs text-subtle mb-1">Servicio de envío</p>
@@ -235,13 +237,18 @@ onMounted(() => loadPackage())
               <div class="sm:col-span-2 border-t border-line pt-4 mt-2">
                 <p class="text-xs text-subtle mb-2">Remitente</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <p class="text-xs text-subtle mb-1">Nombre</p>
-                    <p class="text-sm text-muted">{{ pkg.sender_name }}</p>
-                  </div>
+              <div>
+                <p class="text-xs text-subtle mb-1">Cliente</p>
+                <p class="text-sm text-muted">{{ pkg.sender_name }}</p>
+                <p v-if="pkg.client?.company" class="text-xs text-subtle mt-0.5">{{ pkg.client.company }}</p>
+              </div>
                   <div>
                     <p class="text-xs text-subtle mb-1">Teléfono</p>
                     <p class="text-sm text-muted">{{ pkg.sender_phone || '—' }}</p>
+                  </div>
+                  <div class="sm:col-span-2">
+                    <p class="text-xs text-subtle mb-1">Empresa / Razón Social</p>
+                    <p class="text-sm text-muted">{{ pkg.client?.company || '—' }}</p>
                   </div>
                 </div>
               </div>
@@ -252,6 +259,10 @@ onMounted(() => loadPackage())
                   <div>
                     <p class="text-xs text-subtle mb-1">Nombre</p>
                     <p class="text-sm text-muted">{{ pkg.recipient_name }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-subtle mb-1">Empresa / Razón Social</p>
+                    <p class="text-sm text-muted">{{ pkg.recipient_company || '—' }}</p>
                   </div>
                   <div>
                     <p class="text-xs text-subtle mb-1">Teléfono</p>

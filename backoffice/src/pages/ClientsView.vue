@@ -29,10 +29,10 @@ const {
   service: clientService,
   dataKey: 'clients',
   entityName: 'Cliente',
-  getDefaultForm: () => ({ name: '', email: '', phone: '', ruc: '', address: '', department: '', notes: '', agent_id: null }),
-  populateForm: (c) => ({ name: c.name, email: c.email ?? '', phone: c.phone ?? '', ruc: c.ruc ?? '', address: c.address ?? '', department: c.department ?? '', notes: c.notes ?? '', agent_id: c.agent_id ?? null }),
+  getDefaultForm: () => ({ name: '', company: '', email: '', phone: '', ruc: '', address: '', department: '', notes: '', agent_id: null as number | null, is_active: true }),
+  populateForm: (c) => ({ name: c.name, company: c.company ?? '', email: c.email ?? '', phone: c.phone ?? '', ruc: c.ruc ?? '', address: c.address ?? '', department: c.department ?? '', notes: c.notes ?? '', agent_id: c.agent_id ?? null, is_active: !!c.is_active }),
   validateForm: (f) => {
-    if (!f.name) return 'El nombre es requerido'
+    if (!String(f.name || '').trim()) return 'El nombre es requerido'
     return null
   },
   getEntityId: (c) => c.id,
@@ -106,12 +106,13 @@ function handleSave() {
 }
 
 const columns: TableColumn[] = [
-  { key: 'name', label: 'Nombre', width: '180px' },
+  { key: 'name', label: 'Nombre', width: '200px' },
+  { key: 'company', label: 'Empresa / Razón Social', width: '200px' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Teléfono', width: '140px' },
-  { key: 'ruc', label: 'RUC', width: '110px' },
-  { key: 'department', label: 'Departamento', width: '140px' },
-  { key: 'package_count', label: 'Paquetes', width: '90px' },
+  { key: 'ruc', label: 'RUC', width: '140px' },
+  { key: 'department', label: 'Departamento', width: '150px' },
+  { key: 'package_count', label: 'Paquetes', width: '100px', align: 'center' },
   { key: 'actions', label: '', width: '100px', align: 'right' },
 ]
 
@@ -151,6 +152,7 @@ onMounted(async () => {
         <AppTable :columns="columns" :loading="loading" :is-empty="clients.length === 0" empty-title="Sin clientes" empty-desc="Creá el primer cliente del sistema.">
           <tr v-for="c in clients" :key="c.id">
             <td class="font-medium text-content">{{ c.name }}</td>
+            <td class="text-muted">{{ c.company || '—' }}</td>
             <td class="text-muted">{{ c.email }}</td>
             <td class="text-muted">{{ c.phone || '—' }}</td>
             <td class="text-muted font-mono">{{ c.ruc || '—' }}</td>
@@ -197,6 +199,7 @@ onMounted(async () => {
             <p class="font-medium text-content truncate">{{ c.name }}</p>
             <span class="admin-badge admin-badge-neutral shrink-0">{{ c.package_count ?? 0 }} paquetes</span>
           </div>
+          <p v-if="c.company" class="text-sm text-muted truncate">{{ c.company }}</p>
           <p class="text-sm text-muted truncate">{{ c.email || '—' }}</p>
           <p class="text-xs text-subtle">{{ c.phone || '—' }} · {{ c.ruc || 'Sin RUC' }}</p>
           <p class="text-xs text-subtle">{{ c.department || '—' }}</p>
@@ -248,6 +251,15 @@ onMounted(async () => {
               :error="fieldErrors.name"
               @blur="validateField('name')"
               @input="clearError('name')"
+            />
+            <AppFormField
+              :model-value="fv('company')"
+              @update:model-value="(v: string | number | null) => form.company = v"
+              label="Empresa / Razón Social"
+              icon="building"
+              placeholder="Nombre de la empresa (opcional)"
+              :disabled="saving"
+              :maxlength="150"
             />
             <AppFormField
               :model-value="fv('email')"

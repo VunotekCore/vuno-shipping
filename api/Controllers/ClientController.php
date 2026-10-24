@@ -113,6 +113,9 @@ class ClientController
 
         $insertData = ['name' => $name];
 
+        if (array_key_exists('company', $data)) {
+            $insertData['company'] = $data['company'] !== null && $data['company'] !== '' ? sanitizeString($data['company'], 150) : null;
+        }
         if (!empty($data['email'])) {
             $insertData['email'] = validateEmail($data['email']);
         }
@@ -175,6 +178,9 @@ class ClientController
 
         if (isset($data['name'])) {
             $updateData['name'] = sanitizeString($data['name'], 255);
+        }
+        if (array_key_exists('company', $data)) {
+            $updateData['company'] = ($data['company'] !== null && $data['company'] !== '') ? sanitizeString($data['company'], 150) : null;
         }
         if (isset($data['email'])) {
             $updateData['email'] = validateEmail($data['email']);

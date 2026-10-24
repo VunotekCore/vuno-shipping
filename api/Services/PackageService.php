@@ -76,6 +76,7 @@ class PackageService
                 'sender_name' => sanitizeString($senderName, 255),
                 'sender_phone' => sanitizeString($data['sender_phone'] ?? '', 50),
                 'recipient_name' => sanitizeString($recipientName, 255),
+                'recipient_company' => isset($data['recipient_company']) && $data['recipient_company'] !== '' ? sanitizeString($data['recipient_company'], 150) : null,
                 'recipient_phone' => sanitizeString($recipientPhone, 50),
                 'recipient_address' => sanitizeString($recipientAddress, 500),
                 'created_by' => (int) $payload['sub'],

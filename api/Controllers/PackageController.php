@@ -81,6 +81,16 @@ class PackageController
         $trackingModel = new TrackingEventModel(Database::getConnection());
         $events = $trackingModel->listByPackage($pkgId);
 
+        if (isset($package['client_company'])) {
+            $package['client'] = [
+                'id' => isset($package['client_id']) ? (int) $package['client_id'] : null,
+                'name' => $package['client_name'] ?? null,
+                'company' => $package['client_company'],
+                'email' => $package['client_email'] ?? null,
+                'phone' => $package['client_phone'] ?? null,
+            ];
+        }
+
         jsonSuccess(['package' => $package, 'events' => $events]);
     }
 

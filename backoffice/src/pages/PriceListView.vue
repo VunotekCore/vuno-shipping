@@ -28,6 +28,8 @@ interface PricingRule {
   percentage_of_value: number | null
   min_price: number | null
   volumetric_divisor: number | null
+  min_weight?: number | null
+  max_weight?: number | null
   is_active: number | boolean
   zones?: Zone[]
 }
@@ -36,17 +38,11 @@ interface DeliveryType {
   id: number
   name: string
   description: string | null
-  delivery_frequency: string | null
+  delivery_frequency?: string | null
   category?: string
 }
 
 interface PricingRuleType {
-  id: number
-  name: string
-  description: string | null
-}
-
-interface DeliveryType {
   id: number
   name: string
   description: string | null
@@ -65,7 +61,7 @@ function getDeliveryFrequency(rule: PricingRule): string | null {
   return null
 }
 
-function formatCurrency(val: number | null | undefined): string {
+function formatCurrency(val: number | string | null | undefined): string {
   if (val === null || val === undefined || val === '') return '—'
   const num = Number(val)
   if (Number.isNaN(num)) return '—'
