@@ -97,6 +97,7 @@ const form = reactive({
   longitude: null as number | null,
   zone_id: null as number | null,
   description: '',
+  guide_number: '',
   weight: null as number | null,
   length: null as number | null,
   width: null as number | null,
@@ -579,6 +580,7 @@ async function handleCreate() {
     if (form.declared_value) payload.declared_value = form.declared_value
     if (form.pricing_rule_id) payload.pricing_rule_id = form.pricing_rule_id
     if (form.storage_category_id) payload.storage_category_id = form.storage_category_id
+    if (form.guide_number) payload.guide_number = form.guide_number
     if (form.notes) payload.notes = form.notes
 
     const res = await packageService.create(payload as any)
@@ -625,6 +627,7 @@ function resetForm() {
   form.longitude = null
   form.zone_id = null
   form.description = ''
+  form.guide_number = ''
   form.weight = null
   form.length = null
   form.width = null
@@ -987,6 +990,26 @@ onMounted(() => loadReferenceData())
                 :disabled="creating"
                 :rows="2"
               />
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Clasificación <span class="text-danger">*</span></label>
+                  <AppDropdown
+                    :model-value="form.storage_category_id"
+                    @update:model-value="(v: string | number | null) => form.storage_category_id = v as number | null"
+                    :options="storageCategories.map(c => ({ value: c.id, label: c.name + (c.description ? ' — ' + c.description : '') }))"
+                    :placeholder="storageCategories.length === 0 ? 'Sin clasificaciones disponibles' : 'Seleccionar clasificación...'"
+                    :disabled="creating"
+                  />
+                </div>
+                <AppFormField
+                  :model-value="form.guide_number"
+                  @update:model-value="(v: string | number | null) => form.guide_number = String(v ?? '')"
+                  label="Número de Guía"
+                  icon="hash"
+                  placeholder="Ej. GUIA-123456"
+                  :disabled="creating"
+                />
+              </div>
               <div>
                 <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Regla de precio</label>
                 <AppDropdown
@@ -1064,25 +1087,6 @@ onMounted(() => loadReferenceData())
                 class="max-w-xs"
               />
             </div>
-          </div>
-
-          <!-- Almacenaje -->
-          <div class="admin-card p-5 space-y-4">
-            <p class="admin-form-section mb-1">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l9-5 9 5v13M9 21v-8h6v8M3 21h18"/></svg>
-              Almacenaje
-            </p>
-            <div>
-              <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-content">Clasificación <span class="text-danger">*</span></label>
-              <AppDropdown
-                :model-value="form.storage_category_id"
-                @update:model-value="(v: string | number | null) => form.storage_category_id = v as number | null"
-                :options="storageCategories.map(c => ({ value: c.id, label: c.name + (c.description ? ' — ' + c.description : '') }))"
-                :placeholder="storageCategories.length === 0 ? 'Sin clasificaciones disponibles' : 'Seleccionar clasificación...'"
-                :disabled="creating"
-              />
-            </div>
-            <p class="text-xs text-subtle">La ubicación se asigna automáticamente según la clasificación y el origen.</p>
           </div>
 
           <!-- Servicio de envío + Opción de entrega -->

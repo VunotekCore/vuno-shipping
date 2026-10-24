@@ -283,6 +283,9 @@ class PackageService
             if (isset($data['storage_category_id']) && $data['storage_category_id'] !== '' && $data['storage_category_id'] !== null) {
                 $insertData['storage_category_id'] = (int) $data['storage_category_id'];
             }
+            if (isset($data['guide_number']) && $data['guide_number'] !== '') {
+                $insertData['guide_number'] = sanitizeString((string) $data['guide_number'], 100);
+            }
 
             $packageId = $model->create($insertData);
 

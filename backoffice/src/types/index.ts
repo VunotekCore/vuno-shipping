@@ -291,41 +291,31 @@ export interface Package {
   zone_id: number | null
   zone_name: string | null
   description: string | null
+  guide_number?: string | null
+  volumetric_weight?: number | null
+  chargeable_weight?: number | null
   weight: number | null
   length: number | null
   width: number | null
   height: number | null
-  volumetric_weight: number | null
-  chargeable_weight: number | null
   declared_value: number | null
   flete_cost: number | null
   delivery_cost: number | null
   shipping_cost: number | null
-  pricing_rule_id: number | null
-  pricing_rule_name: string | null
-  delivery_type_id: number | null
-  delivery_type_name: string | null
-  shipping_service_id: number | null
-  shipping_service_name: string | null
-  delivery_option: string | null
-  local_delivery_type_id: number | null
-  local_delivery_type_name: string | null
-  delivery_option_id: number | null
-  delivery_option_name: string | null
+  currency: string | null
   status_id: number | null
   status_name: string | null
-  assigned_to: number | null
-  assigned_to_name: string | null
+  status_label: string | null
+  delivery_option?: string | null
+  delivery_option_name?: string | null
+  shipping_service?: string | null
+  shipping_service_name?: string | null
+  shipping_service_id: number | null
   notes: string | null
-  origin: 'online' | 'local'
-  pickup_required?: number
-  pickup_vehicle_id?: number | null
-  pickup_vehicle_plate?: string | null
   received_at: string | null
   delivered_at: string | null
-  invoice_id?: number | null
-  invoice_number?: string | null
-  invoice_status?: 'pending' | 'paid' | 'cancelled' | null
+  created_at: string
+  updated_at: string
   storage_category_id?: number | null
   storage_category_name?: string | null
   storage_category_color?: string | null
@@ -333,11 +323,20 @@ export interface Package {
   storage_location_code?: string | null
   storage_warehouse_id?: number | null
   stored_at?: string | null
-  created_by: number | null
-  created_at: string
-  updated_at: string
+  invoice_id?: number | null
+  invoice_number?: string | null
+  invoice_status?: string | null
+  pickup_required?: boolean | number
+  pickup_vehicle_id?: number | null
+  pickup_vehicle_plate?: string | null
+  driver_id?: number | null
+  driver_name?: string | null
+  assigned_to_name?: string | null
+  pricing_rule_id?: number | null
+  pricing_rule_name?: string | null
+  route_run_id?: number | null
+  carried_over?: number
 }
-
 export interface ShipmentPackage {
   id: number
   tracking_number: string
@@ -352,8 +351,10 @@ export interface ShipmentPackage {
   zone_id: number | null
   zone_name: string | null
   description: string | null
+  guide_number?: string | null
+  volumetric_weight?: number | null
+  chargeable_weight?: number | null
   weight: number | null
-  chargeable_weight: number | null
   flete_cost: number | null
   delivery_cost: number | null
   shipping_cost: number | null
