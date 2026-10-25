@@ -342,7 +342,7 @@ class ShipmentController
 
         $uniform = $this->model->getUniformPackageStatus($shipmentId);
         if ($uniform !== 'received') {
-            jsonError('Todos los paquetes deben estar en estado Recibido en Miami para despachar', 409);
+            jsonError('Todos los paquetes deben estar en estado Recibido en almacén para despachar', 409);
         }
 
         $db = Database::getConnection();
@@ -443,16 +443,69 @@ class ShipmentController
                 ]);
 
                 try {
-                    $storageService->free((int) $pkg['id'], (int) $payload['sub'], 'released', 'Despachado de bodega Miami');
-                    $storageService->assign(
-                        (int) $pkg['id'],
-                        'local',
-                        null,
-                        null,
-                        (int) $payload['sub'],
-                        'stored',
-                        'Ubicado en bodega Nicaragua — embarque ' . $shipment['code']
-                    );
+                    $pkgFull = $packageModel->findById((int) $pkg['id']);
+                    $branchId = $pkgFull && isset($pkgFull['reception_branch_id']) ? (int) $pkgFull['reception_branch_id'] : 0;
+                    $branch = null;
+                    if ($branchId > 0) {
+                        $branchStmt = $db->prepare('SELECT * FROM branch WHERE id = :id LIMIT 1');
+                        $branchStmt->execute(['id' => $branchId]);
+                        $branch = $branchStmt->fetch();
+                    }
+                    $storageService->free((int) $pkg['id'], (int) $payload['sub'], 'released', 'Despachado de bodega de consolidación');
+                    $destWarehouseId = ($branch && !empty($branch['transfer_to_warehouse_id'])) ? (int) $branch['transfer_to_warehouse_id'] : null;
+                    if ($destWarehouseId === null) {
+                        $wStmt = $db->prepare("SELECT id FROM warehouse WHERE is_distribution = 1 AND (country_code IS NULL OR country_code = 'NI') ORDER BY is_central DESC, id ASC LIMIT 1");
+                        $wStmt->execute();
+                        $dw = $wStmt->fetchColumn();
+                        if ($dw) {
+                            $destWarehouseId = (int) $dw;
+                        }
+                    }
+                    if ($destWarehouseId !== null) {
+                        $locStmt = $db->prepare('SELECT id FROM storage_location WHERE warehouse_id = :wid AND is_active = 1 ORDER BY id ASC LIMIT 1');
+                        $locStmt->execute(['wid' => $destWarehouseId]);
+                        $locId = $locStmt->fetchColumn();
+                        if ($locId) {
+                            $locModel = new \App\Models\StorageLocationModel($db);
+                            $loc = $locModel->findById((int) $locId);
+                            if ($loc !== null) {
+                                $pkgModelUp = new PackageModel($db);
+                                $pkgModelUp->update((int) $pkg['id'], [
+                                    'storage_location_id' => (int) $locId,
+                                    'stored_at' => date('Y-m-d H:i:s'),
+                                ]);
+                                (new \App\Models\PackageStorageMovementModel($db))->create([
+                                    'package_id' => (int) $pkg['id'],
+                                    'warehouse_id' => $destWarehouseId,
+                                    'location_id' => (int) $locId,
+                                    'category_id' => isset($pkgFull['storage_category_id']) ? (int) $pkgFull['storage_category_id'] : null,
+                                    'action' => 'stored',
+                                    'notes' => 'Ubicado en bodega destino — embarque ' . $shipment['code'],
+                                    'created_by' => (int) $payload['sub'],
+                                ]);
+                            }
+                        } else {
+                            $storageService->assign(
+                                (int) $pkg['id'],
+                                'local',
+                                null,
+                                null,
+                                (int) $payload['sub'],
+                                'stored',
+                                'Ubicado en bodega destino — embarque ' . $shipment['code']
+                            );
+                        }
+                    } else {
+                        $storageService->assign(
+                            (int) $pkg['id'],
+                            'local',
+                            null,
+                            null,
+                            (int) $payload['sub'],
+                            'stored',
+                            'Ubicado en bodega destino — embarque ' . $shipment['code']
+                        );
+                    }
                 } catch (\Throwable $storageError) {
                     apiLog('ERROR', 'Error reubicando paquete ' . $pkg['id'] . ' al llegar embarque: ' . $storageError->getMessage());
                 }

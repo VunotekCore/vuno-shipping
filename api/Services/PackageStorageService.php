@@ -25,8 +25,16 @@ class PackageStorageService
 {
     public function __construct(private PDO $db) {}
 
-    public function resolveWarehouseId(string $origin): ?int
+    public function resolveWarehouseId(string $origin, ?int $branchId = null): ?int
     {
+        if ($branchId !== null) {
+            $branchStmt = $this->db->prepare('SELECT receiving_warehouse_id FROM branch WHERE id = :id LIMIT 1');
+            $branchStmt->execute(['id' => $branchId]);
+            $branchRow = $branchStmt->fetch();
+            if ($branchRow && !empty($branchRow['receiving_warehouse_id'])) {
+                return (int) $branchRow['receiving_warehouse_id'];
+            }
+        }
         $warehouse = (new WarehouseModel($this->db))->findByOrigin($origin);
         return $warehouse ? (int) $warehouse['id'] : null;
     }

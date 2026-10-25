@@ -110,12 +110,18 @@ class PackageController
         if (!in_array($origin, ['online', 'local'], true)) {
             $origin = 'local';
         }
+        $branchId = isset($_GET['reception_branch_id']) && $_GET['reception_branch_id'] !== '' ? (int) $_GET['reception_branch_id'] : null;
         $categoryId = isset($_GET['category_id']) && $_GET['category_id'] !== '' ? (int) $_GET['category_id'] : null;
 
         $suggested = null;
-        $warehouse = (new WarehouseModel($db))->findByOrigin($origin);
-        if ($warehouse !== null) {
-            $suggested = (new PackageStorageService($db))->autoSuggest((int) $warehouse['id'], $categoryId);
+        $warehouseId = (new PackageStorageService($db))->resolveWarehouseId($origin, $branchId);
+        if ($warehouseId !== null) {
+            $suggested = (new PackageStorageService($db))->autoSuggest($warehouseId, $categoryId);
+        } else {
+            $warehouse = (new WarehouseModel($db))->findByOrigin($origin);
+            if ($warehouse !== null) {
+                $suggested = (new PackageStorageService($db))->autoSuggest((int) $warehouse['id'], $categoryId);
+            }
         }
 
         jsonSuccess([

@@ -200,15 +200,37 @@ class PackageService
                 $insertData['status_id'] = $statusId;
             }
 
-            // Origin: compra online (Miami) vs directo en Nicaragua (local).
+            // Origin/Branch: define flujo (consolidation -> embarque, direct -> ingreso local)
             $origin = ($data['origin'] ?? '') === 'local' ? 'local' : 'online';
             $insertData['origin'] = $origin;
 
+            $branch = null;
+            if (isset($data['reception_branch_id']) && $data['reception_branch_id'] !== '' && $data['reception_branch_id'] !== null) {
+                $branch = (new BranchModel($this->db))->findById((int) $data['reception_branch_id']);
+                if ($branch !== null) {
+                    $insertData['reception_branch_id'] = (int) $branch['id'];
+                }
+            }
+            if (isset($data['pickup_branch_id']) && $data['pickup_branch_id'] !== '' && $data['pickup_branch_id'] !== null) {
+                $insertData['pickup_branch_id'] = (int) $data['pickup_branch_id'];
+            }
+
             $statusName = 'received';
-            $statusDescription = 'Paquete recibido en almacén Miami';
-            if ($origin === 'local') {
+            $statusDescription = 'Paquete recibido en almacén';
+            if ($branch !== null && $branch['type'] === 'direct') {
                 $statusName = 'in_nicaragua';
-                $statusDescription = 'Paquete recibido en Nicaragua, listo para entrega local';
+                $statusDescription = 'Paquete recibido en sucursal, listo para entrega local';
+            } elseif ($branch !== null && $branch['type'] === 'consolidation') {
+                $statusName = 'received';
+                $statusDescription = 'Paquete recibido en almacén de consolidación';
+            } else {
+                if ($origin === 'local') {
+                    $statusName = 'in_nicaragua';
+                    $statusDescription = 'Paquete recibido en Nicaragua, listo para entrega local';
+                } else {
+                    $statusName = 'received';
+                    $statusDescription = 'Paquete recibido en almacén Miami';
+                }
             }
 
             $initialStatusId = $model->getStatusId($statusName);
@@ -291,9 +313,15 @@ class PackageService
 
             try {
                 $storageService = new PackageStorageService($this->db);
+                $assignOrigin = $origin;
+                if ($branch !== null && $branch['type'] === 'direct') {
+                    $assignOrigin = 'local';
+                } elseif ($branch !== null && $branch['type'] === 'consolidation') {
+                    $assignOrigin = 'online';
+                }
                 $storageService->assign(
                     $packageId,
-                    $origin,
+                    $assignOrigin,
                     $insertData['storage_category_id'] ?? null,
                     isset($data['storage_location_id']) && $data['storage_location_id'] !== '' ? (int) $data['storage_location_id'] : null,
                     (int) $payload['sub'],

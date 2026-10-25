@@ -728,3 +728,21 @@ export interface QuoteStatsResult {
   summary: QuoteSummary
   commissions: QuoteCommissionRow[]
 }
+export interface Branch {
+  id: number
+  code: string
+  name: string
+  country_code: string | null
+  type: 'consolidation' | 'direct'
+  receiving_warehouse_id: number | null
+  transfer_to_warehouse_id: number | null
+  allows_pickup: number | boolean
+  is_active: number | boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+  receiving_warehouse_name?: string | null
+  receiving_warehouse_code?: string | null
+  transfer_to_warehouse_name?: string | null
+  transfer_to_warehouse_code?: string | null
+}

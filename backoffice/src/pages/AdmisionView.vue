@@ -8,7 +8,8 @@ import { zoneService, type Zone } from '../services/zoneService'
 import { subzoneService, type Subzone } from '../services/subzoneService'
 import { pricingRuleService, type PricingRule } from '../services/pricingRuleService'
 import { storageCategoryService, type StorageCategory } from '../services/storageCategoryService'
-import type { DeliveryOption, Invoice } from '../types'
+import { branchService } from '../services/branchService'
+import type { DeliveryOption, Invoice, Branch } from '../types'
 import { useToast } from '../composables/useToast'
 import { formatCurrency } from '../utils/format'
 import QRCode from 'qrcode'
@@ -52,6 +53,7 @@ const currentShippingService = ref<{ id: number; name: string; description: stri
 
 // Almacenaje: solo clasificación obligatoria, ubicación se asigna automáticamente
 const storageCategories = ref<StorageCategory[]>([])
+const branches = ref<Branch[]>([])
 
 const filteredDeliveryOptions = ref<DeliveryOption[]>([])
 
@@ -81,6 +83,8 @@ function pricingRuleLabel(rule: PricingRule): string {
 const form = reactive({
   client_id: null as number | null,
   origin: 'local' as 'online' | 'local',
+  reception_branch_id: null as number | null,
+  pickup_branch_id: null as number | null,
   sender_name: '',
   sender_phone: '',
   recipient_name: '',
@@ -294,16 +298,18 @@ async function loadReferenceData() {
       return []
     }
   }
-  const [clientsData, zonesData, rulesData, categoriesRes] = await Promise.all([
+  const [clientsData, zonesData, rulesData, categoriesRes, branchesRes] = await Promise.all([
     load(clientService.listAll, 'clients'),
     load(zoneService.listAll, 'zones'),
     load(pricingRuleService.listAll, 'pricing_rules'),
-    packageService.storageOptions(form.origin).catch(() => ({ data: { data: { storage_categories: [] as StorageCategory[] } } })),
+    packageService.storageOptions(form.origin, form.reception_branch_id).catch(() => ({ data: { data: { storage_categories: [] as StorageCategory[] } } })),
+    branchService.list(true).catch(() => ({ data: { data: { branches: [] } } })),
   ])
   clients.value = clientsData
   zones.value = zonesData
   pricingRules.value = rulesData.map(normalizePricingRule)
   storageCategories.value = (categoriesRes.data.data?.storage_categories as StorageCategory[]) ?? []
+  branches.value = (branchesRes.data?.data?.branches as Branch[]) ?? (branchesRes as any).data?.branches ?? []
   if (storageCategories.value.length === 0) {
     try {
       const res = await storageCategoryService.listAll()
@@ -346,6 +352,19 @@ function onToggleUseClientData(value: boolean) {
   form.use_client_data = value
   if (value) syncRecipientFromSender()
 }
+
+function applyBranch(b: Branch | null) {
+  if (!b) return
+  form.origin = b.type === 'consolidation' ? 'online' : 'local'
+  form.use_client_data = b.type === 'consolidation'
+  syncRecipientFromSender()
+  packageService.storageOptions(form.origin, form.reception_branch_id).then((res: any) => {
+    const cats = res.data?.data?.storage_categories || []
+    if (cats.length > 0) storageCategories.value = cats
+  }).catch(() => {})
+}
+
+
 
 // El switch se posiciona solo según el origen, porque los dos casos por defecto
 // son distintos: comprando en Amazon lo habitual es que el paquete sea para uno
@@ -569,6 +588,7 @@ async function handleCreate() {
       delivery_option: form.delivery_option,
       origin: form.origin,
     }
+    if (form.reception_branch_id) payload.reception_branch_id = form.reception_branch_id
     if (form.shipping_service_id && currentShippingService.value) {
       payload.shipping_service = currentShippingService.value.name
     }
@@ -622,7 +642,9 @@ function goToDetail() {
 function resetForm() {
   form.client_id = null
   form.origin = 'local'
-  form.use_client_data = true
+  form.reception_branch_id = null
+  form.pickup_branch_id = null
+  form.use_client_data = (form.origin as string) === 'online'
   form.sender_name = ''
   form.sender_phone = ''
   form.recipient_name = ''
@@ -776,11 +798,11 @@ onMounted(() => loadReferenceData())
             </div>
           </div>
 
-          <!-- Origen del envío -->
+          <!-- Sucursal de ingreso -->
           <div class="admin-card p-5">
             <p class="admin-form-section mb-4">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h4l2 2h8a2 2 0 012 2v2M3 7v8a2 2 0 002 2h3m-9-2h3m0 0V9a2 2 0 012-2h10l3 3v3m-8 2v4h8v-4"/></svg>
-              Origen del envío</p>
+              Tipo de flujo / Sucursal de ingreso</p>
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 type="button"
@@ -788,14 +810,14 @@ onMounted(() => loadReferenceData())
                 :class="form.origin === 'local'
                   ? 'border-primary/60 bg-primary/10'
                   : 'border-line bg-transparent hover:border-line-strong'"
-                @click="form.origin = 'local'"
+                @click="() => { form.origin = 'local'; const cur = branches.find(x => x.id === form.reception_branch_id); if (cur && cur.type !== 'direct') { form.reception_branch_id = null; } }"
               >
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 019.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10zM2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
                 </span>
                 <span>
                   <span class="block text-sm font-semibold text-content">Ingreso local</span>
-                  <span class="mt-0.5 block text-xs text-subtle">Cliente lo entrega en la oficina, listo para distribución</span>
+                  <span class="mt-0.5 block text-xs text-subtle">Cliente lo entrega en la oficina</span>
                 </span>
               </button>
               <button
@@ -804,16 +826,45 @@ onMounted(() => loadReferenceData())
                 :class="form.origin === 'online'
                   ? 'border-primary/60 bg-primary/10'
                   : 'border-line bg-transparent hover:border-line-strong'"
-                @click="form.origin = 'online'"
+                @click="() => { form.origin = 'online'; const cur = branches.find(x => x.id === form.reception_branch_id); if (cur && cur.type !== 'consolidation') { form.reception_branch_id = null; } }"
               >
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
                 </span>
                 <span>
                   <span class="block text-sm font-semibold text-content">Compra EEUU</span>
-                  <span class="mt-0.5 block text-xs text-subtle">Recibido en el almacén de Miami, viaja en embarque a Nicaragua</span>
+                  <span class="mt-0.5 block text-xs text-subtle">Recibido en almacén de consolidación</span>
                 </span>
               </button>
+            </div>
+            <div v-if="branches.length > 0" class="mt-4 space-y-3">
+              <p class="text-xs font-semibold uppercase tracking-wider text-content">Sucursal de ingreso</p>
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button
+                  v-for="b in (form.origin === 'online' ? branches.filter(x => x.type === 'consolidation' && (x.is_active === 1 || x.is_active === true)) : branches.filter(x => x.type === 'direct' && (x.is_active === 1 || x.is_active === true)))"
+                  :key="b.id"
+                  type="button"
+                  class="flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors"
+                  :class="form.reception_branch_id === b.id
+                    ? 'border-primary/60 bg-primary/10'
+                    : 'border-line bg-transparent hover:border-line-strong'"
+                  @click="() => { form.reception_branch_id = b.id; applyBranch(b); }"
+                >
+                  <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h4l2 2h8a2 2 0 012 2v2M3 7v8a2 2 0 002 2h3m-9-2h3m0 0V9a2 2 0 012-2h10l3 3v3m-8 2v4h8v-4"/></svg>
+                  </span>
+                  <span class="min-w-0">
+                    <span class="block truncate text-sm font-medium text-content">{{ b.name }}</span>
+                    <span class="block text-xs text-subtle">{{ b.type === 'consolidation' ? 'Consolidación' : 'Ingreso local' }}</span>
+                  </span>
+                </button>
+              </div>
+              <p v-if="form.reception_branch_id" class="text-xs text-subtle">
+                {{ (branches.find(b => b.id === form.reception_branch_id)?.type === 'consolidation') ? 'Compra/ingreso fuera de Nicaragua → va por embarque' : 'Ingreso local → puede trasladarse a bodega central si está configurado' }}
+              </p>
+            </div>
+            <div v-else class="mt-4 rounded-lg border border-line bg-surface-raised/20 px-4 py-3">
+              <p class="text-sm text-subtle">No hay sucursales activas. Crealas desde el módulo de sucursales.</p>
             </div>
           </div>
 

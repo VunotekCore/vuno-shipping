@@ -73,6 +73,12 @@ const router = createRouter({
           meta: { permission: 'document_sequence', action: 'read' },
         },
         {
+          path: 'branches',
+          name: 'branches',
+          component: () => import('../pages/BranchesView.vue'),
+          meta: { permission: 'branch', action: 'read' },
+        },
+        {
           path: 'admision',
           name: 'admision',
           component: () => import('../pages/AdmisionView.vue'),

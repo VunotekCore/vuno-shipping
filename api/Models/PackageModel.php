@@ -358,7 +358,8 @@ class PackageModel
         $where = ['ps.name = :status'];
         $params = ['status' => 'received'];
 
-        $serviceJoin = ' LEFT JOIN shipping_service ss ON ss.id = p.shipping_service_id';
+        $serviceJoin = ' LEFT JOIN shipping_service ss ON ss.id = p.shipping_service_id LEFT JOIN branch b ON b.id = p.reception_branch_id';
+        $where[] = "(b.type = 'consolidation' OR p.origin = 'online')";
         if ($mode === 'air' || $mode === 'sea') {
             $serviceJoin .= ' INNER JOIN delivery_type sdt ON sdt.id = ss.delivery_type_id';
             $where[] = "sdt.category = 'international'";

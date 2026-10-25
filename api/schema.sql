@@ -390,6 +390,9 @@ CREATE TABLE IF NOT EXISTS warehouse (
     origin ENUM('online','local') NOT NULL DEFAULT 'online',
     address VARCHAR(500) NULL,
     is_active TINYINT(1) DEFAULT 1,
+    is_central TINYINT(1) NOT NULL DEFAULT 0,
+    is_distribution TINYINT(1) NOT NULL DEFAULT 0,
+    country_code VARCHAR(2) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_warehouse_code (code)
@@ -405,6 +408,65 @@ CREATE TABLE IF NOT EXISTS storage_category (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_storage_category_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS branch (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(20) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    country_code VARCHAR(2) DEFAULT 'NI',
+    type ENUM('consolidation','direct') NOT NULL DEFAULT 'direct',
+    receiving_warehouse_id INT NULL,
+    transfer_to_warehouse_id INT NULL,
+    allows_pickup TINYINT(1) NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_branch_code (code),
+    INDEX idx_branch_type (type),
+    INDEX idx_branch_receiving (receiving_warehouse_id),
+    INDEX idx_branch_transfer_to (transfer_to_warehouse_id),
+    CONSTRAINT fk_branch_receiving_warehouse FOREIGN KEY (receiving_warehouse_id) REFERENCES warehouse(id) ON DELETE SET NULL,
+    CONSTRAINT fk_branch_transfer_to_warehouse FOREIGN KEY (transfer_to_warehouse_id) REFERENCES warehouse(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS warehouse_transfer (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL,
+    from_warehouse_id INT NOT NULL,
+    to_warehouse_id INT NOT NULL,
+    branch_id INT NULL,
+    status ENUM('pending','in_transit','received','cancelled') NOT NULL DEFAULT 'pending',
+    notes TEXT NULL,
+    created_by INT NULL,
+    received_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    received_at TIMESTAMP NULL,
+    UNIQUE KEY uk_warehouse_transfer_code (code),
+    INDEX idx_wt_from (from_warehouse_id),
+    INDEX idx_wt_to (to_warehouse_id),
+    INDEX idx_wt_status (status),
+    INDEX idx_wt_branch (branch_id),
+    CONSTRAINT fk_wt_from FOREIGN KEY (from_warehouse_id) REFERENCES warehouse(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_wt_to FOREIGN KEY (to_warehouse_id) REFERENCES warehouse(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_wt_branch FOREIGN KEY (branch_id) REFERENCES branch(id) ON DELETE SET NULL,
+    CONSTRAINT fk_wt_created_by FOREIGN KEY (created_by) REFERENCES `user`(id) ON DELETE SET NULL,
+    CONSTRAINT fk_wt_received_by FOREIGN KEY (received_by) REFERENCES `user`(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS warehouse_transfer_item (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    transfer_id INT NOT NULL,
+    package_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_wti_transfer_package (transfer_id, package_id),
+    INDEX idx_wti_transfer (transfer_id),
+    INDEX idx_wti_package (package_id),
+    CONSTRAINT fk_wti_transfer FOREIGN KEY (transfer_id) REFERENCES warehouse_transfer(id) ON DELETE CASCADE,
+    CONSTRAINT fk_wti_package FOREIGN KEY (package_id) REFERENCES package(id) ON DELETE CASASE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS storage_location (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -466,6 +528,8 @@ CREATE TABLE IF NOT EXISTS package (
     route_id INT NULL,
     notes TEXT NULL,
     origin ENUM('online','local') DEFAULT 'online',
+    reception_branch_id INT NULL,
+    pickup_branch_id INT NULL,
     pickup_required TINYINT(1) NOT NULL DEFAULT 0,
     pickup_vehicle_id INT NULL,
     storage_category_id INT NULL,
@@ -498,7 +562,11 @@ CREATE TABLE IF NOT EXISTS package (
     INDEX idx_package_zone (zone_id),
     INDEX idx_package_delivery_type (delivery_type_id),
     INDEX idx_package_shipping_service (shipping_service_id),
-    INDEX idx_package_assigned (assigned_to)
+    INDEX idx_package_assigned (assigned_to),
+    INDEX idx_package_reception_branch (reception_branch_id),
+    INDEX idx_package_pickup_branch (pickup_branch_id),
+    CONSTRAINT fk_package_reception_branch FOREIGN KEY (reception_branch_id) REFERENCES branch(id) ON DELETE SET NULL,
+    CONSTRAINT fk_package_pickup_branch FOREIGN KEY (pickup_branch_id) REFERENCES branch(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS package_storage_movement (

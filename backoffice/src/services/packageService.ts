@@ -28,10 +28,13 @@ export const packageService = {
       `/package/list.php${qs ? '?' + qs : ''}`
     )
   },
-  storageOptions(origin?: 'online' | 'local') {
-    const qs = origin ? `?origin=${origin}` : ''
+  storageOptions(origin?: 'online' | 'local', reception_branch_id?: number | null) {
+    const params: any = {}
+    if (origin) params.origin = origin
+    if (reception_branch_id) params.reception_branch_id = reception_branch_id
     return api.get<{ success: boolean; data: { storage_categories: import('../types').StorageCategory[]; suggested_location_id?: number | null; suggested_location_code?: string | null } }>(
-      `/package/storage-options.php${qs}`
+      `/package/storage-options.php`,
+      { params }
     )
   },
 
